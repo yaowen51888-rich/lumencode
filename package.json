@@ -1,0 +1,15 @@
+{
+  "name": "ccusage-report",
+  "version": "1.0.0",
+  "description": "Claude Code 使用报告工具 - 从 JSONL 日志和 Git 仓库提取效率与使用指标",
+  "type": "module",
+  "bin": {
+    "ccusage-report": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

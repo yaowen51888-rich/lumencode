@@ -1,0 +1,78 @@
+{
+  "claudeDir": "C:\\Users\\宋卫奇\\.claude",
+  "repos": [
+    "D:\\fzwork",
+    "E:\\play\\idea04",
+    "E:\\play\\idea",
+    "E:\\play\\one\\ai-projects-hub"
+  ],
+  "excludeProjects": [],
+  "scenarioKeywords": {
+    "coding": [
+      "实现",
+      "功能",
+      "开发",
+      "添加",
+      "修改代码",
+      "implement",
+      "feature",
+      "add",
+      "refactor",
+      "重构",
+      "组件"
+    ],
+    "testing": [
+      "测试",
+      "test",
+      "spec",
+      "覆盖率",
+      "coverage",
+      "单元测试",
+      "unit test",
+      "jest",
+      "vitest",
+      "mocha"
+    ],
+    "debugging": [
+      "修复",
+      "bug",
+      "debug",
+      "fix",
+      "报错",
+      "错误",
+      "异常",
+      "error",
+      "issue",
+      "问题",
+      "排查",
+      "堆栈"
+    ],
+    "documentation": [
+      "文档",
+      "doc",
+      "readme",
+      "md",
+      "注释",
+      "comment",
+      "说明",
+      "指南",
+      "guide"
+    ],
+    "review": [
+      "review",
+      "审查",
+      "检查",
+      "代码审查",
+      "/review"
+    ],
+    "planning": [
+      "计划",
+      "plan",
+      "设计",
+      "架构",
+      "方案",
+      "design",
+      "architect"
+    ]
+  }
+}

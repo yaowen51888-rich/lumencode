@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ccusage-report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <div class="logo">ccusage-report</div>
+      <div class="nav-controls">
+        <div class="nav-pill-group">
+          <button class="category-tab active" data-period="daily">日报</button>
+          <button class="category-tab" data-period="weekly">周报</button>
+          <button class="category-tab" data-period="monthly">月报</button>
+        </div>
+        <input type="date" id="dateInput" class="text-input">
+        <button id="settingsBtn" class="icon-btn" title="设置">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="hero-band">
+      <div class="hero-row">
+        <div>
+          <h1 class="display-lg" id="reportTitle">Claude Code 使用日报</h1>
+          <p class="body-md muted" id="reportDate">加载中...</p>
+        </div>
+        <button id="workReportBtn" class="btn-outline">工作汇报</button>
+      </div>
+    </section>
+
+    <section class="stats-grid" id="statsGrid">
+      <div class="feature-card">
+        <div class="card-label">独立会话</div>
+        <div class="card-value" id="statSessions">-</div>
+      </div>
+      <div class="feature-card">
+        <div class="card-label">交互轮次</div>
+        <div class="card-value" id="statRequests">-</div>
+      </div>
+      <div class="feature-card">
+        <div class="card-label">覆盖项目</div>
+        <div class="card-value" id="statProjects">-</div>
+      </div>
+      <div class="feature-card">
+        <div class="card-label">Token 消耗</div>
+        <div class="card-value" id="statTokens">-</div>
+      </div>
+    </section>
+
+    <section class="charts-section">
+      <div class="chart-row">
+        <div class="chart-card">
+          <h3 class="title-md">工作类型分布</h3>
+          <div class="chart-wrap"><canvas id="scenarioChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="title-md">模型使用分布</h3>
+          <div class="chart-wrap"><canvas id="modelChart"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card">
+          <h3 class="title-md">项目使用分布</h3>
+          <div class="chart-wrap"><canvas id="projectChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="title-md">工具调用排行</h3>
+          <div class="chart-wrap"><canvas id="toolChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="git-section" id="gitSection" style="display:none;">
+      <div class="cta-band-light">
+        <h3 class="title-lg">Git 代码产出</h3>
+        <div class="git-stats" id="gitStats"></div>
+      </div>
+    </section>
+
+    <section class="work-report-section" id="workReportSection" style="display:none;">
+      <div class="chart-card">
+        <div class="work-report-header">
+          <h3 class="title-md">工作汇报</h3>
+          <div class="work-report-actions">
+            <button id="copyWorkReport" class="btn-secondary">复制</button>
+            <button id="backToReport" class="btn-primary">返回</button>
+          </div>
+        </div>
+        <div id="workReportContent" class="work-report-content"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="title-md">配置</h3>
+        <button id="closeSettings" class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Claude 日志目录</label>
+          <input type="text" id="cfgClaudeDir" class="text-input form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">本地项目路径（每行一个）</label>
+          <textarea id="cfgRepos" class="text-input form-textarea" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">排除项目（每行一个）</label>
+          <textarea id="cfgExclude" class="text-input form-textarea" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">场景关键词</label>
+          <textarea id="cfgKeywords" class="text-input form-textarea" rows="5"></textarea>
+          <p class="form-hint">JSON 格式，如 { "coding": ["实现", "开发"] }</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveSettings" class="btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>ccusage-report · Claude Code 使用统计</p>
+      <p class="muted-soft">数据来自本地日志，不上传至任何服务器</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
