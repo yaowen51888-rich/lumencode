@@ -578,3 +578,17 @@ body {
   padding: 32px;
   color: var(--muted);
 }
+
+/* Print / PDF */
+@media print {
+  .top-nav, .footer, .icon-btn, .btn-outline,
+  .btn-primary:not(#openSettingsBtn),
+  #settingsModal, #drillModal, #toast, #emptyState,
+  .hero-actions { display: none !important; }
+  body { background: white; }
+  .stats-grid { grid-template-columns: repeat(5, 1fr) !important; }
+  .chart-row { grid-template-columns: 1fr 1fr !important; }
+  .feature-card, .chart-card { break-inside: avoid; }
+  .container { max-width: 100%; padding: 0; }
+  .hero-band { padding: 16px 0; }
+}

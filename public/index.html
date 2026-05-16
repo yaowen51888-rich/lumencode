@@ -34,7 +34,11 @@
           <h1 class="display-lg" id="reportTitle">Claude Code 使用日报</h1>
           <p class="body-md muted" id="reportDate">加载中...</p>
         </div>
-        <button id="workReportBtn" class="btn-outline">工作汇报</button>
+        <div class="hero-actions" style="display:flex;gap:8px;">
+          <button id="exportCsvBtn" class="btn-outline">导出 CSV</button>
+          <button id="printBtn" class="btn-outline">打印/PDF</button>
+          <button id="workReportBtn" class="btn-outline">工作汇报</button>
+        </div>
       </div>
     </section>
 
@@ -109,6 +113,7 @@
           <h3 class="title-md">工作汇报</h3>
           <div class="work-report-actions">
             <button id="copyWorkReport" class="btn-secondary">复制</button>
+            <button id="downloadMdBtn" class="btn-secondary">下载 .md</button>
             <button id="backToReport" class="btn-primary">返回</button>
           </div>
         </div>

@@ -8,6 +8,29 @@ let currentDate = new Date().toISOString().slice(0, 10);
 
 const charts = {};
 
+// ── URL Hash State ──
+function loadStateFromHash() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  const [p, d] = hash.split('/');
+  if (p && ['daily', 'weekly', 'monthly'].includes(p)) {
+    currentPeriod = p;
+    document.querySelectorAll('.category-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.period === p);
+    });
+  }
+  if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    currentDate = d;
+    document.getElementById('dateInput').value = d;
+  }
+}
+
+function saveStateToHash() {
+  location.hash = `${currentPeriod}/${currentDate}`;
+}
+
+loadStateFromHash();
+
 async function loadData() {
   showSkeleton();
   hideError();
@@ -229,6 +252,7 @@ document.querySelectorAll('.category-tab').forEach(btn => {
     btn.classList.add('active');
     currentPeriod = btn.dataset.period;
     loadData();
+    saveStateToHash();
   });
 });
 
@@ -236,6 +260,7 @@ document.getElementById('dateInput').value = currentDate;
 document.getElementById('dateInput').addEventListener('change', (e) => {
   currentDate = e.target.value;
   loadData();
+  saveStateToHash();
 });
 
 // ── Trend chart ──
@@ -568,3 +593,40 @@ function fmtShort(n) {
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return String(n);
 }
+
+// ── CSV Export ──
+document.getElementById('exportCsvBtn').addEventListener('click', async () => {
+  const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}`);
+  if (!res.ok) return;
+  const data = await res.json();
+  if (!data || data.error) return;
+  const rows = [['日期', '请求数', '输入Token', '输出Token']];
+  const daily = data.usageStats.dailyStats || {};
+  for (const d of Object.keys(daily).sort()) {
+    const s = daily[d];
+    rows.push([d, s.requests, s.inputTokens, s.outputTokens]);
+  }
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ccusage-${currentPeriod}-${currentDate}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── Print ──
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+// ── Download MD ──
+document.getElementById('downloadMdBtn').addEventListener('click', () => {
+  if (!currentWorkReportMarkdown) return;
+  const blob = new Blob([currentWorkReportMarkdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `work-report-${currentPeriod}-${currentDate}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
