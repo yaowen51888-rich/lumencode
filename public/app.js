@@ -63,7 +63,7 @@ function fmt(n) {
   return n.toLocaleString('zh-CN');
 }
 
-function renderTrend(elId, current, previous) {
+function renderTrendArrow(elId, current, previous) {
   const el = document.getElementById(elId);
   if (!el) return;
   if (previous == null || previous === undefined || previous === 0 || current == null || current === undefined) { el.textContent = ''; el.className = 'card-trend'; return; }
@@ -114,11 +114,11 @@ function render(data) {
   }
 
   // Trend arrows (compare with previous period)
-  renderTrend('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
-  renderTrend('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
-  renderTrend('trendProjects', Object.keys(usageStats.projects).length, data.prevStats && data.prevStats.projects ? Object.keys(data.prevStats.projects).length : null);
-  renderTrend('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
-  renderTrend('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
+  renderTrendArrow('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
+  renderTrendArrow('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
+  renderTrendArrow('trendProjects', Object.keys(usageStats.projects).length, data.prevStats && data.prevStats.projects ? Object.keys(data.prevStats.projects).length : null);
+  renderTrendArrow('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
+  renderTrendArrow('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
 
   // Trend chart
   const trendSection = document.getElementById('trendSection');
