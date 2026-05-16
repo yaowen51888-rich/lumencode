@@ -63,6 +63,17 @@ function fmt(n) {
   return n.toLocaleString('zh-CN');
 }
 
+function renderTrend(elId, current, previous) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (previous == null || previous === 0) { el.textContent = ''; el.className = 'card-trend'; return; }
+  const pct = ((current - previous) / previous * 100).toFixed(0);
+  const val = Math.abs(pct);
+  if (pct > 0) { el.textContent = `↑${val}%`; el.className = 'card-trend up'; }
+  else if (pct < 0) { el.textContent = `↓${val}%`; el.className = 'card-trend down'; }
+  else { el.textContent = '—'; el.className = 'card-trend flat'; }
+}
+
 function render(data) {
   const { usageStats, gitStats, start, end } = data;
 
@@ -87,6 +98,13 @@ function render(data) {
       ? `~$${usageStats.estimatedCost.toFixed(2)}`
       : '-';
   }
+
+  // Trend arrows (compare with previous period)
+  renderTrend('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
+  renderTrend('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
+  renderTrend('trendProjects', Object.keys(usageStats.projects).length, data.prevStats ? Object.keys(data.prevStats.projects || {}).length : null);
+  renderTrend('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
+  renderTrend('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
 
   // Trend chart
   const trendSection = document.getElementById('trendSection');
@@ -629,4 +647,41 @@ document.getElementById('downloadMdBtn').addEventListener('click', () => {
   a.download = `work-report-${currentPeriod}-${currentDate}.md`;
   a.click();
   URL.revokeObjectURL(url);
+});
+
+// ── Date navigation ──
+function shiftDate(days) {
+  const d = new Date(currentDate);
+  d.setDate(d.getDate() + days);
+  currentDate = d.toISOString().slice(0, 10);
+  document.getElementById('dateInput').value = currentDate;
+  loadData();
+  saveStateToHash();
+}
+
+document.getElementById('prevDate').addEventListener('click', () => {
+  const step = currentPeriod === 'daily' ? -1 : currentPeriod === 'weekly' ? -7 : -30;
+  shiftDate(step);
+});
+
+document.getElementById('nextDate').addEventListener('click', () => {
+  const step = currentPeriod === 'daily' ? 1 : currentPeriod === 'weekly' ? 7 : 30;
+  shiftDate(step);
+});
+
+// ── Dark mode ──
+const themeBtn = document.getElementById('themeBtn');
+const savedTheme = localStorage.getItem('ccusage-theme');
+if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+themeBtn.addEventListener('click', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('ccusage-theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('ccusage-theme', 'dark');
+  }
+  loadData();
 });

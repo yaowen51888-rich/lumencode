@@ -19,7 +19,18 @@
           <button class="category-tab" data-period="weekly">周报</button>
           <button class="category-tab" data-period="monthly">月报</button>
         </div>
-        <input type="date" id="dateInput" class="text-input">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button id="prevDate" class="icon-btn" title="上一个">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <input type="date" id="dateInput" class="text-input">
+          <button id="nextDate" class="icon-btn" title="下一个">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+        <button id="themeBtn" class="icon-btn" title="切换暗色模式">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
         <button id="settingsBtn" class="icon-btn" title="设置">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </button>
@@ -45,23 +56,23 @@
     <section class="stats-grid" id="statsGrid">
       <div class="feature-card">
         <div class="card-label">独立会话</div>
-        <div class="card-value" id="statSessions">-</div>
+        <div class="card-value-row"><div class="card-value" id="statSessions">-</div><div class="card-trend" id="trendSessions"></div></div>
       </div>
       <div class="feature-card">
         <div class="card-label">交互轮次</div>
-        <div class="card-value" id="statRequests">-</div>
+        <div class="card-value-row"><div class="card-value" id="statRequests">-</div><div class="card-trend" id="trendRequests"></div></div>
       </div>
       <div class="feature-card">
         <div class="card-label">覆盖项目</div>
-        <div class="card-value" id="statProjects">-</div>
+        <div class="card-value-row"><div class="card-value" id="statProjects">-</div><div class="card-trend" id="trendProjects"></div></div>
       </div>
       <div class="feature-card">
         <div class="card-label">Token 消耗</div>
-        <div class="card-value" id="statTokens">-</div>
+        <div class="card-value-row"><div class="card-value" id="statTokens">-</div><div class="card-trend" id="trendTokens"></div></div>
       </div>
       <div class="feature-card">
         <div class="card-label">预估费用</div>
-        <div class="card-value" id="statCost">-</div>
+        <div class="card-value-row"><div class="card-value" id="statCost">-</div><div class="card-trend" id="trendCost"></div></div>
       </div>
     </section>
 
