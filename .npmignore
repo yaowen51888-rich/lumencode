@@ -1,0 +1,7 @@
+doc/
+docs/
+.spec-workflow/
+scripts/
+test/
+DESIGN.md
+*.png
