@@ -144,7 +144,7 @@ body {
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 48px;
 }
@@ -152,7 +152,7 @@ body {
 .feature-card {
   background: var(--surface-card);
   border-radius: 12px;
-  padding: 32px;
+  padding: 24px;
 }
 
 .card-label {
