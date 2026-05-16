@@ -548,3 +548,33 @@ body {
   .git-stats { grid-template-columns: 1fr; }
   .cta-band-light { padding: 24px; }
 }
+
+/* Drill-down table */
+.drill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.drill-table th,
+.drill-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--hairline);
+}
+.drill-table th {
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+.drill-text {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--body);
+}
+.drill-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+}

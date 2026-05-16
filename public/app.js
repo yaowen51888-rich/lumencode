@@ -77,16 +77,48 @@ function render(data) {
   // Scenarios
   renderDoughnut('scenarioChart', usageStats.scenarios, '场景分布');
 
-  // Models
+  // Models (with drill-down)
   const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
-  renderBar('modelChart', modelEntries.map(([k, v]) => k), modelEntries.map(([k, v]) => v.count), '请求次数');
+  destroyChart('modelChart');
+  const modelCtx = document.getElementById('modelChart').getContext('2d');
+  charts['modelChart'] = new Chart(modelCtx, {
+    type: 'bar',
+    data: { labels: modelEntries.map(([k]) => k), datasets: [{ label: '请求次数', data: modelEntries.map(([, v]) => v.count), backgroundColor: '#111111', borderRadius: 6, barThickness: 20 }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
+      onClick: (evt, elements) => {
+        if (elements.length === 0) return;
+        const model = modelEntries[elements[0].index][0];
+        showDrill(model, '<div class="drill-empty">加载中...</div>');
+        fetch(`/api/details?period=${currentPeriod}&date=${currentDate}&dimension=model&key=${encodeURIComponent(model)}`).then(r => r.json()).then(rows => {
+          if (!rows.length) { showDrill(model, '<div class="drill-empty">无数据</div>'); return; }
+          showDrill(model + ' 按日分布', '<table class="drill-table"><tr><th>日期</th><th>请求数</th><th>输入Token</th><th>输出Token</th></tr>' + rows.map(r => `<tr><td>${r.date}</td><td>${r.requests}</td><td>${fmtShort(r.inputTokens)}</td><td>${fmtShort(r.outputTokens)}</td></tr>`).join('') + '</table>');
+        });
+      }
+    }
+  });
 
-  // Projects
+  // Projects (with drill-down)
   const projEntries = Object.entries(usageStats.projects)
     .filter(([, d]) => d.requests > 0)
     .sort((a, b) => b[1].requests - a[1].requests)
     .slice(0, 8);
-  renderBar('projectChart', projEntries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k), projEntries.map(([, v]) => v.requests), '请求数');
+  destroyChart('projectChart');
+  const projCtx = document.getElementById('projectChart').getContext('2d');
+  charts['projectChart'] = new Chart(projCtx, {
+    type: 'bar',
+    data: { labels: projEntries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k), datasets: [{ label: '请求数', data: projEntries.map(([, v]) => v.requests), backgroundColor: '#111111', borderRadius: 6, barThickness: 20 }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
+      onClick: (evt, elements) => {
+        if (elements.length === 0) return;
+        const project = projEntries[elements[0].index][0];
+        showDrill(project, '<div class="drill-empty">加载中...</div>');
+        fetch(`/api/sessions?project=${encodeURIComponent(project)}`).then(r => r.json()).then(rows => {
+          if (!rows.length) { showDrill(project, '<div class="drill-empty">无数据</div>'); return; }
+          showDrill(project + ' 会话记录', '<table class="drill-table"><tr><th>会话ID</th><th>开始时间</th><th>请求数</th></tr>' + rows.map(r => `<tr><td class="drill-text" title="${r.id}">${r.id}</td><td>${r.startedAt ? r.startedAt.slice(0, 16).replace('T', ' ') : '-'}</td><td>${r.requests || '-'}</td></tr>`).join('') + '</table>');
+        });
+      }
+    }
+  });
 
   // Tools
   const toolEntries = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]).slice(0, 10);
@@ -142,6 +174,19 @@ function renderDoughnut(canvasId, dataMap, label) {
             },
           },
         },
+      },
+      onClick: (evt, elements) => {
+        if (elements.length === 0) return;
+        const clickEntries = Object.entries(dataMap).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+        const label = clickEntries[elements[0].index]?.[0];
+        const scenarioKeyMap = { '编码': 'coding', '测试/QA': 'testing', '调试/排错': 'debugging', '文档': 'documentation', '阅读/研究': 'reading', '规划/设计': 'planning', '代码审查': 'review' };
+        const key = scenarioKeyMap[label];
+        if (!key) return;
+        showDrill(label + ' 匹配示例', '<div class="drill-empty">加载中...</div>');
+        fetch(`/api/details?period=${currentPeriod}&date=${currentDate}&dimension=scenario&key=${encodeURIComponent(key)}`).then(r => r.json()).then(rows => {
+          if (!rows.length) { showDrill(label, '<div class="drill-empty">无匹配记录</div>'); return; }
+          showDrill(label + ' 匹配示例', '<table class="drill-table"><tr><th>用户消息</th><th>时间</th></tr>' + rows.map(r => `<tr><td class="drill-text" title="${r.text.replace(/"/g, '&quot;')}">${r.text}</td><td>${r.timestamp.slice(0, 16).replace('T', ' ')}</td></tr>`).join('') + '</table>');
+        });
       },
     },
   });
@@ -502,3 +547,24 @@ copyWorkReport.addEventListener('click', async () => {
     setTimeout(() => copyWorkReport.textContent = '复制', 1500);
   }
 });
+
+// ── Drill-down ──
+
+const drillModal = document.getElementById('drillModal');
+const drillTitle = document.getElementById('drillTitle');
+const drillBody = document.getElementById('drillBody');
+
+document.getElementById('closeDrill').addEventListener('click', () => { drillModal.style.display = 'none'; });
+drillModal.querySelector('.modal-backdrop').addEventListener('click', () => { drillModal.style.display = 'none'; });
+
+function showDrill(title, html) {
+  drillTitle.textContent = title;
+  drillBody.innerHTML = html;
+  drillModal.style.display = 'flex';
+}
+
+function fmtShort(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
