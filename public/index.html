@@ -85,7 +85,17 @@
       </div>
     </section>
 
+    <section class="git-section" id="gitSection" style="display:none;">
+      <div class="cta-band-light">
+        <h3 class="title-lg">Git 代码产出</h3>
+        <div class="git-stats" id="gitStats"></div>
+      </div>
+    </section>
+
     <section class="charts-section">
+      <div class="section-header">
+        <h2 class="title-md">数据分析</h2>
+      </div>
       <div class="chart-row">
         <div class="chart-card">
           <h3 class="title-md">工作类型分布</h3>
@@ -109,15 +119,18 @@
     </section>
 
     <section class="empty-state" id="emptyState" style="display:none;">
+      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:24px;">
+        <rect x="20" y="30" width="80" height="60" rx="8" stroke="currentColor" stroke-width="2" fill="none" opacity="0.2"/>
+        <rect x="30" y="42" width="24" height="4" rx="2" fill="currentColor" opacity="0.15"/>
+        <rect x="30" y="52" width="40" height="4" rx="2" fill="currentColor" opacity="0.1"/>
+        <rect x="30" y="62" width="32" height="4" rx="2" fill="currentColor" opacity="0.1"/>
+        <rect x="30" y="72" width="20" height="4" rx="2" fill="currentColor" opacity="0.08"/>
+        <circle cx="90" cy="32" r="16" stroke="currentColor" stroke-width="2" fill="none" opacity="0.15"/>
+        <line x1="90" y1="26" x2="90" y2="38" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+        <line x1="84" y1="32" x2="96" y2="32" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+      </svg>
       <p id="emptyMessage">暂无数据，请检查 Claude 日志目录配置</p>
       <button class="btn-primary" id="openSettingsBtn">打开设置</button>
-    </section>
-
-    <section class="git-section" id="gitSection" style="display:none;">
-      <div class="cta-band-light">
-        <h3 class="title-lg">Git 代码产出</h3>
-        <div class="git-stats" id="gitStats"></div>
-      </div>
     </section>
 
     <section class="work-report-section" id="workReportSection" style="display:none;">

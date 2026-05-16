@@ -191,8 +191,14 @@ function render(data) {
       <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.filesChanged)}</div><div class="git-stat-label">变更文件</div></div>
     `;
   } else {
-    gitSection.style.display = 'none';
+    gitSection.style.display = 'block';
     gitSection.dataset.hasGit = 'false';
+    document.getElementById('gitStats').innerHTML = `
+      <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
+        <p style="color:var(--muted);margin-bottom:12px;">配置本地项目路径后，可在此查看 Git 代码产出</p>
+        <button class="btn-outline" onclick="document.getElementById('settingsBtn').click()">配置项目路径</button>
+      </div>
+    `;
   }
 }
 
@@ -359,12 +365,21 @@ function showSkeleton() {
       el.classList.add('skeleton');
     }
   });
+  document.querySelectorAll('.chart-wrap').forEach(el => {
+    if (!el.querySelector('.chart-skeleton')) {
+      const overlay = document.createElement('div');
+      overlay.className = 'chart-skeleton';
+      overlay.innerHTML = '<div class="chart-skeleton-bar"></div><div class="chart-skeleton-bar"></div><div class="chart-skeleton-bar"></div><div class="chart-skeleton-bar"></div><div class="chart-skeleton-bar"></div>';
+      el.appendChild(overlay);
+    }
+  });
 }
 
 function hideSkeleton() {
   document.querySelectorAll('.card-value.skeleton').forEach(el => {
     el.classList.remove('skeleton');
   });
+  document.querySelectorAll('.chart-skeleton').forEach(el => el.remove());
 }
 
 function showError(msg) {
@@ -399,6 +414,7 @@ function hideEmpty() {
   if (empty) empty.style.display = 'none';
   document.getElementById('statsGrid').style.display = 'grid';
   document.querySelector('.charts-section').style.display = 'block';
+  document.getElementById('trendSection').style.display = 'block';
 }
 
 // ── Config: localStorage + server sync ──

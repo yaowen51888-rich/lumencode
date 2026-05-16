@@ -1,4 +1,9 @@
 {
+  "claudeDir": "C:\\Users\\zhang\\.claude",
+  "repos": [
+    "D:\\Ai\\SayItBetter",
+    "D:\\ccusage-report"
+  ],
   "excludeProjects": [],
   "scenarioKeywords": {
     "coding": [

@@ -153,6 +153,12 @@ body {
   background: var(--surface-card);
   border-radius: 12px;
   padding: 24px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.feature-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 
 .card-label {
@@ -184,6 +190,18 @@ body {
 /* Charts */
 .charts-section { margin-bottom: 48px; }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-header .title-md {
+  font-size: 18px;
+  margin-bottom: 0;
+}
+
 .chart-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -195,6 +213,12 @@ body {
   background: var(--surface-card);
   border-radius: 12px;
   padding: 32px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 
 .title-md {
@@ -531,10 +555,48 @@ body {
   width: 80px;
 }
 
+.chart-skeleton {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px;
+  z-index: 1;
+  background: var(--surface-card);
+  overflow: hidden;
+}
+
+.chart-skeleton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 25%, var(--surface-soft) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.chart-skeleton-bar {
+  height: 16px;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  margin-bottom: 12px;
+}
+
+.chart-skeleton-bar:nth-child(1) { width: 75%; }
+.chart-skeleton-bar:nth-child(2) { width: 60%; }
+.chart-skeleton-bar:nth-child(3) { width: 45%; }
+.chart-skeleton-bar:nth-child(4) { width: 55%; }
+.chart-skeleton-bar:nth-child(5) { width: 35%; }
+
 /* Empty state */
 .empty-state {
   text-align: center;
   padding: 80px 24px;
+  color: var(--muted);
 }
 
 .empty-state p {
@@ -579,6 +641,11 @@ body {
   --on-primary: #111111;
   --on-dark: #ffffff;
   --on-dark-soft: #9ca3af;
+}
+
+[data-theme="dark"] .feature-card:hover,
+[data-theme="dark"] .chart-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 [data-theme="dark"] .category-tab.active {
