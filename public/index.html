@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <div id="toast" class="toast" style="display:none;"></div>
   <nav class="top-nav">
     <div class="nav-inner">
       <div class="logo">ccusage-report</div>
@@ -53,6 +54,17 @@
       <div class="feature-card">
         <div class="card-label">Token 消耗</div>
         <div class="card-value" id="statTokens">-</div>
+      </div>
+      <div class="feature-card">
+        <div class="card-label">预估费用</div>
+        <div class="card-value" id="statCost">-</div>
+      </div>
+    </section>
+
+    <section class="trend-section" id="trendSection" style="display:none;">
+      <div class="chart-card">
+        <h3 class="title-md">使用趋势</h3>
+        <div class="chart-wrap chart-wrap-wide"><canvas id="trendChart"></canvas></div>
       </div>
     </section>
 

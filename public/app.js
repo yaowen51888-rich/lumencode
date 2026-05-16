@@ -9,10 +9,27 @@ let currentDate = new Date().toISOString().slice(0, 10);
 const charts = {};
 
 async function loadData() {
-  const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}`);
-  if (!res.ok) return;
-  const data = await res.json();
-  render(data);
+  showSkeleton();
+  hideError();
+
+  try {
+    const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}`);
+    if (!res.ok) {
+      showError('数据加载失败: ' + res.status);
+      return;
+    }
+    const data = await res.json();
+    if (!data) {
+      showEmpty();
+      return;
+    }
+    hideEmpty();
+    render(data);
+  } catch (err) {
+    showError('网络错误: ' + err.message);
+  } finally {
+    hideSkeleton();
+  }
 }
 
 function fmt(n) {
@@ -37,6 +54,23 @@ function render(data) {
   document.getElementById('statRequests').textContent = fmt(usageStats.requestCount);
   document.getElementById('statProjects').textContent = Object.keys(usageStats.projects).length;
   document.getElementById('statTokens').textContent = fmt(usageStats.totalTokens);
+
+  // Cost card
+  const costEl = document.getElementById('statCost');
+  if (costEl) {
+    costEl.textContent = usageStats.estimatedCost
+      ? `~$${usageStats.estimatedCost.toFixed(2)}`
+      : '-';
+  }
+
+  // Trend chart
+  const trendSection = document.getElementById('trendSection');
+  if (data.trendData && Object.keys(data.trendData.dailyStats).length > 0) {
+    trendSection.style.display = 'block';
+    renderTrend(data.trendData);
+  } else {
+    trendSection.style.display = 'none';
+  }
 
   // Scenarios
   renderDoughnut('scenarioChart', usageStats.scenarios, '场景分布');
@@ -156,6 +190,106 @@ document.getElementById('dateInput').addEventListener('change', (e) => {
   currentDate = e.target.value;
   loadData();
 });
+
+// ── Trend chart ──
+
+function renderTrend(trendData) {
+  const dates = Object.keys(trendData.dailyStats).sort();
+  const requests = dates.map(d => trendData.dailyStats[d].requests);
+  const tokens = dates.map(d => ((trendData.dailyStats[d].inputTokens || 0) + (trendData.dailyStats[d].outputTokens || 0)) / 1000);
+  const labels = dates.map(d => d.slice(5));
+
+  destroyChart('trendChart');
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+  charts['trendChart'] = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '请求数',
+          data: requests,
+          borderColor: '#111111',
+          backgroundColor: 'rgba(17,17,17,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Token (K)',
+          data: tokens,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          yAxisID: 'y1',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { position: 'left', grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } }, title: { display: true, text: '请求数', font: { family: 'Inter', size: 12 } } },
+        y1: { position: 'right', grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } }, title: { display: true, text: 'Token (K)', font: { family: 'Inter', size: 12 } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
+      },
+      plugins: {
+        legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, padding: 16 } },
+      },
+    },
+  });
+}
+
+// ── UX states ──
+
+function showSkeleton() {
+  document.querySelectorAll('.card-value').forEach(el => {
+    if (!el.classList.contains('skeleton')) {
+      el._origText = el.textContent;
+      el.textContent = '';
+      el.classList.add('skeleton');
+    }
+  });
+}
+
+function hideSkeleton() {
+  document.querySelectorAll('.card-value.skeleton').forEach(el => {
+    el.classList.remove('skeleton');
+  });
+}
+
+function showError(msg) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => { toast.style.display = 'none'; }, 300);
+  }, 3000);
+}
+
+function hideError() {
+  const toast = document.getElementById('toast');
+  if (toast) toast.style.display = 'none';
+}
+
+function showEmpty() {
+  const grid = document.getElementById('statsGrid');
+  if (grid) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>暂无数据，请检查配置</p><button class="btn-primary" onclick="document.getElementById(\'settingsBtn\').click()">打开设置</button></div>';
+  }
+}
+
+function hideEmpty() {
+  // render() rebuilds content after data loads
+}
 
 loadData();
 

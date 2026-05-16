@@ -144,7 +144,7 @@ body {
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   margin-bottom: 48px;
 }
@@ -479,6 +479,56 @@ body {
 .work-report-content strong {
   font-weight: 600;
   color: var(--ink);
+}
+
+/* Trend chart */
+.trend-section { margin-bottom: 48px; }
+.chart-wrap-wide { height: 320px; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-dark);
+  color: var(--on-dark);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 300;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: opacity 0.3s;
+}
+
+/* Skeleton loading */
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--surface-card) 25%, var(--surface-soft) 50%, var(--surface-card) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.card-value.skeleton {
+  height: 36px;
+  width: 80px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 24px;
 }
 
 /* Responsive */
