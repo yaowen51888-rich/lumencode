@@ -107,7 +107,10 @@ if (command === 'serve') {
   const { records, projects } = collectAllRecords(config.claudeDir, config.excludeProjects, effectiveIncludeProjects);
 
   if (records.length === 0) {
-    console.log('未找到任何会话记录。请检查配置文件中的 claudeDir 路径。');
+    console.log('未找到任何会话记录。可能原因：');
+    console.log(`  1. Claude 日志目录不存在或路径错误: ${config.claudeDir}`);
+    console.log(`  2. 该目录下没有 projects/ 子目录`);
+    console.log('请运行 ccusage-report init 创建配置文件，或在 Web 模式下点击设置按钮配置。');
     process.exit(1);
   }
 

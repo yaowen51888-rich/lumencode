@@ -15,11 +15,13 @@ async function loadData() {
   try {
     const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}`);
     if (!res.ok) {
-      showError('数据加载失败: ' + res.status);
+      const err = await res.json().catch(() => ({}));
+      showError(err.hint || ('数据加载失败: ' + res.status));
       return;
     }
     const data = await res.json();
-    if (!data) {
+    if (!data || data.error) {
+      if (data?.hint) showError(data.hint);
       showEmpty();
       return;
     }
