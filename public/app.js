@@ -297,7 +297,31 @@ function hideEmpty() {
   document.querySelector('.charts-section').style.display = 'block';
 }
 
-loadData();
+// ── Config: localStorage + server sync ──
+
+function loadLocalConfig() {
+  try { return JSON.parse(localStorage.getItem('ccusage-config') || '{}'); } catch { return {}; }
+}
+
+function saveLocalConfig(cfg) {
+  localStorage.setItem('ccusage-config', JSON.stringify(cfg));
+}
+
+async function syncConfigToServer() {
+  const cfg = loadLocalConfig();
+  if (Object.keys(cfg).length > 0) {
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cfg),
+      });
+    } catch {}
+  }
+}
+
+// Page load: sync local config to server, then load data
+syncConfigToServer().then(() => loadData());
 
 // Settings modal
 const settingsModal = document.getElementById('settingsModal');
@@ -307,9 +331,12 @@ const saveSettings = document.getElementById('saveSettings');
 const backdrop = settingsModal.querySelector('.modal-backdrop');
 
 settingsBtn.addEventListener('click', async () => {
-  const res = await fetch('/api/config');
-  if (!res.ok) return;
-  const cfg = await res.json();
+  // Read from localStorage first, fallback to server
+  const cfg = loadLocalConfig();
+  if (Object.keys(cfg).length === 0) {
+    const res = await fetch('/api/config');
+    if (res.ok) Object.assign(cfg, await res.json());
+  }
   document.getElementById('cfgClaudeDir').value = cfg.claudeDir || '';
   document.getElementById('cfgRepos').value = (cfg.repos || []).join('\n');
   document.getElementById('cfgExclude').value = (cfg.excludeProjects || []).join('\n');
@@ -338,6 +365,9 @@ saveSettings.addEventListener('click', async () => {
     excludeProjects: document.getElementById('cfgExclude').value.split('\n').map(s => s.trim()).filter(Boolean),
     scenarioKeywords,
   };
+  // Save to localStorage
+  saveLocalConfig(payload);
+  // Sync to server
   const res = await fetch('/api/config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
