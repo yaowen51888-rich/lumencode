@@ -169,6 +169,18 @@ body {
   color: var(--ink);
 }
 
+.card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.card-sub span {
+  display: inline-block;
+  margin-right: 8px;
+}
+
 /* Charts */
 .charts-section { margin-bottom: 48px; }
 

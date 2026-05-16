@@ -66,9 +66,9 @@ function fmt(n) {
 function renderTrend(elId, current, previous) {
   const el = document.getElementById(elId);
   if (!el) return;
-  if (previous == null || previous === 0) { el.textContent = ''; el.className = 'card-trend'; return; }
+  if (previous == null || previous === undefined || previous === 0 || current == null || current === undefined) { el.textContent = ''; el.className = 'card-trend'; return; }
   const pct = ((current - previous) / previous * 100).toFixed(0);
-  const val = Math.abs(pct);
+  const val = Math.abs(Number(pct));
   if (pct > 0) { el.textContent = `↑${val}%`; el.className = 'card-trend up'; }
   else if (pct < 0) { el.textContent = `↓${val}%`; el.className = 'card-trend down'; }
   else { el.textContent = '—'; el.className = 'card-trend flat'; }
@@ -91,6 +91,13 @@ function render(data) {
   document.getElementById('statProjects').textContent = Object.keys(usageStats.projects).length;
   document.getElementById('statTokens').textContent = fmt(usageStats.totalTokens);
 
+  // Token breakdown
+  const tokenBreakdown = document.getElementById('statTokenBreakdown');
+  if (tokenBreakdown) {
+    tokenBreakdown.innerHTML = `<span>输入 ${fmt(usageStats.inputTokens)}</span><span>输出 ${fmt(usageStats.outputTokens)}</span>` +
+      (usageStats.cacheRead > 0 ? `<span>缓存 ${fmt(usageStats.cacheRead)}</span>` : '');
+  }
+
   // Cost card
   const costEl = document.getElementById('statCost');
   if (costEl) {
@@ -99,10 +106,17 @@ function render(data) {
       : '-';
   }
 
+  // Cost model breakdown
+  const costModelEl = document.getElementById('statCostModel');
+  if (costModelEl && usageStats.models) {
+    const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
+    costModelEl.textContent = modelEntries.length > 0 ? modelEntries.slice(0, 2).map(([m]) => m.replace('claude-', '')).join(' · ') : '';
+  }
+
   // Trend arrows (compare with previous period)
   renderTrend('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
   renderTrend('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
-  renderTrend('trendProjects', Object.keys(usageStats.projects).length, data.prevStats ? Object.keys(data.prevStats.projects || {}).length : null);
+  renderTrend('trendProjects', Object.keys(usageStats.projects).length, data.prevStats && data.prevStats.projects ? Object.keys(data.prevStats.projects).length : null);
   renderTrend('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
   renderTrend('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
 
