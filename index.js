@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath } from './lib/aggregate.js';
-import { getGitStatsForMultipleRepos } from './lib/git.js';
+import { getGitStatsForMultipleReposAsync, invalidateGitCache } from './lib/git.js';
+import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
 
@@ -37,7 +38,7 @@ function loadCliConfig() {
   return { config, dateArg, effectiveIncludeProjects, configPath };
 }
 
-function buildReportData(period, dateArg, config, effectiveIncludeProjects) {
+async function buildReportData(period, dateArg, config, effectiveIncludeProjects) {
   const { records } = collectAllRecords(config.claudeDir, config.excludeProjects, effectiveIncludeProjects);
   if (records.length === 0) {
     return null;
@@ -48,7 +49,7 @@ function buildReportData(period, dateArg, config, effectiveIncludeProjects) {
 
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
-    gitStats = getGitStatsForMultipleRepos(config.repos, start, end + 'T23:59:59');
+    gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
   }
 
   return { usageStats, gitStats, start, end };
@@ -119,7 +120,7 @@ if (command === 'serve') {
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
     console.log('正在统计 Git 指标...');
-    gitStats = getGitStatsForMultipleRepos(config.repos, start, end + 'T23:59:59');
+    gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
   }
 
   const report = isWorkMode
