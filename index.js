@@ -62,7 +62,7 @@ if (!command || command === 'help' || command === '--help') {
 
 命令:
   report   生成使用报告（默认命令）
-  serve    启动 Web 服务（http://localhost:3000）
+  serve    启动 Web 服务（默认端口 4567）
   init     初始化配置文件
   help     显示帮助信息
 

@@ -281,14 +281,20 @@ function hideError() {
 }
 
 function showEmpty() {
-  const grid = document.getElementById('statsGrid');
-  if (grid) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>暂无数据，请检查配置</p><button class="btn-primary" onclick="document.getElementById(\'settingsBtn\').click()">打开设置</button></div>';
-  }
+  document.querySelectorAll('.card-value').forEach(el => el.textContent = '-');
+  document.getElementById('statsGrid').style.display = 'none';
+  document.querySelector('.charts-section').style.display = 'none';
+  document.getElementById('trendSection').style.display = 'none';
+  document.getElementById('gitSection').style.display = 'none';
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.style.display = 'block';
 }
 
 function hideEmpty() {
-  // render() rebuilds content after data loads
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.style.display = 'none';
+  document.getElementById('statsGrid').style.display = 'grid';
+  document.querySelector('.charts-section').style.display = 'block';
 }
 
 loadData();
