@@ -8,10 +8,35 @@ Claude Code 使用报告工具 — 从 JSONL 日志和 Git 仓库提取效率与
 
 - Node.js >= 18.0.0
 
+## 常见问题
+
+| 问题 | 解决方案 |
+|------|----------|
+| 浏览器显示"暂无数据" | 点击右上角设置按钮，检查 Claude 日志目录路径是否正确 |
+| Windows 下日志目录不存在 | 默认路径为 `C:\Users\<用户名>\.claude`，确认该目录下有 `projects/` 子目录 |
+| 端口 4567 被占用 | 设置环境变量：`set CCUSAGE_PORT=8080 && node index.js serve` |
+| 找不到 Git 统计数据 | 在设置中配置"本地项目路径"，指向 Git 仓库根目录 |
+
 ## 快速开始
+
+### 方式一：npm 安装（推荐）
+
+```bash
+npm install -g ccusage-report
+ccusage-report serve
+```
+
+或零安装使用：
+
+```bash
+npx ccusage-report serve
+```
+
+### 方式二：直接运行
 
 ```bash
 # 无依赖，直接运行
+git clone https://github.com/yaowen51888-rich/ccusage-report.git
 cd ccusage-report
 
 # 启动 Web 服务（自动打开浏览器）
