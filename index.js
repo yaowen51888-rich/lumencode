@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
-import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath } from './lib/aggregate.js';
+import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData } from './lib/aggregate.js';
 import { getGitStatsForMultipleReposAsync, invalidateGitCache } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
@@ -52,7 +52,8 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
   }
 
-  return { usageStats, gitStats, start, end };
+  const trendData = computeTrendData(records, period, dateArg);
+  return { usageStats, gitStats, start, end, trendData };
 }
 
 if (!command || command === 'help' || command === '--help') {
