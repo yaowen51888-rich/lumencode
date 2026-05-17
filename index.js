@@ -1,18 +1,34 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
-import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange } from './lib/aggregate.js';
-import { getGitStatsForMultipleReposAsync, invalidateGitCache } from './lib/git.js';
+import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
+import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
+import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 
 const args = process.argv.slice(2);
 const command = args[0];
 
 function loadCliConfig() {
-  const config = loadConfig();
+  let config = loadConfig();
 
-  // 日期参数：跳过 -- 开头的选项，取第一个非选项参数
+  // 零配置：自动检测 claudeDir
+  if (!config.claudeDir || config.claudeDir === '') {
+    config.claudeDir = detectClaudeDir() || config.claudeDir;
+  }
+
+  // 零配置：自动推导项目路径（从 cwd 字段）
+  if ((!config.repos || config.repos.length === 0) && config.claudeDir) {
+    try {
+      const derived = deriveProjectPaths(config.claudeDir, config.excludeProjects || []);
+      if (derived.length > 0) {
+        config._autoRepos = derived;
+      }
+    } catch {}
+  }
+
+  // 日期参数
   let dateArg = new Date().toISOString().slice(0, 10);
   for (let i = 2; i < args.length; i++) {
     if (!args[i].startsWith('--')) {
@@ -21,17 +37,24 @@ function loadCliConfig() {
     }
   }
 
-  // 解析 --projects 参数
+  // --projects 参数
   let includeProjects = null;
   const projectsIdx = args.indexOf('--projects');
   if (projectsIdx !== -1 && args[projectsIdx + 1]) {
     includeProjects = args[projectsIdx + 1].split(',').map(p => p.trim());
   }
 
-  // 如果没有命令行指定 includeProjects，尝试从 repos 推导
+  // 推导 includeProjects
   let effectiveIncludeProjects = includeProjects;
   if (!effectiveIncludeProjects && config.repos && config.repos.length > 0) {
     effectiveIncludeProjects = config.repos.map(r => normalizeProjectPath(r));
+  } else if (!effectiveIncludeProjects && config._autoRepos && config._autoRepos.length > 0) {
+    effectiveIncludeProjects = config._autoRepos.map(r => normalizeProjectPath(r));
+  }
+
+  // 自动推导的 repos 也用于 Git 统计
+  if ((!config.repos || config.repos.length === 0) && config._autoRepos) {
+    config.repos = config._autoRepos;
   }
 
   const configPath = getConfigPath();
@@ -46,10 +69,12 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
 
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords);
+  const sessions = groupBySessions(filtered);
 
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
+    gitStats = finalizeGitStats(gitStats, sessions);
   }
 
   const trendData = computeTrendData(records, period, dateArg);
@@ -63,7 +88,17 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   });
   const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords) : null;
 
-  return { usageStats, gitStats, start, end, trendData, prevStats };
+  // 精简 sessions 仅保留 UI/导出需要的字段，避免 payload 膨胀
+  const slimSessions = sessions.map(s => ({
+    id: s.id,
+    project: s.project,
+    startTime: s.startTime,
+    endTime: s.endTime,
+    requests: s.requests,
+    commits: s.commits || [],
+  }));
+
+  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats };
 }
 
 if (!command || command === 'help' || command === '--help') {
@@ -95,6 +130,10 @@ if (!command || command === 'help' || command === '--help') {
   ccusage-report report daily --work
   ccusage-report serve
   ccusage-report init
+
+零配置:
+  首次运行自动检测 Claude 日志目录和项目路径，无需手动配置。
+  如需自定义，运行 ccusage-report init 或在 Web 模式下点击设置。
 `);
   process.exit(0);
 }
@@ -124,12 +163,16 @@ if (command === 'serve') {
     process.exit(1);
   }
 
-  console.log(`已加载 ${records.length} 条记录，${Object.keys(projects).length} 个项目`);
+  const subagentCount = records.filter(r => r.isSubagent).length;
+  console.log(`已加载 ${records.length} 条记录（含 ${subagentCount} 条子 agent），${Object.keys(projects).length} 个项目`);
 
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
   console.log(`筛选 ${period} 数据: ${start} ~ ${end}，共 ${filtered.length} 条记录`);
 
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords);
+  if (usageStats.subagentTokens > 0) {
+    console.log(`子 agent Token 消耗: ${fmtNum(usageStats.subagentTokens)}（占比 ${(usageStats.subagentTokens / usageStats.totalTokens * 100).toFixed(1)}%）`);
+  }
 
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
@@ -137,8 +180,23 @@ if (command === 'serve') {
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
   }
 
+  // 上一周期数据（用于工作汇报环比）
+  const prevRange = computePrevPeriodRange(period, dateArg);
+  const prevFiltered = records.filter(r => {
+    if (!r.timestamp) return false;
+    const date = r.timestamp.slice(0, 10);
+    return date >= prevRange.start && date <= prevRange.end;
+  });
+  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords) : null;
+
   const report = isWorkMode
-    ? generateWorkReport(usageStats, gitStats, period, start, end)
+    ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats)
     : generateReport(usageStats, gitStats, period, start, end);
   console.log(report);
+}
+
+function fmtNum(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
 }

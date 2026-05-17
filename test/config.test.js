@@ -126,6 +126,7 @@ test('initConfig - Creates file if it doesn\'t exist', () => {
       claudeDir: join(homedir(), '.claude'),
       repos: [],
       excludeProjects: [],
+      blockQuota: null,
       scenarioKeywords: {
         coding: ['实现', '功能', '开发', '添加', '修改代码', 'implement', 'feature', 'add', 'refactor', '重构', '组件'],
         testing: ['测试', 'test', 'spec', '覆盖率', 'coverage', '单元测试', 'unit test', 'jest', 'vitest', 'mocha'],

@@ -78,59 +78,130 @@
       </div>
     </section>
 
-    <section class="trend-section" id="trendSection" style="display:none;">
-      <div class="chart-card">
-        <h3 class="title-md">使用趋势</h3>
-        <div class="chart-wrap chart-wrap-wide"><canvas id="trendChart"></canvas></div>
-      </div>
-    </section>
-
     <section class="git-section" id="gitSection" style="display:none;">
       <div class="cta-band-light">
         <h3 class="title-lg">Git 代码产出</h3>
         <div class="git-stats" id="gitStats"></div>
+        <div class="git-stats git-ai-stats" id="gitAiStats"></div>
       </div>
-    </section>
-
-    <section class="charts-section">
-      <div class="section-header">
-        <h2 class="title-md">数据分析</h2>
-      </div>
-      <div class="chart-row">
+      <div class="chart-row git-insights-row" id="gitInsightsRow" style="display:none;">
         <div class="chart-card">
-          <h3 class="title-md">工作类型分布</h3>
-          <div class="chart-wrap"><canvas id="scenarioChart"></canvas></div>
+          <h3 class="title-md">提交类型分布</h3>
+          <div class="chart-wrap"><canvas id="commitTypeChart"></canvas></div>
         </div>
         <div class="chart-card">
-          <h3 class="title-md">模型使用分布</h3>
-          <div class="chart-wrap"><canvas id="modelChart"></canvas></div>
-        </div>
-      </div>
-      <div class="chart-row">
-        <div class="chart-card">
-          <h3 class="title-md">项目使用分布</h3>
-          <div class="chart-wrap"><canvas id="projectChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <h3 class="title-md">工具调用排行</h3>
-          <div class="chart-wrap"><canvas id="toolChart"></canvas></div>
+          <h3 class="title-md">文件热点 Top 10</h3>
+          <div id="fileHotspotsTable" class="hotspots-table"></div>
         </div>
       </div>
     </section>
 
-    <section class="empty-state" id="emptyState" style="display:none;">
-      <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:24px;">
-        <rect x="20" y="30" width="80" height="60" rx="8" stroke="currentColor" stroke-width="2" fill="none" opacity="0.2"/>
-        <rect x="30" y="42" width="24" height="4" rx="2" fill="currentColor" opacity="0.15"/>
-        <rect x="30" y="52" width="40" height="4" rx="2" fill="currentColor" opacity="0.1"/>
-        <rect x="30" y="62" width="32" height="4" rx="2" fill="currentColor" opacity="0.1"/>
-        <rect x="30" y="72" width="20" height="4" rx="2" fill="currentColor" opacity="0.08"/>
-        <circle cx="90" cy="32" r="16" stroke="currentColor" stroke-width="2" fill="none" opacity="0.15"/>
-        <line x1="90" y1="26" x2="90" y2="38" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
-        <line x1="84" y1="32" x2="96" y2="32" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
-      </svg>
-      <p id="emptyMessage">暂无数据，请检查 Claude 日志目录配置</p>
-      <button class="btn-primary" id="openSettingsBtn">打开设置</button>
+    <section id="analyticsSection">
+    <div class="section-header">
+      <h2 class="title-md">数据分析</h2>
+    </div>
+    <div class="charts-dashboard">
+      <section class="charts-section">
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3 class="title-md">工作类型分布</h3>
+            <div class="chart-wrap"><canvas id="scenarioChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="title-md">模型使用分布</h3>
+            <div class="chart-wrap"><canvas id="modelChart"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3 class="title-md">项目使用分布</h3>
+            <div class="chart-wrap"><canvas id="projectChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="title-md">工具调用排行</h3>
+            <div class="chart-wrap"><canvas id="toolChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+      <section class="trend-section" id="trendSection" style="display:none;">
+        <div class="chart-card trend-card">
+          <h3 class="title-md">使用趋势</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="trendChart"></canvas></div>
+        </div>
+      </section>
+    </div>
+    </section>
+
+    <section class="welcome-page" id="welcomePage" style="display:none;">
+      <div class="welcome-content">
+        <div class="welcome-brand">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px;">
+            <rect x="8" y="12" width="32" height="24" rx="6" stroke="#111111" stroke-width="2.5" fill="none"/>
+            <path d="M16 22L22 28L32 18" stroke="#111111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <h1 class="welcome-title">欢迎使用 ccusage-report</h1>
+          <p class="welcome-subtitle">Claude Code 使用统计与代码产出分析工具</p>
+        </div>
+
+        <div class="welcome-features">
+          <div class="feature-item">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+            <div class="feature-text">
+              <h4>Token 消耗追踪</h4>
+              <p>按日/周/月统计输入、输出、缓存命中</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            <div class="feature-text">
+              <h4>费用估算</h4>
+              <p>基于模型定价自动计算成本</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <div class="feature-text">
+              <h4>AI 贡献度</h4>
+              <p>关联 Git 提交，量化 AI 辅助占比</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="welcome-steps">
+          <div class="step-card">
+            <div class="step-header">
+              <span class="step-number">1</span>
+              <h3>选择 Claude 日志目录</h3>
+            </div>
+            <p class="step-desc">Claude Code 会话日志的存放路径，通常是 <code>~/.claude</code></p>
+            <input type="text" class="welcome-input" id="welcomeClaudeDir" placeholder="例如: C:/Users/xxx/.claude" />
+          </div>
+
+          <div class="step-card">
+            <div class="step-header">
+              <span class="step-number">2</span>
+              <h3>选择项目仓库（可选）</h3>
+            </div>
+            <p class="step-desc">用于关联 Git 代码产出统计，多个仓库用逗号分隔</p>
+            <input type="text" class="welcome-input" id="welcomeRepos" placeholder="例如: D:/project1, D:/project2" />
+          </div>
+        </div>
+
+        <div class="welcome-actions">
+          <button class="btn-primary welcome-start-btn" id="welcomeStartBtn">开始使用</button>
+          <p class="welcome-hint" id="welcomeHint"></p>
+        </div>
+      </div>
     </section>
 
     <section class="work-report-section" id="workReportSection" style="display:none;">
@@ -138,6 +209,11 @@
         <div class="work-report-header">
           <h3 class="title-md">工作汇报</h3>
           <div class="work-report-actions">
+            <div class="platform-pill-group">
+              <button class="platform-tab active" data-platform="default">标准</button>
+              <button class="platform-tab" data-platform="feishu">飞书</button>
+              <button class="platform-tab" data-platform="dingtalk">钉钉</button>
+            </div>
             <button id="copyWorkReport" class="btn-secondary">复制</button>
             <button id="downloadMdBtn" class="btn-secondary">下载 .md</button>
             <button id="backToReport" class="btn-primary">返回</button>

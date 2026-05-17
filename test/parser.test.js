@@ -58,6 +58,7 @@ test('parseJsonlFile - 解析用户和助手消息', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
     {
       type: 'assistant',
@@ -77,6 +78,7 @@ test('parseJsonlFile - 解析用户和助手消息', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
   ]);
 
@@ -125,6 +127,7 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
     {
       type: 'assistant',
@@ -144,6 +147,7 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
     {
       type: 'user',
@@ -163,6 +167,7 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
   ]);
 
@@ -202,6 +207,7 @@ test('parseJsonlFile - Content数组带tool_use被正确解析', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
   ]);
 
@@ -239,6 +245,7 @@ test('parseJsonlFile - 系统类型消息被忽略', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
     {
       type: 'assistant',
@@ -258,6 +265,7 @@ test('parseJsonlFile - 系统类型消息被忽略', () => {
         cacheRead: 0,
       },
       isSidechain: false,
+      isSubagent: false,
     },
   ]);
 
