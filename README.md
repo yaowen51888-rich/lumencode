@@ -27,6 +27,8 @@ npm install -g ccusage-report
 ccusage-report serve
 ```
 
+v0.2.0 起首次运行**自动检测** Claude 日志目录和项目路径，无需手动配置即可看到完整报告。
+
 或零安装使用：
 
 ```bash
