@@ -48,18 +48,34 @@ async function loadData() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       showError(err.hint || ('数据加载失败: ' + res.status));
-      return;
+      return { success: false, error: 'http' };
     }
     const data = await res.json();
     if (!data || data.error) {
       if (data?.hint) showError(data.hint);
-      showEmpty();
-      return;
+      if (data?.error === '未配置') {
+        showEmpty();
+        // 预填 welcomePage
+        try {
+          const cfgRes = await fetch('/api/config');
+          if (cfgRes.ok) {
+            const cfg = await cfgRes.json();
+            const welcomeClaudeDir = document.getElementById('welcomeClaudeDir');
+            const welcomeRepos = document.getElementById('welcomeRepos');
+            if (welcomeClaudeDir) welcomeClaudeDir.value = cfg.claudeDir || '';
+            if (welcomeRepos) welcomeRepos.value = (cfg.repos || []).join(', ');
+          }
+        } catch {}
+      }
+      // 未找到数据时不显示 welcomePage，保持当前页面状态
+      return { success: false, error: data?.error || 'unknown' };
     }
     hideEmpty();
     render(data);
+    return { success: true };
   } catch (err) {
     showError('网络错误: ' + err.message);
+    return { success: false, error: 'network' };
   } finally {
     hideSkeleton();
   }
@@ -651,7 +667,15 @@ document.getElementById('welcomeStartBtn')?.addEventListener('click', async () =
     if (!res.ok) throw new Error('保存失败');
     hint.textContent = '配置已保存，加载数据中...';
     hideEmpty();
-    await loadData();
+    const result = await loadData();
+    if (!result.success) {
+      if (result.error === '未找到数据') {
+        hint.textContent = `配置已保存，但路径 "${claudeDir}" 下暂无数据，请确认存在 projects/ 子目录`;
+        hint.style.color = '#dc2626';
+      } else if (result.error === '未配置') {
+        showEmpty();
+      }
+    }
   } catch (err) {
     hint.textContent = '保存失败: ' + err.message;
     hint.style.color = '#dc2626';
@@ -739,8 +763,19 @@ saveSettings.addEventListener('click', async () => {
     body: JSON.stringify(payload),
   });
   if (res.ok) {
-    hideSettings();
-    loadData();
+    const result = await loadData();
+    if (result.success) {
+      hideSettings();
+    } else if (result.error === '未找到数据') {
+      // 保持设置面板打开，提示用户路径下暂无数据
+      const cfgClaudeDir = document.getElementById('cfgClaudeDir');
+      alert(`配置已保存，但路径 "${cfgClaudeDir?.value || ''}" 下暂无数据。\n\n请确认：\n1. 该目录下存在 projects/ 子目录\n2. projects/ 下有 .jsonl 日志文件\n3. 当前选择的日期有使用记录`);
+    } else if (result.error === '未配置') {
+      hideSettings();
+      showEmpty();
+    } else {
+      hideSettings();
+    }
   } else {
     const err = await res.json().catch(() => ({}));
     alert('保存失败: ' + (err.error || '未知错误'));
