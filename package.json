@@ -4,7 +4,7 @@
   "description": "Claude Code 使用报告工具 — 从 JSONL 日志和 Git 仓库提取 AI 贡献度、效率与使用指标，支持 Web 可视化和命令行两种模式",
   "type": "module",
   "bin": {
-    "ccusage-report": "./index.js"
+    "ccusage-report": "index.js"
   },
   "scripts": {
     "start": "node index.js",
@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yaowen51888-rich/ccusage-report.git"
+    "url": "git+https://github.com/yaowen51888-rich/ccusage-report.git"
   },
   "license": "MIT",
   "author": "zhangyaowen",
