@@ -223,6 +223,7 @@ function render(data) {
   // Git
   const gitSection = document.getElementById('gitSection');
   const gitInsightsRow = document.getElementById('gitInsightsRow');
+  const gitConfigured = gitStats !== null;
   const hasGit = gitStats && (gitStats.commits > 0 || gitStats.filesChanged > 0);
   if (hasGit) {
     gitSection.style.display = 'block';
@@ -237,12 +238,20 @@ function render(data) {
   } else {
     gitSection.style.display = 'block';
     gitSection.dataset.hasGit = 'false';
-    document.getElementById('gitStats').innerHTML = `
-      <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
-        <p style="color:var(--muted);margin-bottom:12px;">配置本地项目路径后，可在此查看 Git 代码产出</p>
-        <button class="btn-outline" onclick="document.getElementById('settingsBtn').click()">配置项目路径</button>
-      </div>
-    `;
+    if (gitConfigured) {
+      document.getElementById('gitStats').innerHTML = `
+        <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
+          <p style="color:var(--muted);">该时间段暂无 Git 提交记录</p>
+        </div>
+      `;
+    } else {
+      document.getElementById('gitStats').innerHTML = `
+        <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
+          <p style="color:var(--muted);margin-bottom:12px;">配置本地项目路径后，可在此查看 Git 代码产出</p>
+          <button class="btn-outline" onclick="document.getElementById('settingsBtn').click()">配置项目路径</button>
+        </div>
+      `;
+    }
     document.getElementById('gitAiStats').innerHTML = '';
     if (gitInsightsRow) gitInsightsRow.style.display = 'none';
     destroyChart('commitTypeChart');
