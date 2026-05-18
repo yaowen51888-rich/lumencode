@@ -668,21 +668,22 @@ function saveLocalConfig(cfg) {
   localStorage.setItem('ccusage-config', JSON.stringify(cfg));
 }
 
-async function syncConfigToServer() {
-  const cfg = loadLocalConfig();
-  if (Object.keys(cfg).length > 0) {
-    try {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cfg),
-      });
-    } catch {}
+async function syncConfigFromServer() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const serverCfg = await res.json();
+    const localCfg = loadLocalConfig();
+    // Server 配置优先覆盖 localStorage，合并后写回
+    const merged = { ...localCfg, ...serverCfg };
+    saveLocalConfig(merged);
+  } catch {
+    // Server 不可用时保持 localStorage 不变（离线降级）
   }
 }
 
-// Page load: sync local config to server, then load data
-syncConfigToServer().then(() => loadData());
+// Page load: sync config from server first, then load data
+syncConfigFromServer().then(() => loadData());
 
 // Settings modal
 const settingsModal = document.getElementById('settingsModal');
@@ -692,11 +693,14 @@ const saveSettings = document.getElementById('saveSettings');
 const backdrop = settingsModal.querySelector('.modal-backdrop');
 
 settingsBtn.addEventListener('click', async () => {
-  // Read from localStorage first, fallback to server
-  const cfg = loadLocalConfig();
-  if (Object.keys(cfg).length === 0) {
+  // Server 优先读取，失败再 fallback 到 localStorage
+  let cfg = {};
+  try {
     const res = await fetch('/api/config');
-    if (res.ok) Object.assign(cfg, await res.json());
+    if (res.ok) cfg = await res.json();
+  } catch {}
+  if (Object.keys(cfg).length === 0) {
+    cfg = loadLocalConfig();
   }
   document.getElementById('cfgClaudeDir').value = cfg.claudeDir || '';
   document.getElementById('cfgRepos').value = (cfg.repos || []).join('\n');
