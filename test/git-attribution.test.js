@@ -1,7 +1,7 @@
 // test/git-attribution.test.js — session ↔ commit 关联
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { attributeCommitsToSessions, attachCommitsToSessions } from '../lib/git.js';
+import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats } from '../lib/git.js';
 
 function mkCommit(over) {
   return {
@@ -108,14 +108,50 @@ test('attachCommitsToSessions - 回填 session.commits', () => {
     { id: 's2', commits: [] },
   ];
   const commitList = [
-    { hash: 'a', sessionId: 's1', subject: 'feat: a', type: 'feat', isAI: false, linesAdded: 10, linesDeleted: 0, date: '2026-05-14T10:00:00' },
-    { hash: 'b', sessionId: 's1', subject: 'fix: b', type: 'fix', isAI: true, linesAdded: 5, linesDeleted: 2, date: '2026-05-14T11:00:00' },
-    { hash: 'c', sessionId: 's2', subject: 'docs: c', type: 'docs', isAI: false, linesAdded: 20, linesDeleted: 0, date: '2026-05-14T12:00:00' },
-    { hash: 'd', sessionId: null, subject: 'other', type: 'other', isAI: false, linesAdded: 1, linesDeleted: 0, date: '2026-05-14T13:00:00' },
+    { hash: 'a', sessionId: 's1', subject: 'feat: a', type: 'feat', isAI: false, attributionType: null, linesAdded: 10, linesDeleted: 0, date: '2026-05-14T10:00:00' },
+    { hash: 'b', sessionId: 's1', subject: 'fix: b', type: 'fix', isAI: true, attributionType: 'explicit', linesAdded: 5, linesDeleted: 2, date: '2026-05-14T11:00:00' },
+    { hash: 'c', sessionId: 's2', subject: 'docs: c', type: 'docs', isAI: false, attributionType: null, linesAdded: 20, linesDeleted: 0, date: '2026-05-14T12:00:00' },
+    { hash: 'd', sessionId: null, subject: 'other', type: 'other', isAI: false, attributionType: null, linesAdded: 1, linesDeleted: 0, date: '2026-05-14T13:00:00' },
   ];
   attachCommitsToSessions(sessions, commitList);
   assert.equal(sessions[0].commits.length, 2);
   assert.equal(sessions[1].commits.length, 1);
   assert.equal(sessions[0].commits[0].hash, 'a');
   assert.equal(sessions[0].commits[1].isAI, true);
+  assert.equal(sessions[0].commits[1].attributionType, 'explicit');
+});
+
+test('finalizeGitStats - session 归因设置 attributionType=session', () => {
+  const merged = {
+    commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({ hash: 'hSess', isAI: false, aiSignals: [] }),
+    ],
+  };
+  const sessions = [mkSession()];
+  finalizeGitStats(merged, sessions);
+  assert.equal(merged.commitList[0].isAI, true);
+  assert.equal(merged.commitList[0].attributionType, 'session');
+  assert.ok(merged.commitList[0].aiSignals.includes('sessionAttributed'));
+});
+
+test('finalizeGitStats - explicit AI 保留 attributionType=explicit', () => {
+  const merged = {
+    commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({ hash: 'hExpl', isAI: true, aiSignals: ['coAuthor'], attributionType: 'explicit' }),
+    ],
+  };
+  const sessions = [mkSession()];
+  finalizeGitStats(merged, sessions);
+  assert.equal(merged.commitList[0].attributionType, 'explicit');
+});
+
+test('projectMatches - d:/repo 不匹配 d:/repo-api', () => {
+  const commits = [mkCommit({ repo: 'D:/repo' })];
+  const sessions = [mkSession({ id: 'sOther', project: 'D:/repo-api' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, null);
 });

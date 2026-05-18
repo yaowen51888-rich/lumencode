@@ -72,7 +72,35 @@ test('computeAIContribution - 基本聚合', () => {
 
 test('computeAIContribution - 空数组', () => {
   const r = computeAIContribution([]);
-  assert.deepEqual(r, { aiCommits: 0, humanCommits: 0, aiRatio: 0, aiLinesAdded: 0, aiLinesDeleted: 0 });
+  assert.equal(r.aiCommits, 0);
+  assert.equal(r.humanCommits, 0);
+  assert.equal(r.aiRatio, 0);
+  assert.equal(r.aiLinesAdded, 0);
+  assert.equal(r.aiLinesDeleted, 0);
+});
+
+test('detectAICommit - body 中的 Co-Authored-By 被检测', () => {
+  const r = detectAICommit('feat: add x', 'human@x.com', 'Normal body\n\nCo-Authored-By: Claude <noreply@anthropic.com>');
+  assert.equal(r.isAI, true);
+  assert.ok(r.signals.includes('coAuthor'));
+});
+
+test('detectAICommit - body 为空 subject 无标记 → 非 AI', () => {
+  const r = detectAICommit('feat: my work', 'human@x.com', '');
+  assert.equal(r.isAI, false);
+  assert.deepEqual(r.signals, []);
+});
+
+test('detectAICommit - Copilot Co-Authored-By', () => {
+  const r = detectAICommit('feat: ai code', 'dev@x.com', 'Co-Authored-By: Copilot (<noreply@github.com>)');
+  assert.equal(r.isAI, true);
+  assert.ok(r.signals.includes('coAuthorCopilot'));
+});
+
+test('detectAICommit - Cursor Co-Authored-By', () => {
+  const r = detectAICommit('fix: bug', 'dev@x.com', 'Co-Authored-By: Cursor');
+  assert.equal(r.isAI, true);
+  assert.ok(r.signals.includes('coAuthorCursor'));
 });
 
 test('computeCommitTypes - 类型计数', () => {
