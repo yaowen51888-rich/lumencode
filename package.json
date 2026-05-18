@@ -27,7 +27,6 @@
     "lib/",
     "public/",
     "index.js",
-    "config.json",
     "README.md"
   ],
   "engines": {

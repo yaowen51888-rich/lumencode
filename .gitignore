@@ -1,0 +1,17 @@
+# User configuration — should not be tracked
+config.json
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
