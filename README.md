@@ -1,9 +1,14 @@
-# ccusage-report
+<div align="center">
+  <img src="doc/logo.png" alt="ccusage-report logo" width="160">
+  <h1>ccusage-report</h1>
+</div>
 
-[![npm version](https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square)](https://www.npmjs.com/package/ccusage-report)
-[![npm downloads](https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square)](https://www.npmjs.com/package/ccusage-report)
-[![license](https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square)](https://nodejs.org/)
+<p align="center">
+  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square" alt="license"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
+</p>
 
 > **量化你的 AI 编程效率** —— 从 Claude Code 的 JSONL 日志和 Git 仓库中，自动提取会话数据、Token 消耗、AI 贡献度和代码产出，生成可视化的日报/周报/月报，以及可直接复制的工作汇报。
 
