@@ -1,6 +1,6 @@
 {
   "name": "ccusage-report",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Claude Code 使用报告工具 — 从 JSONL 日志和 Git 仓库提取 AI 贡献度、效率与使用指标，支持 Web 可视化和命令行两种模式",
   "type": "module",
   "bin": {
@@ -10,14 +10,26 @@
     "start": "node index.js",
     "test": "node --test test/"
   },
-  "keywords": ["claude-code", "usage-report", "analytics", "cli", "visualization"],
+  "keywords": [
+    "claude-code",
+    "usage-report",
+    "analytics",
+    "cli",
+    "visualization"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/yaowen51888-rich/ccusage-report.git"
   },
   "license": "MIT",
   "author": "zhangyaowen",
-  "files": ["lib/", "public/", "index.js", "config.json", "README.md"],
+  "files": [
+    "lib/",
+    "public/",
+    "index.js",
+    "config.json",
+    "README.md"
+  ],
   "engines": {
     "node": ">=18.0.0"
   }
