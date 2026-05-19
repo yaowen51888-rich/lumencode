@@ -575,6 +575,7 @@ function renderTrend(trendData) {
 // ── UX states ──
 
 function showSkeleton() {
+  // 统计卡片骨架
   document.querySelectorAll('.card-value').forEach(el => {
     if (!el.classList.contains('skeleton')) {
       el._origText = el.textContent;
@@ -582,6 +583,8 @@ function showSkeleton() {
       el.classList.add('skeleton');
     }
   });
+
+  // 图表骨架
   document.querySelectorAll('.chart-wrap').forEach(el => {
     if (!el.querySelector('.chart-skeleton')) {
       const overlay = document.createElement('div');
@@ -590,6 +593,34 @@ function showSkeleton() {
       el.appendChild(overlay);
     }
   });
+
+  // Git 区域骨架 — 仅在已可见时更新，避免布局跳动
+  const gitSection = document.getElementById('gitSection');
+  if (gitSection && gitSection.style.display !== 'none') {
+    const gitStatsEl = document.getElementById('gitStats');
+    if (gitStatsEl) {
+      gitStatsEl.innerHTML = `
+        <div class="git-skeleton-grid">
+          <div><div class="skeleton" style="height:28px;width:60px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:48px;margin:0 auto;border-radius:4px;"></div></div>
+          <div><div class="skeleton" style="height:28px;width:60px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:48px;margin:0 auto;border-radius:4px;"></div></div>
+          <div><div class="skeleton" style="height:28px;width:60px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:48px;margin:0 auto;border-radius:4px;"></div></div>
+          <div><div class="skeleton" style="height:28px;width:60px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:48px;margin:0 auto;border-radius:4px;"></div></div>
+        </div>`;
+    }
+    const gitAiStats = document.getElementById('gitAiStats');
+    if (gitAiStats) {
+      gitAiStats.innerHTML = `
+        <div class="git-skeleton-grid" style="grid-template-columns:repeat(3,1fr);padding-top:14px;margin-top:14px;border-top:1px dashed var(--hairline);">
+          <div><div class="skeleton" style="height:28px;width:50px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:80px;margin:0 auto;border-radius:4px;"></div></div>
+          <div><div class="skeleton" style="height:28px;width:50px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:80px;margin:0 auto;border-radius:4px;"></div></div>
+          <div><div class="skeleton" style="height:28px;width:50px;margin:0 auto 6px;border-radius:6px;"></div><div class="skeleton" style="height:14px;width:80px;margin:0 auto;border-radius:4px;"></div></div>
+        </div>`;
+    }
+    const gitInsightsRow = document.getElementById('gitInsightsRow');
+    if (gitInsightsRow) gitInsightsRow.style.display = 'none';
+  }
+
+  // 趋势区域 — 不强制显示，由 render() 按数据决定
 }
 
 function hideSkeleton() {
@@ -636,7 +667,7 @@ function hideEmpty() {
   if (wp) wp.style.display = 'none';
   document.getElementById('statsGrid').style.display = 'grid';
   document.getElementById('analyticsSection').style.display = 'block';
-  document.getElementById('trendSection').style.display = 'block';
+  // trendSection 可见性由 render() 管理，避免布局跳动
   // 恢复顶部操作按钮
   ['exportCsvBtn', 'printBtn', 'workReportBtn'].forEach(id => {
     const el = document.getElementById(id);
@@ -827,9 +858,15 @@ function renderMarkdown(md) {
       continue;
     }
 
-    // List
-    if (line.startsWith('- ')) {
+    // List (- or •)
+    if (line.startsWith('- ') || line.startsWith('• ')) {
       out.push(`<li class="md-li">${inline(line.slice(2))}</li>`);
+      continue;
+    }
+
+    // Divider line (DingTalk style: ───)
+    if (/^[━─]+/.test(line.trim()) && line.trim().length >= 5) {
+      out.push(`<div class="md-divider">${inline(line.trim())}</div>`);
       continue;
     }
 
@@ -864,18 +901,36 @@ const gitSection = document.getElementById('gitSection');
 
 let currentWorkReportMarkdown = '';
 let currentPlatform = 'default';
+let currentLevel = 'detailed';
 
 workReportBtn.addEventListener('click', async () => {
-  await loadWorkReport('default');
+  await loadWorkReport(currentPlatform, currentLevel);
 });
 
-async function loadWorkReport(platform) {
-  currentPlatform = platform || 'default';
-  const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}&format=work&platform=${currentPlatform}`);
+async function loadWorkReport(platform, level) {
+  currentPlatform = platform || currentPlatform;
+  currentLevel = level || currentLevel;
+  const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}&format=work&platform=${currentPlatform}&level=${currentLevel}`);
   if (!res.ok) return;
   const markdown = await res.text();
   currentWorkReportMarkdown = markdown;
-  workReportContent.innerHTML = renderMarkdown(markdown);
+
+  // 渲染 markdown
+  let html = renderMarkdown(markdown);
+
+  // 添加平台徽章
+  const platformLabels = { default: '标准', feishu: '飞书', dingtalk: '钉钉' };
+  const platformClass = currentPlatform === 'feishu' ? 'feishu' : currentPlatform === 'dingtalk' ? 'dingtalk' : 'default';
+  const badgeHtml = `<span class="platform-badge ${platformClass}">${platformLabels[currentPlatform] || '标准'}</span>`;
+
+  // 在标题后插入徽章
+  html = html.replace(/(<h1 class="md-h1">.*?<\/h1>)/, `$1\n${badgeHtml}`);
+
+  workReportContent.innerHTML = html;
+
+  // 简报模式添加紧凑样式
+  workReportContent.classList.toggle('is-brief', currentLevel === 'brief');
+
   statsGrid.style.display = 'none';
   chartsSection.style.display = 'none';
   gitSection.style.display = 'none';
@@ -883,12 +938,21 @@ async function loadWorkReport(platform) {
   workReportBtn.style.display = 'none';
 }
 
+// Level toggle (brief / detailed)
+document.querySelectorAll('.level-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.level-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadWorkReport(null, btn.dataset.level);
+  });
+});
+
 // Platform tabs
 document.querySelectorAll('.platform-tab').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.platform-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    loadWorkReport(btn.dataset.platform);
+    loadWorkReport(btn.dataset.platform, null);
   });
 });
 

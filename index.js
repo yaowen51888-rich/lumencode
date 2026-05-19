@@ -126,12 +126,14 @@ if (!command || command === 'help' || command === '--help') {
 选项:
   --projects   只统计指定项目，多个项目用逗号分隔
   --work       输出工作汇报版本（Markdown 格式）
+  --brief      配合 --work 使用，输出简报（3-5 句话）
 
 示例:
   ccusage-report report daily 2026-05-15
   ccusage-report report daily --projects D://fzwork
   ccusage-report report weekly 2026-05-15 --projects D://fzwork,E://play/idea
   ccusage-report report daily --work
+  ccusage-report report daily --work --brief
   ccusage-report serve
   ccusage-report init
 
@@ -154,6 +156,7 @@ if (command === 'serve') {
   // report command (default)
   const period = args[1] || 'daily';
   const isWorkMode = args.includes('--work');
+  const isBrief = args.includes('--brief');
   const { config, dateArg, effectiveIncludeProjects } = loadCliConfig();
 
   console.log('正在扫描 Claude Code 日志...');
@@ -194,7 +197,7 @@ if (command === 'serve') {
   const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
 
   const report = isWorkMode
-    ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats)
+    ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats, { level: isBrief ? 'brief' : 'detailed' })
     : generateReport(usageStats, gitStats, period, start, end);
   console.log(report);
 }

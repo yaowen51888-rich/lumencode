@@ -97,13 +97,51 @@ body {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Platform pills (work report) */
+/* Work report control bar */
+.work-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Level tabs (详报/简报) — 主切换，带底部指示条 */
+.level-tab-group {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--hairline);
+  padding: 0 2px;
+}
+
+.level-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 0;
+}
+
+.level-tab:hover { color: var(--body); }
+
+.level-tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* Platform tabs (标准/飞书/钉钉) — 次要选择，小标签 */
 .platform-pill-group {
   background: var(--surface-soft);
   border-radius: 9999px;
-  padding: 4px;
+  padding: 3px;
   display: flex;
-  gap: 2px;
+  gap: 1px;
 }
 
 .platform-tab {
@@ -111,20 +149,28 @@ body {
   border: none;
   color: var(--muted);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.platform-tab:hover { color: var(--ink); }
+.platform-tab:hover { color: var(--body); }
 
 .platform-tab.active {
   background: var(--canvas);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* 按钮组之间的分隔线 */
+.action-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--hairline);
+  flex-shrink: 0;
 }
 
 .text-input {
@@ -147,6 +193,7 @@ body {
   margin: 0 auto;
   padding: 0 32px;
   flex: 1;
+  width: 100%;
 }
 
 /* Hero — compact */
@@ -347,6 +394,14 @@ body {
 }
 .git-ai-card .git-stat-value {
   color: #3b82f6;
+}
+
+/* Git skeleton grid */
+.git-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 16px 0;
 }
 
 /* Git insights row（提交类型 + 文件热点）*/
@@ -680,77 +735,242 @@ body {
 
 .work-report-header .title-md { margin-bottom: 0; }
 
-.work-report-actions {
-  display: flex;
-  gap: 8px;
+/* 平台标识徽章 */
+.platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+.platform-badge.feishu {
+  background: #e8f1fc;
+  color: #3370ff;
+}
+.platform-badge.dingtalk {
+  background: #e6f7ff;
+  color: #0089ff;
+}
+.platform-badge.default {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+[data-theme="dark"] .platform-badge.feishu {
+  background: #1a2744;
+  color: #5b8ff9;
+}
+[data-theme="dark"] .platform-badge.dingtalk {
+  background: #0d2137;
+  color: #4da6ff;
 }
 
+/* 简报/详报内容区 —— 使用卡片式分层设计 */
 .work-report-content {
-  background: var(--canvas);
-  color: var(--body);
-  border-radius: 10px;
-  padding: 20px;
+  background: var(--surface-card);
+  border-radius: 12px;
+  padding: 28px 32px;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
   overflow-x: auto;
   max-height: 70vh;
   overflow-y: auto;
+  color: var(--body);
+  border: 1px solid var(--hairline);
+  transition: box-shadow 0.2s ease;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+.work-report-content:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+.work-report-content::-webkit-scrollbar {
+  width: 6px;
+}
+.work-report-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.work-report-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 9999px;
+}
+.work-report-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
+/* Markdown 标题层级 */
 .work-report-content .md-h1 {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--ink);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   margin-top: 0;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
 }
 
 .work-report-content .md-h2 {
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
-  margin-top: 20px;
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.work-report-content .md-p {
-  margin-bottom: 8px;
-}
-
-.work-report-content .md-ul {
+  margin-top: 24px;
   margin-bottom: 12px;
-  padding-left: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.work-report-content .md-h2::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--ink);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* 段落 */
+.work-report-content .md-p {
+  margin-bottom: 10px;
+}
+
+/* 列表 —— 自定义标记 */
+.work-report-content .md-ul {
+  margin-bottom: 14px;
+  padding-left: 0;
+  list-style: none;
 }
 
 .work-report-content .md-li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding-left: 18px;
+  position: relative;
 }
 
+.work-report-content .md-li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted-soft);
+}
+
+/* 表格 —— 与热点表格风格一致 */
 .work-report-content .md-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 16px;
   font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .work-report-content .md-table th,
 .work-report-content .md-table td {
-  padding: 8px 12px;
+  padding: 10px 14px;
   text-align: left;
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline-soft);
 }
 
 .work-report-content .md-table th {
   font-weight: 600;
   color: var(--ink);
   background: var(--surface-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.work-report-content .md-table tr:last-child td {
+  border-bottom: none;
+}
+
+.work-report-content .md-table tr:hover td {
+  background: var(--surface-soft);
+}
+
+/* 代码片段 */
+.work-report-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--surface-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+  border: 1px solid var(--hairline);
 }
 
 .work-report-content strong {
   font-weight: 600;
   color: var(--ink);
+}
+
+/* 钉钉纯文本模式的分隔线样式 */
+.work-report-content .md-divider {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 20px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+  letter-spacing: 0.5px;
+}
+
+/* 简报模式 —— 更紧凑 */
+.work-report-content.is-brief {
+  padding: 24px 28px;
+  font-size: 13.5px;
+}
+
+.work-report-content.is-brief .md-h1 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.work-report-content.is-brief .md-h2 {
+  font-size: 13px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+}
+
+.work-report-content.is-brief .md-h2::before {
+  height: 12px;
+}
+
+.work-report-content.is-brief .md-li {
+  margin-bottom: 5px;
+}
+
+/* 暗色主题适配 */
+[data-theme="dark"] .work-report-content {
+  border-color: var(--hairline);
+  scrollbar-color: #475569 transparent;
+}
+[data-theme="dark"] .work-report-content::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+[data-theme="dark"] .work-report-content::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+[data-theme="dark"] .work-report-content:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+[data-theme="dark"] .work-report-content code {
+  background: var(--surface-dark-soft, #1f2937);
+  border-color: var(--hairline);
+}
+[data-theme="dark"] .work-report-content .md-table tr:hover td {
+  background: var(--surface-dark-soft, #1f2937);
 }
 
 /* Trend chart (standalone fallback) */

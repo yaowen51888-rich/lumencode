@@ -209,11 +209,16 @@
         <div class="work-report-header">
           <h3 class="title-md">工作汇报</h3>
           <div class="work-report-actions">
+            <div class="level-tab-group">
+              <button class="level-tab active" data-level="detailed">详报</button>
+              <button class="level-tab" data-level="brief">简报</button>
+            </div>
             <div class="platform-pill-group">
               <button class="platform-tab active" data-platform="default">标准</button>
               <button class="platform-tab" data-platform="feishu">飞书</button>
               <button class="platform-tab" data-platform="dingtalk">钉钉</button>
             </div>
+            <span class="action-divider"></span>
             <button id="copyWorkReport" class="btn-secondary">复制</button>
             <button id="downloadMdBtn" class="btn-secondary">下载 .md</button>
             <button id="backToReport" class="btn-primary">返回</button>

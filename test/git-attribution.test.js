@@ -104,12 +104,12 @@ test('attributeCommitsToSessions - strong signal wins over weak window', () => {
 });
 
 test('attributeCommitsToSessions - non commit Bash does not trigger strong signal', () => {
-  const commits = [mkCommit({ date: '2026-05-14T15:00:00' })];
+  const commits = [mkCommit({ date: '2026-05-14T16:00:00' })];
   const sessions = [mkSession({
     startTime: '2026-05-14T14:00:00',
     endTime: '2026-05-14T14:30:00',
     toolSequence: [
-      { name: 'Bash', input: { command: 'git status' }, timestamp: '2026-05-14T15:00:00' },
+      { name: 'Bash', input: { command: 'git status' }, timestamp: '2026-05-14T14:15:00' },
     ],
   })];
   attributeCommitsToSessions(commits, sessions);
@@ -295,6 +295,89 @@ test('finalizeGitStats - explicit AI keeps explicit attribution', () => {
 test('project mismatch - d:/repo does not match d:/repo-api', () => {
   const commits = [mkCommit({ repo: 'D:/repo' })];
   const sessions = [mkSession({ id: 'sOther', project: 'D:/repo-api' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, null);
+});
+
+test('projectKey - hyphen vs no-separator are distinct (no collision)', () => {
+  const commits = [mkCommit({ repo: 'D:/foo-bar' })];
+  const sessions = [mkSession({ id: 'sNoBar', project: 'D:/foobar' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, null);
+});
+
+test('projectKey - hyphen matches slash (decodeProjectName compatibility)', () => {
+  const commits = [mkCommit({ repo: 'D:/foo-bar' })];
+  const sessions = [mkSession({ id: 'sDecoded', project: 'D:/foo/bar' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 'sDecoded');
+});
+
+test('projectKey - underscore matches slash', () => {
+  const commits = [mkCommit({ repo: 'D:/foo_bar' })];
+  const sessions = [mkSession({ id: 'sUS', project: 'D:/foo/bar' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 'sUS');
+});
+
+test('projectKey - multi-segment hyphen path matches decoded', () => {
+  const commits = [mkCommit({ repo: 'D:/my-app-v2' })];
+  const sessions = [mkSession({ id: 'sMulti', project: 'D:/my/app/v2' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 'sMulti');
+});
+
+test('weak signal - different author rejected when session has known author', () => {
+  const commits = [
+    mkCommit({ hash: 'hAlice', date: '2026-05-14T10:00:05', author: 'alice@company.com' }),
+    mkCommit({ hash: 'hBob', date: '2026-05-14T10:30:00', author: 'bob@company.com' }),
+  ];
+  const sessions = [mkSession({
+    toolSequence: [
+      { name: 'Bash', input: { command: 'git commit -m "feat: alice work"' }, timestamp: '2026-05-14T10:00:00' },
+    ],
+  })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'strong');
+  assert.equal(commits[1].sessionId, null);
+});
+
+test('weak signal - same author accepted when session has known author', () => {
+  const commits = [
+    mkCommit({ hash: 'hStrong', date: '2026-05-14T10:00:05', author: 'alice@company.com' }),
+    mkCommit({ hash: 'hWeak', date: '2026-05-14T10:30:00', author: 'alice@company.com' }),
+  ];
+  const sessions = [mkSession({
+    toolSequence: [
+      { name: 'Bash', input: { command: 'git commit -m "feat: x"' }, timestamp: '2026-05-14T10:00:00' },
+    ],
+  })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionAttribution, 'strong');
+  assert.equal(commits[1].sessionId, 's1');
+  assert.equal(commits[1].sessionAttribution, 'weak');
+});
+
+test('weak signal - no strong match still allows any author', () => {
+  const commits = [mkCommit({ date: '2026-05-14T10:30:00', author: 'anyone@company.com' })];
+  const sessions = [mkSession()];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'weak');
+});
+
+test('weak signal - delayed commit 20min after session end is caught', () => {
+  const commits = [mkCommit({ date: '2026-05-14T11:20:00' })];
+  const sessions = [mkSession({ endTime: '2026-05-14T11:00:00' })];
+  attributeCommitsToSessions(commits, sessions);
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'weak');
+});
+
+test('weak signal - commit 31min after session end is outside buffer', () => {
+  const commits = [mkCommit({ date: '2026-05-14T11:31:00' })];
+  const sessions = [mkSession({ endTime: '2026-05-14T11:00:00' })];
   attributeCommitsToSessions(commits, sessions);
   assert.equal(commits[0].sessionId, null);
 });
