@@ -10,20 +10,21 @@
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
 
-> **Quantify your AI coding productivity** — Automatically extract session data, Token consumption, AI contribution metrics, and code output from Claude Code JSONL logs and Git repositories. Generate visual daily/weekly/monthly reports and copy-ready work summaries.
+> **How much code did Claude Code write for you? One command to find out.**
+
+Answer the boss's ultimate question — "Is this AI tool worth it?" — with real data. Token usage, cost estimates, AI contribution, code output — all auto-generated. Copy-paste into Lark or DingTalk weekly reports in seconds.
 
 ![Daily Report Screenshot](doc/%E6%97%A5%E6%8A%A5v0.2.0.png)
 
 [中文版](README.md)
 
-## Why use it?
+## What problem does it solve?
 
-| Pain Point | Solution |
-|-----------|----------|
-| Boss asks "Is the AI tool worth it?" and you have no data | Auto-generate reports with Token usage, cost estimates, and code output metrics |
-| Manual statistics are painful, spending half a day every week | One command for instant reports, real-time Web dashboard |
-| Don't know what you accomplished this week for the weekly report | Natural language summary + multi-platform formats (Lark/DingTalk), copy-paste ready |
-| Don't know how much code AI actually helped write | AI contribution analysis: auto-detect AI-assisted commits, measure AI add/delete line ratios |
+**Writing your weekly report** — Open ccusage-report, switch to weekly, click "Work Summary → Copy", paste into your team chat. Done.
+
+**Proving AI ROI** — "Last week 67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." Real numbers, real confidence.
+
+**Understanding your Claude Code habits** — Which project uses it most? Which model burns the most tokens? When's your coding peak? All at a glance.
 
 ## Get Started in 3 Seconds
 
@@ -150,6 +151,15 @@ For customization, click the settings button (top-right corner) in the Web UI. S
 | Git stats not found | v0.2.0+ auto-derives project path from session `cwd`. Manual override available in settings |
 
 ## Changelog
+
+### v0.3.0 (2026-05-19)
+
+- **Work summary platform support**: Lark and DingTalk format output with one-click switching
+- **Brief/Detailed report toggle**: Compact or full report modes
+- **Fix layout jumping on refresh**: Resolved cards clustering in center before data loads
+- **Markdown rendering improvements**: Custom list markers, dividers, table hover effects, code styling
+- **AI attribution enhancements**: Improved confidence scoring and file-level metrics
+- **Dark mode refinements**: Work summary area, platform badges, and more
 
 ### v0.2.7 (2026-05-18)
 
