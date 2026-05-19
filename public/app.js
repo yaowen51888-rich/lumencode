@@ -202,14 +202,15 @@ function render(data) {
                 const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
                 const commitRows = cn > 0
                   ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="5"><table class="commit-subtable">
-                       <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th></tr>
+                       <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th><th>证据</th></tr>
                        ${r.commits.map(c => `<tr>
                          <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
                          <td><span class="commit-type-tag type-${c.type}">${c.type}</span></td>
                          <td class="commit-subject" title="${(c.subject || '').replace(/"/g, '&quot;')}">${c.subject || ''}</td>
                          <td class="num pos">+${fmt(c.linesAdded || 0)}</td>
                          <td class="num neg">-${fmt(c.linesDeleted || 0)}</td>
-                         <td>${c.isAI ? '🤖' : ''}</td>
+                         <td>${c.aiConfidence === 'high' ? 'H' : c.aiConfidence === 'medium' ? 'M' : c.aiConfidence === 'low' ? 'L' : ''}</td>
+                         <td>${c.aiEvidenceDetails?.matchedFileCount ? `文件交集 ${c.aiEvidenceDetails.matchedFileCount}` : (c.attributionType || '')}</td>
                        </tr>`).join('')}
                      </table></td></tr>`
                   : '';
@@ -281,9 +282,10 @@ function renderGitInsights(gitStats) {
   if (ai && gitStats.commits > 0) {
     const pct = Math.round((ai.aiCommits / gitStats.commits) * 100);
     aiStatsEl.innerHTML = `
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${pct}%</div><div class="git-stat-label">AI 辅助提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiLinesAdded)}</div><div class="git-stat-label">AI 新增行</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiLinesDeleted)}</div><div class="git-stat-label">AI 删除行</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${pct}%</div><div class="git-stat-label">高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">高/中置信提交数</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiFileLinesAdded)}</div><div class="git-stat-label">AI 命中文件新增行</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiFileLinesDeleted)}</div><div class="git-stat-label">AI 命中文件删除行</div></div>
     `;
   } else {
     aiStatsEl.innerHTML = '';
@@ -964,9 +966,11 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => {
     if (gitStats.aiContribution) {
       const ai = gitStats.aiContribution;
       const pct = Math.round((ai.aiCommits / gitStats.commits) * 100);
-      lines.push(`AI辅助提交,${ai.aiCommits}/${gitStats.commits} (${pct}%)`);
-      lines.push(`AI新增行,+${ai.aiLinesAdded}`);
-      lines.push(`AI删除行,-${ai.aiLinesDeleted}`);
+      lines.push(`高/中置信AI提交,${ai.aiCommits}/${gitStats.commits} (${pct}%)`);
+      lines.push(`高置信提交,${ai.highConfidenceCommits}`);
+      lines.push(`AI命中文件新增行,+${ai.aiFileLinesAdded}`);
+      lines.push(`AI命中文件删除行,-${ai.aiFileLinesDeleted}`);
+      lines.push(`低置信关联提交,${ai.lowConfidenceCommits}`);
     }
     if (gitStats.commitTypes) {
       for (const [t, n] of Object.entries(gitStats.commitTypes).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])) {
@@ -1122,7 +1126,11 @@ ${gitStats && gitStats.commits > 0 ? printTable('Git 代码产出', ['指标', '
   if (gitStats.aiContribution) {
     const ai = gitStats.aiContribution;
     const pct = Math.round((ai.aiCommits / gitStats.commits) * 100);
-    rows.push(['AI 辅助提交', `${ai.aiCommits}/${gitStats.commits} (${pct}%)`]);
+    rows.push(['高/中置信 AI 提交', `${ai.aiCommits}/${gitStats.commits} (${pct}%)`]);
+    rows.push(['高置信提交', `${ai.highConfidenceCommits}`]);
+    rows.push(['AI 命中文件新增行', `+${ai.aiFileLinesAdded}`]);
+    rows.push(['AI 命中文件删除行', `-${ai.aiFileLinesDeleted}`]);
+    rows.push(['低置信关联提交', `${ai.lowConfidenceCommits}`]);
   }
   return rows;
 })()) : ''}
