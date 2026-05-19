@@ -29,6 +29,30 @@ function createTestFile(filename, content) {
   return filePath;
 }
 
+function expectedRecord(overrides = {}) {
+  return {
+    type: '',
+    role: '',
+    timestamp: '',
+    model: '',
+    text: '',
+    toolCalls: [],
+    sessionId: '',
+    cwd: '',
+    gitBranch: '',
+    project: '',
+    tokens: { input: 0, output: 0, cacheCreate: 0, cacheRead: 0 },
+    isSidechain: false,
+    isSubagent: false,
+    messageId: '',
+    requestId: '',
+    costUSD: null,
+    isApiError: false,
+    speed: 'standard',
+    ...overrides,
+  };
+}
+
 test('parseJsonlFile - 解析用户和助手消息', () => {
   setupTestDir();
 
@@ -59,6 +83,11 @@ test('parseJsonlFile - 解析用户和助手消息', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
     {
       type: 'assistant',
@@ -79,6 +108,11 @@ test('parseJsonlFile - 解析用户和助手消息', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
   ]);
 
@@ -128,6 +162,11 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
     {
       type: 'assistant',
@@ -148,6 +187,11 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
     {
       type: 'user',
@@ -168,6 +212,11 @@ test('parseJsonlFile - 损坏JSON行被跳过', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
   ]);
 
@@ -208,6 +257,11 @@ test('parseJsonlFile - Content数组带tool_use被正确解析', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
   ]);
 
@@ -246,6 +300,11 @@ test('parseJsonlFile - 系统类型消息被忽略', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
     {
       type: 'assistant',
@@ -266,6 +325,11 @@ test('parseJsonlFile - 系统类型消息被忽略', () => {
       },
       isSidechain: false,
       isSubagent: false,
+      messageId: '',
+      requestId: '',
+      costUSD: null,
+      isApiError: false,
+      speed: 'standard',
     },
   ]);
 

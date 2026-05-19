@@ -6,6 +6,7 @@ import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
+import { identifyBillingBlocks } from './lib/blocks.js';
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -68,7 +69,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   }
 
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
-  const usageStats = computeUsageStats(filtered, config.scenarioKeywords);
+  const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
   const sessions = groupBySessions(filtered);
 
   let gitStats = null;
@@ -86,7 +87,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     const date = r.timestamp.slice(0, 10);
     return date >= prevRange.start && date <= prevRange.end;
   });
-  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords) : null;
+  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
 
   // 精简 sessions 仅保留 UI/导出需要的字段，避免 payload 膨胀
   const slimSessions = sessions.map(s => ({
@@ -98,7 +99,10 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     commits: s.commits || [],
   }));
 
-  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats };
+  // 5-hour billing blocks
+  const billingBlocks = identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode);
+
+  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks };
 }
 
 if (!command || command === 'help' || command === '--help') {
@@ -169,7 +173,7 @@ if (command === 'serve') {
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
   console.log(`筛选 ${period} 数据: ${start} ~ ${end}，共 ${filtered.length} 条记录`);
 
-  const usageStats = computeUsageStats(filtered, config.scenarioKeywords);
+  const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
   if (usageStats.subagentTokens > 0) {
     console.log(`子 agent Token 消耗: ${fmtNum(usageStats.subagentTokens)}（占比 ${(usageStats.subagentTokens / usageStats.totalTokens * 100).toFixed(1)}%）`);
   }
@@ -187,7 +191,7 @@ if (command === 'serve') {
     const date = r.timestamp.slice(0, 10);
     return date >= prevRange.start && date <= prevRange.end;
   });
-  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords) : null;
+  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
 
   const report = isWorkMode
     ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats)

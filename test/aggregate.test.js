@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   filterRecordsByPeriod,
   computeUsageStats,
-  computeTrendData
+  computeTrendData,
+  deduplicateRecords,
+  resolveModelPricing,
 } from '../lib/aggregate.js';
 
 // 测试记录创建辅助函数
@@ -17,6 +19,10 @@ function makeRecord(date, type = 'assistant', model = 'claude-sonnet-4-6', sessi
     text: type === 'user' ? 'some text' : '',
     toolCalls: [],
     tokens: type === 'assistant' ? { input: 100, output: 50, cacheRead: 10, cacheCreate: 0 } : { input: 0, output: 0, cacheRead: 0, cacheCreate: 0 },
+    messageId: type === 'assistant' ? `msg_${date}_${sessionId}` : '',
+    requestId: type === 'assistant' ? `req_${date}_${sessionId}` : '',
+    costUSD: null,
+    speed: 'standard',
   };
 }
 
@@ -328,4 +334,70 @@ test('computeUsageStats - cost estimation', () => {
 
   // 注意：实际成本取决于具体的token数量和计算
   assert.ok(result.estimatedCost >= 0);
+});
+
+// ── Dedup tests ──
+
+test('deduplicateRecords - keeps higher token count', () => {
+  const records = [
+    { type: 'assistant', messageId: 'm1', requestId: 'r1', timestamp: '2024-01-01T10:00:00Z', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 } },
+    { type: 'assistant', messageId: 'm1', requestId: 'r1', timestamp: '2024-01-01T10:00:00Z', tokens: { input: 200, output: 100, cacheRead: 0, cacheCreate: 0 } },
+  ];
+  const deduped = deduplicateRecords(records);
+  assert.strictEqual(deduped.length, 1);
+  assert.strictEqual(deduped[0].tokens.input, 200);
+});
+
+test('deduplicateRecords - preserves user records', () => {
+  const records = [
+    { type: 'user', timestamp: '2024-01-01T10:00:00Z', sessionId: 's1' },
+    { type: 'user', timestamp: '2024-01-01T10:01:00Z', sessionId: 's1' },
+  ];
+  const deduped = deduplicateRecords(records);
+  assert.strictEqual(deduped.length, 2);
+});
+
+test('deduplicateRecords - no dedup key passes through', () => {
+  const records = [
+    { type: 'assistant', messageId: '', requestId: 'r1', timestamp: '2024-01-01T10:00:00Z', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 } },
+    { type: 'assistant', messageId: 'm1', requestId: '', timestamp: '2024-01-01T10:00:00Z', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 } },
+  ];
+  const deduped = deduplicateRecords(records);
+  assert.strictEqual(deduped.length, 2);
+});
+
+// ── Model pricing tests ──
+
+test('resolveModelPricing - exact match', () => {
+  const p = resolveModelPricing('claude-sonnet-4-6');
+  assert.strictEqual(p.input, 3);
+  assert.strictEqual(p.output, 15);
+});
+
+test('resolveModelPricing - strips provider prefix', () => {
+  const p = resolveModelPricing('anthropic--claude-opus-4-6');
+  assert.strictEqual(p.input, 15);
+  assert.strictEqual(p.output, 75);
+});
+
+test('resolveModelPricing - fuzzy match by family', () => {
+  const p = resolveModelPricing('claude-opus-4-some-custom');
+  assert.strictEqual(p.input, 15);
+});
+
+test('resolveModelPricing - unknown model defaults to sonnet', () => {
+  const p = resolveModelPricing('unknown-model');
+  assert.strictEqual(p.input, 3);
+});
+
+test('resolveModelPricing - null/undefined defaults to sonnet', () => {
+  const p = resolveModelPricing(null);
+  assert.strictEqual(p.input, 3);
+  const p2 = resolveModelPricing(undefined);
+  assert.strictEqual(p2.input, 3);
+});
+
+test('resolveModelPricing - includes cacheCreate pricing', () => {
+  const p = resolveModelPricing('claude-sonnet-4-6');
+  assert.ok(p.cacheCreate > 0);
 });
