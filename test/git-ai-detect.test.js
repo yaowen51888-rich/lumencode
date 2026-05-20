@@ -82,7 +82,8 @@ test('computeAIContribution - counted by confidence', () => {
   const r = computeAIContribution(commits);
   assert.equal(r.aiCommits, 2);
   assert.equal(r.humanCommits, 2);
-  assert.equal(r.aiRatio, 0.5);
+  assert.equal(r.aiCommitRatio, 0.5);
+  assert.equal(r.aiRatio, 95 / 127);
   assert.equal(r.aiLinesAdded, 80);
   assert.equal(r.aiLinesDeleted, 15);
   assert.equal(r.aiCommitLinesAdded, 80);
@@ -92,6 +93,66 @@ test('computeAIContribution - counted by confidence', () => {
   assert.equal(r.highConfidenceCommits, 1);
   assert.equal(r.mediumConfidenceCommits, 1);
   assert.equal(r.lowConfidenceCommits, 1);
+});
+
+test('computeAIContribution - aiRatio uses changed lines instead of commit count', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'explicit',
+      linesAdded: 10,
+      linesDeleted: 0,
+      files: [{ path: 'ai.js', added: 10, deleted: 0 }],
+    },
+    {
+      isAI: false,
+      aiConfidence: 'none',
+      linesAdded: 90,
+      linesDeleted: 0,
+      files: [{ path: 'human.js', added: 90, deleted: 0 }],
+    },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiCommits, 1);
+  assert.equal(r.aiCommitRatio, 0.5);
+  assert.equal(r.aiRatio, 0.1);
+  assert.equal(r.aiLineRatio, 0.1);
+  assert.equal(r.totalLinesChanged, 100);
+});
+
+test('computeAIContribution - tool filter keeps total project lines as denominator', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'explicit',
+      attributedTool: 'claude',
+      linesAdded: 10,
+      linesDeleted: 0,
+      files: [{ path: 'claude.js', added: 10, deleted: 0 }],
+    },
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'explicit',
+      attributedTool: 'codex',
+      linesAdded: 30,
+      linesDeleted: 0,
+      files: [{ path: 'codex.js', added: 30, deleted: 0 }],
+    },
+    {
+      isAI: false,
+      aiConfidence: 'none',
+      linesAdded: 60,
+      linesDeleted: 0,
+      files: [{ path: 'human.js', added: 60, deleted: 0 }],
+    },
+  ];
+  const r = computeAIContribution(commits, 'claude');
+  assert.equal(r.aiCommits, 1);
+  assert.equal(r.aiRatio, 0.1);
+  assert.equal(r.totalLinesChanged, 100);
 });
 
 test('computeAIContribution - file-level line attribution only counts matched files', () => {

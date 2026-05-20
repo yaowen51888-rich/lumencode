@@ -412,7 +412,8 @@ function renderGitInsights(gitStats, activeTool = 'all') {
   const aiStatsEl = document.getElementById('gitAiStats');
   const ai = gitStats.aiContribution;
   if (ai && gitStats.commits > 0) {
-    const pct = Math.round((ai.aiCommits / gitStats.commits) * 100);
+    const commitPct = Math.round((ai.aiCommitRatio ?? (ai.aiCommits / gitStats.commits)) * 100);
+    const linePct = Math.round(((ai.aiLineRatio ?? ai.aiRatio) || 0) * 100);
     const toolNames = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' };
     const toolLabel = activeTool !== 'all' ? ((toolNames[activeTool] || activeTool) + ' ') : '';
 
@@ -429,7 +430,8 @@ function renderGitInsights(gitStats, activeTool = 'all') {
     }
 
     aiStatsEl.innerHTML = `
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${pct}%</div><div class="git-stat-label">${toolLabel}高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${linePct}%</div><div class="git-stat-label">${toolLabel}AI 代码改写占比（${ai.aiFileLinesAdded + ai.aiFileLinesDeleted} 行）</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${commitPct}%</div><div class="git-stat-label">${toolLabel}高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">${toolLabel}高/中置信提交数</div></div>
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiFileLinesAdded)}</div><div class="git-stat-label">${toolLabel}AI 命中文件新增行</div></div>
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiFileLinesDeleted)}</div><div class="git-stat-label">${toolLabel}AI 命中文件删除行</div></div>

@@ -97,7 +97,9 @@ test('finalizeGitStats - explicit AI commit contributes to metrics', () => {
 
   assert.equal(stats.aiContribution.aiCommits, 1);
   assert.equal(stats.aiContribution.humanCommits, 1);
-  assert.equal(stats.aiContribution.aiRatio, 0.5);
+  assert.equal(stats.aiContribution.aiCommitRatio, 0.5);
+  assert.equal(stats.aiContribution.aiRatio, 55 / 65);
+  assert.equal(stats.aiContribution.aiLineRatio, 55 / 65);
   assert.equal(stats.aiContribution.aiLinesAdded, 50);
   assert.equal(stats.aiContribution.aiLinesDeleted, 5);
 });
