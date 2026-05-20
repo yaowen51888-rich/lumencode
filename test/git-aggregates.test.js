@@ -186,6 +186,92 @@ test('finalizeGitStats - file overlap lifts weak session into counted AI', () =>
   assert.equal(stats.aiContribution.aiFileLinesDeleted, 1);
 });
 
+test('finalizeGitStats - attributedTool from explicit AI signature', () => {
+  const output = [
+    `${COMMIT_SENTINEL}c1|2026-05-14T10:00:00|me@x|feat: ai work`,
+    '@@ENDBODY@@',
+    'Co-Authored-By: Claude <noreply@anthropic.com>',
+    '10\t0\ta.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  finalizeGitStats(stats, []);
+
+  assert.equal(stats.commitList[0].attributedTool, 'claude');
+  assert.ok(stats.aiContributionByTool);
+  assert.equal(stats.aiContributionByTool.claude.aiCommits, 1);
+  assert.equal(stats.aiContributionByTool['generic-ai'].aiCommits, 0);
+});
+
+test('finalizeGitStats - attributedTool from session primaryTool', () => {
+  const output = [
+    `${COMMIT_SENTINEL}s1|2026-05-14T10:30:00|human@x|feat: session work`,
+    '15\t2\tsrc/app.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  const sessions = [{
+    id: 's-codex',
+    project: 'D:/myrepo',
+    startTime: '2026-05-14T10:00:00',
+    endTime: '2026-05-14T11:00:00',
+    primaryTool: 'codex',
+    toolSequence: [
+      { name: 'Bash', input: { command: 'git commit -m "feat: session work"' }, timestamp: '2026-05-14T10:30:00' },
+    ],
+    commits: [],
+  }];
+  finalizeGitStats(stats, sessions);
+
+  assert.equal(stats.commitList[0].attributedTool, 'codex');
+  assert.ok(stats.aiContributionByTool);
+  assert.equal(stats.aiContributionByTool.codex.aiCommits, 1);
+});
+
+test('finalizeGitStats - attributedTool generic-ai for unspecific AI signals', () => {
+  const output = [
+    `${COMMIT_SENTINEL}g1|2026-05-14T10:00:00|me@x|feat: ai work`,
+    '@@ENDBODY@@',
+    '[AI] auto generated code',
+    '10\t0\ta.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  finalizeGitStats(stats, []);
+
+  assert.equal(stats.commitList[0].attributedTool, 'generic-ai');
+  assert.equal(stats.aiContributionByTool['generic-ai'].aiCommits, 1);
+});
+
+test('finalizeGitStats - attributedTool null for human commit', () => {
+  const output = [
+    `${COMMIT_SENTINEL}h1|2026-05-14T10:00:00|human@x|feat: my work`,
+    '10\t0\ta.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  finalizeGitStats(stats, []);
+
+  assert.equal(stats.commitList[0].attributedTool, null);
+});
+
+test('finalizeGitStats - aiContributionByTool contains all tool keys', () => {
+  const output = [
+    `${COMMIT_SENTINEL}c1|2026-05-14T10:00:00|me@x|feat: claude work`,
+    '@@ENDBODY@@',
+    'Co-Authored-By: Claude',
+    '10\t0\ta.js',
+    `${COMMIT_SENTINEL}x1|2026-05-14T11:00:00|me@x|feat: human work`,
+    '5\t0\tb.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  finalizeGitStats(stats, []);
+
+  assert.ok(stats.aiContributionByTool);
+  assert.equal(typeof stats.aiContributionByTool.claude, 'object');
+  assert.equal(typeof stats.aiContributionByTool.codex, 'object');
+  assert.equal(typeof stats.aiContributionByTool.opencode, 'object');
+  assert.equal(typeof stats.aiContributionByTool['generic-ai'], 'object');
+  // Global still works
+  assert.equal(stats.aiContribution.aiCommits, 1);
+});
+
 test('finalizeGitStats - file-level AI lines only count matched files in mixed commit', () => {
   const output = [
     `${COMMIT_SENTINEL}m1|2026-05-14T10:30:00|human@x|feat: mixed overlap`,

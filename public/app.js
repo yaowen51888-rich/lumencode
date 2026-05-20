@@ -285,10 +285,10 @@ document.addEventListener('alpine:init', () => {
       renderBar('toolChart', toolEntries.map(([k]) => k), toolEntries.map(([, v]) => v), '调用次数');
 
       // Git
-      this.updateGitPanel(gitStats);
+      this.updateGitPanel(gitStats, this.activeTool);
     },
 
-    updateGitPanel(gitStats) {
+    updateGitPanel(gitStats, activeTool = 'all') {
       const gitSection = document.getElementById('gitSection');
       const gitInsightsRow = document.getElementById('gitInsightsRow');
       const gitConfigured = gitStats !== null;
@@ -302,7 +302,7 @@ document.addEventListener('alpine:init', () => {
           <div class="git-stat-item"><div class="git-stat-value">-${fmt(gitStats.linesDeleted)}</div><div class="git-stat-label">删除行数</div></div>
           <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.filesChanged)}</div><div class="git-stat-label">变更文件</div></div>
         `;
-        renderGitInsights(gitStats);
+        renderGitInsights(gitStats, activeTool);
       } else {
         gitSection.style.display = 'block';
         gitSection.dataset.hasGit = 'false';
@@ -407,17 +407,33 @@ function renderTrendArrow(elId, current, previous) {
   else { el.textContent = '—'; el.className = 'card-trend flat'; }
 }
 
-function renderGitInsights(gitStats) {
+function renderGitInsights(gitStats, activeTool = 'all') {
   // AI 贡献度卡片
   const aiStatsEl = document.getElementById('gitAiStats');
   const ai = gitStats.aiContribution;
   if (ai && gitStats.commits > 0) {
     const pct = Math.round((ai.aiCommits / gitStats.commits) * 100);
+    const toolNames = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' };
+    const toolLabel = activeTool !== 'all' ? ((toolNames[activeTool] || activeTool) + ' ') : '';
+
+    let extraCards = '';
+    if (activeTool !== 'all' && gitStats.aiContributionByTool) {
+      const globalAi = gitStats.aiContributionByTool;
+      const allAiCommits = (globalAi.claude?.aiCommits || 0) + (globalAi.codex?.aiCommits || 0) + (globalAi.opencode?.aiCommits || 0) + (globalAi['generic-ai']?.aiCommits || 0);
+      const globalPct = gitStats.commits > 0 ? Math.round((allAiCommits / gitStats.commits) * 100) : 0;
+      extraCards = `<div class="git-stat-item git-ai-card"><div class="git-stat-value">${globalPct}%</div><div class="git-stat-label">全局 AI 提交率</div></div>`;
+      const genericCount = globalAi['generic-ai']?.aiCommits || 0;
+      if (genericCount > 0) {
+        extraCards += `<div class="git-stat-item git-ai-card"><div class="git-stat-value">${genericCount}</div><div class="git-stat-label">通用 AI 标记提交</div></div>`;
+      }
+    }
+
     aiStatsEl.innerHTML = `
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${pct}%</div><div class="git-stat-label">高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">高/中置信提交数</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiFileLinesAdded)}</div><div class="git-stat-label">AI 命中文件新增行</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiFileLinesDeleted)}</div><div class="git-stat-label">AI 命中文件删除行</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${pct}%</div><div class="git-stat-label">${toolLabel}高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">${toolLabel}高/中置信提交数</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiFileLinesAdded)}</div><div class="git-stat-label">${toolLabel}AI 命中文件新增行</div></div>
+      <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiFileLinesDeleted)}</div><div class="git-stat-label">${toolLabel}AI 命中文件删除行</div></div>
+      ${extraCards}
     `;
   } else {
     aiStatsEl.innerHTML = '';
