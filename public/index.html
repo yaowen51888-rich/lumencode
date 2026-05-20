@@ -39,23 +39,37 @@
     </div>
   </nav>
 
-  <nav class="tool-tabs" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
-    <div class="tool-tab-inner">
-      <template x-for="tool in availableTools" :key="tool.name">
-        <button
-          class="tool-tab"
-          :class="{ active: activeTool === tool.name, disabled: !tool.detected && !tool.enabled }"
-          :disabled="!tool.detected && !tool.enabled"
-          @click="setTool(tool.name)"
-          x-text="tool.displayName"
-        ></button>
-      </template>
-      <button class="tool-tab" :class="{ active: activeTool === 'all' }" @click="setTool('all')">汇总</button>
-      <button class="tool-tab-add" @click="showAddTool = true" title="添加数据源">+</button>
-    </div>
-  </nav>
+  <div class="app-layout">
+    <aside class="tool-sidebar" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
+      <div class="tool-sidebar-header">
+        <span class="tool-sidebar-title">数据源</span>
+      </div>
+      <nav class="tool-nav">
+        <template x-for="tool in availableTools" :key="tool.name">
+          <button
+            class="tool-nav-item"
+            :class="{ active: activeTool === tool.name, disabled: !tool.detected && !tool.enabled }"
+            :disabled="!tool.detected && !tool.enabled"
+            @click="setTool(tool.name)"
+          >
+            <span class="tool-dot" :class="'tool-dot-' + tool.name"></span>
+            <span class="tool-nav-label" x-text="tool.displayName"></span>
+          </button>
+        </template>
+        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')">
+          <span class="tool-dot tool-dot-all"></span>
+          <span class="tool-nav-label">汇总</span>
+        </button>
+      </nav>
+      <div class="tool-sidebar-footer">
+        <button class="tool-nav-add" @click="showAddTool = true" title="添加数据源">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span class="tool-nav-label">添加</span>
+        </button>
+      </div>
+    </aside>
 
-  <main class="container" x-data="app()" x-init="init()">
+    <main class="container" x-data="app()" x-init="init()">
     <section class="hero-band">
       <div class="hero-row">
         <div>
@@ -256,6 +270,7 @@
       </div>
     </div>
   </main>
+  </div>
 
   <!-- Settings Modal -->
   <div id="settingsModal" class="modal" style="display:none;">
