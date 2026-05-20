@@ -429,7 +429,27 @@ function renderGitInsights(gitStats, activeTool = 'all') {
       }
     }
 
+    let summaryCards = '';
+    if (gitStats.attributionSummary) {
+      const s = gitStats.attributionSummary;
+      const total = s.totalLinesChanged || 1;
+      const confirmedPct = Math.round((s.confirmedAILines / total) * 100);
+      const upperPct = Math.round(((s.confirmedAILines + s.probableAILines + s.possibleAILines) / total) * 100);
+      const unknownPct = Math.round((s.unknownLines / total) * 100);
+      summaryCards = `
+        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${confirmedPct}%</div><div class="git-stat-label">确认 AI 改动</div></div>
+        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${upperPct}%</div><div class="git-stat-label">可能 AI 上限</div></div>
+        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${unknownPct}%</div><div class="git-stat-label">未归因改动</div></div>
+      `;
+      if (s.unknownReasons?.length) {
+        summaryCards += `
+          <div class="git-stat-item git-ai-card"><div class="git-stat-value">${s.unknownReasons.length}</div><div class="git-stat-label">未归因原因</div></div>
+        `;
+      }
+    }
+
     aiStatsEl.innerHTML = `
+      ${summaryCards}
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">${linePct}%</div><div class="git-stat-label">${toolLabel}AI 代码改写占比（${ai.aiFileLinesAdded + ai.aiFileLinesDeleted} 行）</div></div>
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">${commitPct}%</div><div class="git-stat-label">${toolLabel}高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
       <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">${toolLabel}高/中置信提交数</div></div>

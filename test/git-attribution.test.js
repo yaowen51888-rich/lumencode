@@ -381,3 +381,59 @@ test('weak signal - commit 31min after session end is outside buffer', () => {
   attributeCommitsToSessions(commits, sessions);
   assert.equal(commits[0].sessionId, null);
 });
+
+test('finalizeGitStats - manual commit override controls layered attribution', () => {
+  const merged = {
+    commits: 1, filesChanged: 1, linesAdded: 10, linesDeleted: 2,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({
+        hash: 'hManual',
+        linesAdded: 10,
+        linesDeleted: 2,
+        files: [{ path: 'lib/a.js', added: 10, deleted: 2 }],
+      }),
+    ],
+  };
+
+  finalizeGitStats(merged, [], {
+    overrides: {
+      commits: {
+        hManual: { classification: 'confirmed_ai', primaryTool: 'codex', tools: ['codex'] },
+      },
+    },
+  });
+
+  assert.equal(merged.attributionSummary.confirmedAI, 1);
+  assert.equal(merged.attributionSummary.confirmedAILines, 12);
+});
+
+test('finalizeGitStats - file override beats commit override', () => {
+  const merged = {
+    commits: 1, filesChanged: 1, linesAdded: 10, linesDeleted: 2,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({
+        hash: 'hFileManual',
+        linesAdded: 10,
+        linesDeleted: 2,
+        files: [{ path: 'lib/a.js', added: 10, deleted: 2 }],
+      }),
+    ],
+  };
+
+  finalizeGitStats(merged, [], {
+    overrides: {
+      commits: {
+        hFileManual: { classification: 'confirmed_ai', primaryTool: 'codex', tools: ['codex'] },
+      },
+      files: {
+        'hFileManual:lib/a.js': { classification: 'human' },
+      },
+    },
+  });
+
+  assert.equal(merged.attributionSummary.confirmedAI, 0);
+  assert.equal(merged.attributionSummary.human, 1);
+  assert.equal(merged.attributionSummary.humanLines, 12);
+});

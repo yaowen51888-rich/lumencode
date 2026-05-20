@@ -435,3 +435,34 @@ test('groupBySessions - multiple sessions with different tools', () => {
   assert.equal(byId['s-claude'].primaryTool, 'claude');
   assert.equal(byId['s-codex'].primaryTool, 'codex');
 });
+
+test('groupBySessions - exposes shared attribution evidence fields', () => {
+  const records = [
+    {
+      sessionId: 's-codex',
+      timestamp: '2026-05-16T11:00:00Z',
+      type: 'assistant',
+      model: 'm2',
+      tool: 'codex',
+      project: 'D:/repo',
+      tokens: { input: 80, output: 30, cacheRead: 0, cacheCreate: 0 },
+      metadata: {
+        toolCalls: [
+          { name: 'Edit', input: { file_path: 'D:/repo/lib/a.js' } },
+          { name: 'Bash', input: { command: 'git commit -m "feat: x"' } },
+        ],
+      },
+    },
+  ];
+
+  const [session] = groupBySessions(records);
+  assert.equal(session.primaryTool, 'codex');
+  assert.equal(session.project, 'D:/repo');
+  assert.ok(Array.isArray(session.toolSequence));
+  assert.ok(Array.isArray(session.touchedFiles));
+  assert.ok(Array.isArray(session.shellCommands));
+  assert.ok(Array.isArray(session.gitCommitTimestamps));
+  assert.ok(session.touchedFiles.includes('D:/repo/lib/a.js'));
+  assert.ok(session.shellCommands.includes('git commit -m "feat: x"'));
+  assert.deepEqual(session.gitCommitTimestamps, ['2026-05-16T11:00:00Z']);
+});

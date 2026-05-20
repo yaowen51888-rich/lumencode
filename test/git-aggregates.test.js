@@ -303,3 +303,19 @@ test('finalizeGitStats - file-level AI lines only count matched files in mixed c
   assert.equal(stats.aiContribution.aiLinesAdded, 40);
   assert.equal(stats.aiContribution.aiLinesDeleted, 5);
 });
+
+test('finalizeGitStats - exposes layered attribution summary fields', () => {
+  const output = [
+    `${COMMIT_SENTINEL}l1|2026-05-14T10:00:00|me@x|feat: layered summary`,
+    '18\t4\tlib/git.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  finalizeGitStats(stats, []);
+
+  assert.ok(stats.attributionSummary);
+  assert.equal(stats.attributionSummary.confirmedAI, 0);
+  assert.equal(stats.attributionSummary.probableAI, 0);
+  assert.equal(stats.attributionSummary.possibleAI, 0);
+  assert.equal(stats.attributionSummary.unknown, 0);
+  assert.equal(stats.attributionSummary.human, 1);
+});

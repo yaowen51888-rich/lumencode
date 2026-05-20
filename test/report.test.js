@@ -306,3 +306,53 @@ test('generateFeishuCard - returns valid card JSON', () => {
   assert.ok(fieldsEl);
   assert.ok(fieldsEl.fields.some(f => f.text.content.includes('交互数')));
 });
+test('generateWorkReport - layered attribution summary is surfaced in report text', () => {
+  const usageStats = {
+    requestCount: 10, totalTokens: 5000, sessionCount: 2, estimatedCost: 0.5,
+    inputTokens: 2000, outputTokens: 3000, cacheRead: 0, cacheCreate: 0,
+    activeDays: 1, userMessageCount: 8, subagentTokens: 0,
+    projects: {}, scenarios: {}, models: {}, tools: {},
+  };
+  const gitStats = {
+    commits: 2, filesChanged: 2, linesAdded: 100, linesDeleted: 20,
+    commitList: [mkCommit({ type: 'feat', subject: 'feat: add attribution summary' })],
+    attributionSummary: {
+      confirmedAI: 1,
+      probableAI: 0,
+      possibleAI: 1,
+      unknown: 0,
+      human: 0,
+      excluded: 0,
+      confirmedAILines: 70,
+      possibleAILines: 50,
+      totalLinesChanged: 120,
+    },
+  };
+
+  const report = generateWorkReport(usageStats, gitStats, 'daily', '2026-05-20', '2026-05-20');
+  assert.ok(report.includes('确认 AI'));
+  assert.ok(report.includes('可能 AI'));
+});
+
+test('generateWorkReport - shows unknown attribution reasons when present', () => {
+  const usageStats = {
+    requestCount: 1, totalTokens: 100, sessionCount: 1,
+    inputTokens: 50, outputTokens: 50, cacheRead: 0, cacheCreate: 0,
+    activeDays: 1, userMessageCount: 1, subagentTokens: 0,
+    projects: {}, scenarios: {}, models: {}, tools: {},
+  };
+  const gitStats = {
+    commits: 1, filesChanged: 1, linesAdded: 2, linesDeleted: 0,
+    attributionSummary: {
+      confirmedAILines: 0,
+      probableAILines: 0,
+      possibleAILines: 0,
+      unknownLines: 2,
+      totalLinesChanged: 2,
+      unknownReasons: ['no_session_match'],
+    },
+  };
+
+  const report = generateWorkReport(usageStats, gitStats, 'daily', '2026-05-20', '2026-05-20');
+  assert.ok(report.includes('no_session_match'));
+});
