@@ -199,3 +199,58 @@ test('computeFileHotspots - empty input', () => {
   assert.deepEqual(computeFileHotspots([], 10), []);
   assert.deepEqual(computeFileHotspots(null, 10), []);
 });
+
+test('detectAICommit - detectedTool for Claude signals', () => {
+  const r = detectAICommit('feat: x', 'me@x', 'Co-Authored-By: Claude <noreply@anthropic.com>');
+  assert.equal(r.detectedTool, 'claude');
+});
+
+test('detectAICommit - detectedTool for Generated with Claude', () => {
+  const r = detectAICommit('feat: x', 'me@x', 'Generated with [Claude Code](https://...)');
+  assert.equal(r.detectedTool, 'claude');
+});
+
+test('detectAICommit - detectedTool for Copilot signals', () => {
+  const r = detectAICommit('feat: x', 'dev@x', 'Co-Authored-By: Copilot (<noreply@github.com>)');
+  assert.equal(r.detectedTool, 'copilot');
+});
+
+test('detectAICommit - detectedTool for Codex signals', () => {
+  const r = detectAICommit('feat: x', 'dev@x', 'Co-Authored-By: Codex');
+  assert.equal(r.detectedTool, 'codex');
+});
+
+test('detectAICommit - detectedTool for OpenCode signals', () => {
+  const r = detectAICommit('feat: x', 'dev@x', 'Co-Authored-By: OpenCode');
+  assert.equal(r.detectedTool, 'opencode');
+});
+
+test('detectAICommit - detectedTool for generic AI signals', () => {
+  const r = detectAICommit('feat: x', 'dev@x', '[AI] auto generated');
+  assert.equal(r.detectedTool, 'generic-ai');
+});
+
+test('detectAICommit - detectedTool null for human commit', () => {
+  const r = detectAICommit('feat: my work', 'human@x.com', 'just normal commit body');
+  assert.equal(r.detectedTool, null);
+});
+
+test('detectAICommit - detectedTool prefers explicit tool over generic', () => {
+  const r = detectAICommit('feat: x', 'claude-bot@x.com', 'Co-Authored-By: Claude\n[AI] generated');
+  assert.equal(r.detectedTool, 'claude');
+});
+
+test('detectAICommit - detectedTool for Cursor signals', () => {
+  const r = detectAICommit('fix: bug', 'dev@x', 'Co-Authored-By: Cursor');
+  assert.equal(r.detectedTool, 'cursor');
+});
+
+test('detectAICommit - detectedTool for Aider signals', () => {
+  const r = detectAICommit('feat: x', 'dev@x', 'Generated with [Aider](https://...)');
+  assert.equal(r.detectedTool, 'aider');
+});
+
+test('detectAICommit - detectedTool for author-based Claude detection', () => {
+  const r = detectAICommit('docs: update', 'noreply@anthropic.com');
+  assert.equal(r.detectedTool, 'claude');
+});
