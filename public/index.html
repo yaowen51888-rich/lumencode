@@ -6,6 +6,7 @@
   <title>ccusage-report</title>
   <link rel="stylesheet" href="/fonts/inter.css">
   <script src="/vendor/chart.umd.min.js"></script>
+  <script defer src="/vendor/alpine.min.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -38,7 +39,23 @@
     </div>
   </nav>
 
-  <main class="container">
+  <nav class="tool-tabs" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
+    <div class="tool-tab-inner">
+      <template x-for="tool in availableTools" :key="tool.name">
+        <button
+          class="tool-tab"
+          :class="{ active: activeTool === tool.name, disabled: !tool.detected && !tool.enabled }"
+          :disabled="!tool.detected && !tool.enabled"
+          @click="setTool(tool.name)"
+          x-text="tool.displayName"
+        ></button>
+      </template>
+      <button class="tool-tab" :class="{ active: activeTool === 'all' }" @click="setTool('all')">汇总</button>
+      <button class="tool-tab-add" @click="showAddTool = true" title="添加数据源">+</button>
+    </div>
+  </nav>
+
+  <main class="container" x-data="app()" x-init="init()">
     <section class="hero-band">
       <div class="hero-row">
         <div>
