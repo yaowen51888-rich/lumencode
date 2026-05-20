@@ -907,6 +907,12 @@ saveSettings.addEventListener('click', async () => {
     body: JSON.stringify(payload),
   });
   if (res.ok) {
+    // 清空 Alpine 数据缓存，确保配置修改后重新加载
+    const appEl = document.querySelector('[x-data="app()"]');
+    if (appEl && appEl._x_dataStack) {
+      const app = appEl._x_dataStack[0];
+      if (app && app.cache) app.cache = {};
+    }
     await loadData();
     hideSettings();
   } else {
