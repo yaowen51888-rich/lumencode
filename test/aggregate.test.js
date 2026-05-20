@@ -6,6 +6,7 @@ import {
   computeTrendData,
   deduplicateRecords,
   resolveModelPricing,
+  groupBySessions,
 } from '../lib/aggregate.js';
 
 // 测试记录创建辅助函数
@@ -400,4 +401,37 @@ test('resolveModelPricing - null/undefined defaults to sonnet', () => {
 test('resolveModelPricing - includes cacheCreate pricing', () => {
   const p = resolveModelPricing('claude-sonnet-4-6');
   assert.ok(p.cacheCreate > 0);
+});
+
+// ── groupBySessions primaryTool tests ──
+
+test('groupBySessions - derives primaryTool from records', () => {
+  const records = [
+    { sessionId: 's1', timestamp: '2026-05-16T10:00:00Z', type: 'assistant', model: 'm1', tool: 'claude', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+    { sessionId: 's1', timestamp: '2026-05-16T10:01:00Z', type: 'assistant', model: 'm1', tool: 'claude', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+    { sessionId: 's1', timestamp: '2026-05-16T10:02:00Z', type: 'assistant', model: 'm1', tool: 'codex', tokens: { input: 50, output: 20, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+  ];
+  const sessions = groupBySessions(records);
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].primaryTool, 'claude');
+});
+
+test('groupBySessions - primaryTool null when no tool field', () => {
+  const records = [
+    { sessionId: 's1', timestamp: '2026-05-16T10:00:00Z', type: 'assistant', model: 'm1', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+  ];
+  const sessions = groupBySessions(records);
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].primaryTool, null);
+});
+
+test('groupBySessions - multiple sessions with different tools', () => {
+  const records = [
+    { sessionId: 's-claude', timestamp: '2026-05-16T10:00:00Z', type: 'assistant', model: 'm1', tool: 'claude', tokens: { input: 100, output: 50, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+    { sessionId: 's-codex', timestamp: '2026-05-16T11:00:00Z', type: 'assistant', model: 'm2', tool: 'codex', tokens: { input: 80, output: 30, cacheRead: 0, cacheCreate: 0 }, toolCalls: [], metadata: {} },
+  ];
+  const sessions = groupBySessions(records);
+  const byId = Object.fromEntries(sessions.map(s => [s.id, s]));
+  assert.equal(byId['s-claude'].primaryTool, 'claude');
+  assert.equal(byId['s-codex'].primaryTool, 'codex');
 });
