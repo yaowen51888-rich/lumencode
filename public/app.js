@@ -16,7 +16,358 @@ let lastReportData = null;
 
 const charts = {};
 
-// ── URL Hash State ──
+// ── Alpine.js Components ──
+document.addEventListener('alpine:init', () => {
+
+  // 工具 Tab 组件
+  Alpine.data('toolTabs', () => ({
+    activeTool: 'all',
+    availableTools: [],
+    showAddTool: false,
+
+    async init() {
+      await this.loadTools();
+    },
+
+    async loadTools() {
+      try {
+        const res = await fetch('/api/tools');
+        this.availableTools = await res.json();
+      } catch {
+        this.availableTools = [];
+      }
+    },
+
+    setTool(name) {
+      this.activeTool = name;
+      window.dispatchEvent(new CustomEvent('tool-changed', { detail: name }));
+    },
+  }));
+
+  // 主应用组件
+  Alpine.data('app', () => ({
+    activeTool: 'all',
+    activePeriod: currentPeriod,
+    currentDate: currentDate,
+    loading: false,
+    error: null,
+    cache: {},
+    lastReportData: null,
+
+    async init() {
+      this.loadStateFromHash();
+
+      window.addEventListener('tool-changed', e => {
+        this.activeTool = e.detail;
+        this.loadCurrentView();
+      });
+
+      // 绑定周期切换按钮
+      this.bindPeriodButtons();
+
+      // 绑定日期切换
+      this.bindDateControls();
+
+      await this.loadCurrentView();
+    },
+
+    bindPeriodButtons() {
+      document.querySelectorAll('.category-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.setPeriod(btn.dataset.period);
+        });
+      });
+    },
+
+    bindDateControls() {
+      const dateInput = document.getElementById('dateInput');
+      if (dateInput) {
+        dateInput.value = this.currentDate;
+        dateInput.addEventListener('change', e => this.setDate(e.target.value));
+      }
+      document.getElementById('prevDate')?.addEventListener('click', () => this.shiftDate(-1));
+      document.getElementById('nextDate')?.addEventListener('click', () => this.shiftDate(1));
+    },
+
+    shiftDate(days) {
+      const d = new Date(this.currentDate);
+      d.setDate(d.getDate() + days);
+      this.setDate(d.toISOString().slice(0, 10));
+    },
+
+    async loadCurrentView() {
+      const cacheKey = `${this.activeTool}-${this.activePeriod}-${this.currentDate}`;
+      if (this.cache[cacheKey]) {
+        this.renderData(this.cache[cacheKey]);
+        return;
+      }
+
+      this.loading = true;
+      this.error = null;
+      showSkeleton();
+      hideError();
+
+      try {
+        const res = await fetch(`/api/report?tool=${this.activeTool}&period=${this.activePeriod}&date=${this.currentDate}`);
+        const data = await res.json();
+
+        if (!data || data.error) {
+          if (data?.hint) this.error = data.hint;
+          if (data?.error === '未配置') {
+            showEmpty();
+            try {
+              const cfgRes = await fetch('/api/config');
+              if (cfgRes.ok) {
+                const cfg = await cfgRes.json();
+                const welcomeClaudeDir = document.getElementById('welcomeClaudeDir');
+                const welcomeRepos = document.getElementById('welcomeRepos');
+                if (welcomeClaudeDir) welcomeClaudeDir.value = cfg.claudeDir || '';
+                if (welcomeRepos) welcomeRepos.value = (cfg.repos || []).join(', ');
+              }
+            } catch {}
+          }
+          return;
+        }
+
+        hideEmpty();
+        this.cache[cacheKey] = data;
+        this.lastReportData = data;
+        lastReportData = data;
+        this.renderData(data);
+      } catch (err) {
+        this.error = '网络错误: ' + err.message;
+        showError(this.error);
+      } finally {
+        this.loading = false;
+        hideSkeleton();
+      }
+    },
+
+    renderData(data) {
+      const { usageStats, gitStats, start, end } = data;
+
+      // 更新标题
+      const toolName = this.activeTool === 'all' ? 'Claude Code' : this.activeTool;
+      const periodName = this.activePeriod === 'daily' ? '日报' : this.activePeriod === 'weekly' ? '周报' : '月报';
+      document.getElementById('reportTitle').textContent = `${toolName} 使用${periodName}`;
+      document.getElementById('reportDate').textContent =
+        this.activePeriod === 'daily' ? start :
+        this.activePeriod === 'weekly' ? `${start} ~ ${end}` :
+        start.slice(0, 7);
+
+      // 更新统计卡片
+      document.getElementById('statSessions').textContent = fmt(usageStats.sessionCount);
+      document.getElementById('statRequests').textContent = fmt(usageStats.requestCount);
+      document.getElementById('statProjects').textContent = Object.keys(usageStats.projects).length;
+      document.getElementById('statTokens').textContent = fmt(usageStats.totalTokens);
+
+      // Token breakdown
+      const tokenBreakdown = document.getElementById('statTokenBreakdown');
+      if (tokenBreakdown) {
+        tokenBreakdown.innerHTML = `<span>输入 ${fmt(usageStats.inputTokens)}</span><span>输出 ${fmt(usageStats.outputTokens)}</span>` +
+          (usageStats.cacheRead > 0 ? `<span>缓存 ${fmt(usageStats.cacheRead)}</span>` : '');
+      }
+
+      // Cost card
+      const costEl = document.getElementById('statCost');
+      if (costEl) {
+        costEl.textContent = usageStats.estimatedCost
+          ? `~$${usageStats.estimatedCost.toFixed(2)}`
+          : '-';
+      }
+
+      // Cost model breakdown
+      const costModelEl = document.getElementById('statCostModel');
+      if (costModelEl && usageStats.models) {
+        const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
+        costModelEl.textContent = modelEntries.length > 0 ? modelEntries.slice(0, 2).map(([m]) => m.replace('claude-', '')).join(' · ') : '';
+      }
+
+      // Trend arrows
+      renderTrendArrow('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
+      renderTrendArrow('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
+      renderTrendArrow('trendProjects', Object.keys(usageStats.projects).length, data.prevStats && data.prevStats.projects ? Object.keys(data.prevStats.projects).length : null);
+      renderTrendArrow('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
+      renderTrendArrow('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
+
+      // Trend chart
+      const trendSection = document.getElementById('trendSection');
+      if (data.trendData && Object.keys(data.trendData.dailyStats).length > 0) {
+        trendSection.style.display = 'block';
+        renderTrend(data.trendData);
+      } else {
+        trendSection.style.display = 'none';
+      }
+
+      // Scenarios
+      renderDoughnut('scenarioChart', usageStats.scenarios, '场景分布');
+
+      // Models (with drill-down)
+      const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
+      destroyChart('modelChart');
+      const modelCtx = document.getElementById('modelChart').getContext('2d');
+      charts['modelChart'] = new Chart(modelCtx, {
+        type: 'bar',
+        data: { labels: modelEntries.map(([k]) => k), datasets: [{ label: '请求次数', data: modelEntries.map(([, v]) => v.count), backgroundColor: '#374151', borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
+          onClick: (evt, elements) => {
+            if (elements.length === 0) return;
+            const model = modelEntries[elements[0].index][0];
+            showDrill(model, '<div class="drill-empty">加载中...</div>');
+            fetch(`/api/details?period=${this.activePeriod}&date=${this.currentDate}&dimension=model&key=${encodeURIComponent(model)}`).then(r => r.json()).then(rows => {
+              if (!rows.length) { showDrill(model, '<div class="drill-empty">无数据</div>'); return; }
+              showDrill(model + ' 按日分布', '<table class="drill-table"><tr><th>日期</th><th>请求数</th><th>输入Token</th><th>输出Token</th></tr>' + rows.map(r => `<tr><td>${r.date}</td><td>${r.requests}</td><td>${fmtShort(r.inputTokens)}</td><td>${fmtShort(r.outputTokens)}</td></tr>`).join('') + '</table>');
+            });
+          }
+        }
+      });
+
+      // Projects (with drill-down)
+      const projEntries = Object.entries(usageStats.projects)
+        .filter(([, d]) => d.requests > 0)
+        .sort((a, b) => b[1].requests - a[1].requests)
+        .slice(0, 8);
+      destroyChart('projectChart');
+      const projCtx = document.getElementById('projectChart').getContext('2d');
+      charts['projectChart'] = new Chart(projCtx, {
+        type: 'bar',
+        data: { labels: projEntries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k), datasets: [{ label: '请求数', data: projEntries.map(([, v]) => v.requests), backgroundColor: '#374151', borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
+          onClick: (evt, elements) => {
+            if (elements.length === 0) return;
+            const project = projEntries[elements[0].index][0];
+            showDrill(project, '<div class="drill-empty">加载中...</div>');
+            fetch(`/api/sessions?project=${encodeURIComponent(project)}&period=${this.activePeriod}&date=${this.currentDate}`).then(r => r.json()).then(rows => {
+              if (!rows.length) { showDrill(project, '<div class="drill-empty">无数据</div>'); return; }
+              const html = '<table class="drill-table">'
+                + '<tr><th></th><th>会话ID</th><th>开始时间</th><th>请求数</th><th>提交数</th></tr>'
+                + rows.map((r, i) => {
+                    const start = r.startTime ? r.startTime.slice(0, 16).replace('T', ' ') : '-';
+                    const cn = r.commits?.length || 0;
+                    const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
+                    const commitRows = cn > 0
+                      ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="5"><table class="commit-subtable">
+                           <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th><th>证据</th></tr>
+                           ${r.commits.map(c => `<tr>
+                             <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
+                             <td><span class="commit-type-tag type-${c.type}">${c.type}</span></td>
+                             <td class="commit-subject" title="${(c.subject || '').replace(/"/g, '&quot;')}">${c.subject || ''}</td>
+                             <td class="num pos">+${fmt(c.linesAdded || 0)}</td>
+                             <td class="num neg">-${fmt(c.linesDeleted || 0)}</td>
+                             <td>${c.aiConfidence === 'high' ? 'H' : c.aiConfidence === 'medium' ? 'M' : c.aiConfidence === 'low' ? 'L' : ''}</td>
+                             <td>${c.aiEvidenceDetails?.matchedFileCount ? `文件交集 ${c.aiEvidenceDetails.matchedFileCount}` : (c.attributionType || '')}</td>
+                           </tr>`).join('')}
+                         </table></td></tr>`
+                      : '';
+                    return `<tr><td>${toggle}</td><td class="drill-text" title="${r.id}">${r.id}</td><td>${start}</td><td>${r.requests || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
+                  }).join('')
+                + '</table>';
+              showDrill(project + ' 会话记录', html);
+              // 绑定展开/折叠
+              document.querySelectorAll('.commit-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                  const idx = btn.dataset.idx;
+                  const sub = document.querySelector(`.commit-subrow[data-idx="${idx}"]`);
+                  const open = sub.style.display !== 'none';
+                  sub.style.display = open ? 'none' : '';
+                  btn.textContent = open ? '▸' : '▾';
+                });
+              });
+            });
+          }
+        }
+      });
+
+      // Tools
+      const toolEntries = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      renderBar('toolChart', toolEntries.map(([k]) => k), toolEntries.map(([, v]) => v), '调用次数');
+
+      // Git
+      this.updateGitPanel(gitStats);
+    },
+
+    updateGitPanel(gitStats) {
+      const gitSection = document.getElementById('gitSection');
+      const gitInsightsRow = document.getElementById('gitInsightsRow');
+      const gitConfigured = gitStats !== null;
+      const hasGit = gitStats && (gitStats.commits > 0 || gitStats.filesChanged > 0);
+      if (hasGit) {
+        gitSection.style.display = 'block';
+        gitSection.dataset.hasGit = 'true';
+        document.getElementById('gitStats').innerHTML = `
+          <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.commits)}</div><div class="git-stat-label">提交次数</div></div>
+          <div class="git-stat-item"><div class="git-stat-value">+${fmt(gitStats.linesAdded)}</div><div class="git-stat-label">新增行数</div></div>
+          <div class="git-stat-item"><div class="git-stat-value">-${fmt(gitStats.linesDeleted)}</div><div class="git-stat-label">删除行数</div></div>
+          <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.filesChanged)}</div><div class="git-stat-label">变更文件</div></div>
+        `;
+        renderGitInsights(gitStats);
+      } else {
+        gitSection.style.display = 'block';
+        gitSection.dataset.hasGit = 'false';
+        if (gitConfigured) {
+          document.getElementById('gitStats').innerHTML = `
+            <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
+              <p style="color:var(--muted);">该时间段暂无 Git 提交记录</p>
+            </div>
+          `;
+        } else {
+          document.getElementById('gitStats').innerHTML = `
+            <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
+              <p style="color:var(--muted);margin-bottom:12px;">配置本地项目路径后，可在此查看 Git 代码产出</p>
+              <button class="btn-outline" onclick="document.getElementById('settingsBtn').click()">配置项目路径</button>
+            </div>
+          `;
+        }
+        document.getElementById('gitAiStats').innerHTML = '';
+        if (gitInsightsRow) gitInsightsRow.style.display = 'none';
+        destroyChart('commitTypeChart');
+      }
+    },
+
+    setPeriod(period) {
+      this.activePeriod = period;
+      currentPeriod = period;
+      this.saveStateToHash();
+      resetToReportView();
+      this.loadCurrentView();
+    },
+
+    setDate(date) {
+      this.currentDate = date;
+      currentDate = date;
+      document.getElementById('dateInput').value = date;
+      this.saveStateToHash();
+      resetToReportView();
+      this.loadCurrentView();
+    },
+
+    loadStateFromHash() {
+      const hash = location.hash.slice(1);
+      if (!hash) return;
+      const [p, d] = hash.split('/');
+      if (p && ['daily', 'weekly', 'monthly'].includes(p)) {
+        this.activePeriod = p;
+        currentPeriod = p;
+        document.querySelectorAll('.category-tab').forEach(b => {
+          b.classList.toggle('active', b.dataset.period === p);
+        });
+      }
+      if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        this.currentDate = d;
+        currentDate = d;
+      }
+    },
+
+    saveStateToHash() {
+      location.hash = `${this.activePeriod}/${this.currentDate}`;
+    },
+  }));
+
+});
+
+// ── URL Hash State (fallback for non-Alpine) ──
 function loadStateFromHash() {
   const hash = location.hash.slice(1);
   if (!hash) return;
@@ -39,48 +390,6 @@ function saveStateToHash() {
 
 loadStateFromHash();
 
-async function loadData() {
-  showSkeleton();
-  hideError();
-
-  try {
-    const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}`);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      showError(err.hint || ('数据加载失败: ' + res.status));
-      return { success: false, error: 'http' };
-    }
-    const data = await res.json();
-    if (!data || data.error) {
-      if (data?.hint) showError(data.hint);
-      if (data?.error === '未配置') {
-        showEmpty();
-        // 预填 welcomePage
-        try {
-          const cfgRes = await fetch('/api/config');
-          if (cfgRes.ok) {
-            const cfg = await cfgRes.json();
-            const welcomeClaudeDir = document.getElementById('welcomeClaudeDir');
-            const welcomeRepos = document.getElementById('welcomeRepos');
-            if (welcomeClaudeDir) welcomeClaudeDir.value = cfg.claudeDir || '';
-            if (welcomeRepos) welcomeRepos.value = (cfg.repos || []).join(', ');
-          }
-        } catch {}
-      }
-      // 未找到数据时不显示 welcomePage，保持当前页面状态
-      return { success: false, error: data?.error || 'unknown' };
-    }
-    hideEmpty();
-    render(data);
-    return { success: true };
-  } catch (err) {
-    showError('网络错误: ' + err.message);
-    return { success: false, error: 'network' };
-  } finally {
-    hideSkeleton();
-  }
-}
-
 function fmt(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + ' M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + ' K';
@@ -96,183 +405,6 @@ function renderTrendArrow(elId, current, previous) {
   if (pct > 0) { el.textContent = `↑${val}%`; el.className = 'card-trend up'; }
   else if (pct < 0) { el.textContent = `↓${val}%`; el.className = 'card-trend down'; }
   else { el.textContent = '—'; el.className = 'card-trend flat'; }
-}
-
-function render(data) {
-  lastReportData = data;
-  const { usageStats, gitStats, start, end } = data;
-
-  // Title & date
-  const periodName = currentPeriod === 'daily' ? '日报' : currentPeriod === 'weekly' ? '周报' : '月报';
-  document.getElementById('reportTitle').textContent = `Claude Code 使用${periodName}`;
-  document.getElementById('reportDate').textContent =
-    currentPeriod === 'daily' ? start :
-    currentPeriod === 'weekly' ? `${start} ~ ${end}` :
-    start.slice(0, 7);
-
-  // Stats cards
-  document.getElementById('statSessions').textContent = fmt(usageStats.sessionCount);
-  document.getElementById('statRequests').textContent = fmt(usageStats.requestCount);
-  document.getElementById('statProjects').textContent = Object.keys(usageStats.projects).length;
-  document.getElementById('statTokens').textContent = fmt(usageStats.totalTokens);
-
-  // Token breakdown
-  const tokenBreakdown = document.getElementById('statTokenBreakdown');
-  if (tokenBreakdown) {
-    tokenBreakdown.innerHTML = `<span>输入 ${fmt(usageStats.inputTokens)}</span><span>输出 ${fmt(usageStats.outputTokens)}</span>` +
-      (usageStats.cacheRead > 0 ? `<span>缓存 ${fmt(usageStats.cacheRead)}</span>` : '');
-  }
-
-  // Cost card
-  const costEl = document.getElementById('statCost');
-  if (costEl) {
-    costEl.textContent = usageStats.estimatedCost
-      ? `~$${usageStats.estimatedCost.toFixed(2)}`
-      : '-';
-  }
-
-  // Cost model breakdown
-  const costModelEl = document.getElementById('statCostModel');
-  if (costModelEl && usageStats.models) {
-    const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
-    costModelEl.textContent = modelEntries.length > 0 ? modelEntries.slice(0, 2).map(([m]) => m.replace('claude-', '')).join(' · ') : '';
-  }
-
-  // Trend arrows (compare with previous period)
-  renderTrendArrow('trendSessions', usageStats.sessionCount, data.prevStats?.sessionCount);
-  renderTrendArrow('trendRequests', usageStats.requestCount, data.prevStats?.requestCount);
-  renderTrendArrow('trendProjects', Object.keys(usageStats.projects).length, data.prevStats && data.prevStats.projects ? Object.keys(data.prevStats.projects).length : null);
-  renderTrendArrow('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
-  renderTrendArrow('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
-
-  // Trend chart
-  const trendSection = document.getElementById('trendSection');
-  if (data.trendData && Object.keys(data.trendData.dailyStats).length > 0) {
-    trendSection.style.display = 'block';
-    renderTrend(data.trendData);
-  } else {
-    trendSection.style.display = 'none';
-  }
-
-  // Scenarios
-  renderDoughnut('scenarioChart', usageStats.scenarios, '场景分布');
-
-  // Models (with drill-down)
-  const modelEntries = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count);
-  destroyChart('modelChart');
-  const modelCtx = document.getElementById('modelChart').getContext('2d');
-  charts['modelChart'] = new Chart(modelCtx, {
-    type: 'bar',
-    data: { labels: modelEntries.map(([k]) => k), datasets: [{ label: '请求次数', data: modelEntries.map(([, v]) => v.count), backgroundColor: '#374151', borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }] },
-    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
-      onClick: (evt, elements) => {
-        if (elements.length === 0) return;
-        const model = modelEntries[elements[0].index][0];
-        showDrill(model, '<div class="drill-empty">加载中...</div>');
-        fetch(`/api/details?period=${currentPeriod}&date=${currentDate}&dimension=model&key=${encodeURIComponent(model)}`).then(r => r.json()).then(rows => {
-          if (!rows.length) { showDrill(model, '<div class="drill-empty">无数据</div>'); return; }
-          showDrill(model + ' 按日分布', '<table class="drill-table"><tr><th>日期</th><th>请求数</th><th>输入Token</th><th>输出Token</th></tr>' + rows.map(r => `<tr><td>${r.date}</td><td>${r.requests}</td><td>${fmtShort(r.inputTokens)}</td><td>${fmtShort(r.outputTokens)}</td></tr>`).join('') + '</table>');
-        });
-      }
-    }
-  });
-
-  // Projects (with drill-down)
-  const projEntries = Object.entries(usageStats.projects)
-    .filter(([, d]) => d.requests > 0)
-    .sort((a, b) => b[1].requests - a[1].requests)
-    .slice(0, 8);
-  destroyChart('projectChart');
-  const projCtx = document.getElementById('projectChart').getContext('2d');
-  charts['projectChart'] = new Chart(projCtx, {
-    type: 'bar',
-    data: { labels: projEntries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k), datasets: [{ label: '请求数', data: projEntries.map(([, v]) => v.requests), backgroundColor: '#374151', borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }] },
-    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } }, plugins: { legend: { display: false } },
-      onClick: (evt, elements) => {
-        if (elements.length === 0) return;
-        const project = projEntries[elements[0].index][0];
-        showDrill(project, '<div class="drill-empty">加载中...</div>');
-        fetch(`/api/sessions?project=${encodeURIComponent(project)}&period=${currentPeriod}&date=${currentDate}`).then(r => r.json()).then(rows => {
-          if (!rows.length) { showDrill(project, '<div class="drill-empty">无数据</div>'); return; }
-          const html = '<table class="drill-table">'
-            + '<tr><th></th><th>会话ID</th><th>开始时间</th><th>请求数</th><th>提交数</th></tr>'
-            + rows.map((r, i) => {
-                const start = r.startTime ? r.startTime.slice(0, 16).replace('T', ' ') : '-';
-                const cn = r.commits?.length || 0;
-                const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
-                const commitRows = cn > 0
-                  ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="5"><table class="commit-subtable">
-                       <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th><th>证据</th></tr>
-                       ${r.commits.map(c => `<tr>
-                         <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
-                         <td><span class="commit-type-tag type-${c.type}">${c.type}</span></td>
-                         <td class="commit-subject" title="${(c.subject || '').replace(/"/g, '&quot;')}">${c.subject || ''}</td>
-                         <td class="num pos">+${fmt(c.linesAdded || 0)}</td>
-                         <td class="num neg">-${fmt(c.linesDeleted || 0)}</td>
-                         <td>${c.aiConfidence === 'high' ? 'H' : c.aiConfidence === 'medium' ? 'M' : c.aiConfidence === 'low' ? 'L' : ''}</td>
-                         <td>${c.aiEvidenceDetails?.matchedFileCount ? `文件交集 ${c.aiEvidenceDetails.matchedFileCount}` : (c.attributionType || '')}</td>
-                       </tr>`).join('')}
-                     </table></td></tr>`
-                  : '';
-                return `<tr><td>${toggle}</td><td class="drill-text" title="${r.id}">${r.id}</td><td>${start}</td><td>${r.requests || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
-              }).join('')
-            + '</table>';
-          showDrill(project + ' 会话记录', html);
-          // 绑定展开/折叠
-          document.querySelectorAll('.commit-toggle').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const idx = btn.dataset.idx;
-              const sub = document.querySelector(`.commit-subrow[data-idx="${idx}"]`);
-              const open = sub.style.display !== 'none';
-              sub.style.display = open ? 'none' : '';
-              btn.textContent = open ? '▸' : '▾';
-            });
-          });
-        });
-      }
-    }
-  });
-
-  // Tools
-  const toolEntries = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  renderBar('toolChart', toolEntries.map(([k]) => k), toolEntries.map(([, v]) => v), '调用次数');
-
-  // Git
-  const gitSection = document.getElementById('gitSection');
-  const gitInsightsRow = document.getElementById('gitInsightsRow');
-  const gitConfigured = gitStats !== null;
-  const hasGit = gitStats && (gitStats.commits > 0 || gitStats.filesChanged > 0);
-  if (hasGit) {
-    gitSection.style.display = 'block';
-    gitSection.dataset.hasGit = 'true';
-    document.getElementById('gitStats').innerHTML = `
-      <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.commits)}</div><div class="git-stat-label">提交次数</div></div>
-      <div class="git-stat-item"><div class="git-stat-value">+${fmt(gitStats.linesAdded)}</div><div class="git-stat-label">新增行数</div></div>
-      <div class="git-stat-item"><div class="git-stat-value">-${fmt(gitStats.linesDeleted)}</div><div class="git-stat-label">删除行数</div></div>
-      <div class="git-stat-item"><div class="git-stat-value">${fmt(gitStats.filesChanged)}</div><div class="git-stat-label">变更文件</div></div>
-    `;
-    renderGitInsights(gitStats);
-  } else {
-    gitSection.style.display = 'block';
-    gitSection.dataset.hasGit = 'false';
-    if (gitConfigured) {
-      document.getElementById('gitStats').innerHTML = `
-        <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
-          <p style="color:var(--muted);">该时间段暂无 Git 提交记录</p>
-        </div>
-      `;
-    } else {
-      document.getElementById('gitStats').innerHTML = `
-        <div style="text-align:center;padding:16px 0;grid-column:1/-1;">
-          <p style="color:var(--muted);margin-bottom:12px;">配置本地项目路径后，可在此查看 Git 代码产出</p>
-          <button class="btn-outline" onclick="document.getElementById('settingsBtn').click()">配置项目路径</button>
-        </div>
-      `;
-    }
-    document.getElementById('gitAiStats').innerHTML = '';
-    if (gitInsightsRow) gitInsightsRow.style.display = 'none';
-    destroyChart('commitTypeChart');
-  }
 }
 
 function renderGitInsights(gitStats) {
@@ -498,26 +630,6 @@ function resetToReportView() {
   workReportBtn.style.display = 'inline-block';
 }
 
-// Event handlers
-document.querySelectorAll('.category-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentPeriod = btn.dataset.period;
-    resetToReportView();
-    loadData();
-    saveStateToHash();
-  });
-});
-
-document.getElementById('dateInput').value = currentDate;
-document.getElementById('dateInput').addEventListener('change', (e) => {
-  currentDate = e.target.value;
-  resetToReportView();
-  loadData();
-  saveStateToHash();
-});
-
 // ── Trend chart ──
 
 function renderTrend(trendData) {
@@ -700,15 +812,7 @@ document.getElementById('welcomeStartBtn')?.addEventListener('click', async () =
     if (!res.ok) throw new Error('保存失败');
     hint.textContent = '配置已保存，加载数据中...';
     hideEmpty();
-    const result = await loadData();
-    if (!result.success) {
-      if (result.error === '未找到数据') {
-        hint.textContent = `配置已保存，但路径 "${claudeDir}" 下暂无数据，请确认存在 projects/ 子目录`;
-        hint.style.color = '#dc2626';
-      } else if (result.error === '未配置') {
-        showEmpty();
-      }
-    }
+    await loadData();
   } catch (err) {
     hint.textContent = '保存失败: ' + err.message;
     hint.style.color = '#dc2626';
@@ -740,7 +844,14 @@ async function syncConfigFromServer() {
 }
 
 // Page load: sync config from server first, then load data
-syncConfigFromServer().then(() => loadData());
+// Alpine 组件会自动处理初始化加载，这里仅在 Alpine 未就绪时作为降级
+syncConfigFromServer().then(() => {
+  // 如果 Alpine 尚未初始化，loadData 会在 Alpine ready 后通过组件 init() 自动调用
+  const appEl = document.querySelector('[x-data="app()"]');
+  if (appEl && appEl._x_dataStack) {
+    loadData();
+  }
+});
 
 // Settings modal
 const settingsModal = document.getElementById('settingsModal');
@@ -796,19 +907,8 @@ saveSettings.addEventListener('click', async () => {
     body: JSON.stringify(payload),
   });
   if (res.ok) {
-    const result = await loadData();
-    if (result.success) {
-      hideSettings();
-    } else if (result.error === '未找到数据') {
-      // 保持设置面板打开，提示用户路径下暂无数据
-      const cfgClaudeDir = document.getElementById('cfgClaudeDir');
-      alert(`配置已保存，但路径 "${cfgClaudeDir?.value || ''}" 下暂无数据。\n\n请确认：\n1. 该目录下存在 projects/ 子目录\n2. projects/ 下有 .jsonl 日志文件\n3. 当前选择的日期有使用记录`);
-    } else if (result.error === '未配置') {
-      hideSettings();
-      showEmpty();
-    } else {
-      hideSettings();
-    }
+    await loadData();
+    hideSettings();
   } else {
     const err = await res.json().catch(() => ({}));
     alert('保存失败: ' + (err.error || '未知错误'));
@@ -1226,27 +1326,6 @@ document.getElementById('downloadMdBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// ── Date navigation ──
-function shiftDate(days) {
-  const d = new Date(currentDate);
-  d.setDate(d.getDate() + days);
-  currentDate = d.toISOString().slice(0, 10);
-  document.getElementById('dateInput').value = currentDate;
-  resetToReportView();
-  loadData();
-  saveStateToHash();
-}
-
-document.getElementById('prevDate').addEventListener('click', () => {
-  const step = currentPeriod === 'daily' ? -1 : currentPeriod === 'weekly' ? -7 : -30;
-  shiftDate(step);
-});
-
-document.getElementById('nextDate').addEventListener('click', () => {
-  const step = currentPeriod === 'daily' ? 1 : currentPeriod === 'weekly' ? 7 : 30;
-  shiftDate(step);
-});
-
 // ── Dark mode ──
 const themeBtn = document.getElementById('themeBtn');
 const savedTheme = localStorage.getItem('ccusage-theme');
@@ -1261,13 +1340,25 @@ themeBtn.addEventListener('click', () => {
     document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('ccusage-theme', 'dark');
   }
-  loadData();
+  // 触发 Alpine 组件重新加载数据
+  const appEl = document.querySelector('[x-data="app()"]');
+  if (appEl && appEl._x_dataStack) {
+    const app = appEl._x_dataStack[0];
+    if (app && app.loadCurrentView) app.loadCurrentView();
+  }
 });
 
-// ── Hook into loadData ──
-const origLoadData = loadData;
-const enhancedLoadData = async function() {
-  await origLoadData.call(this);
-};
-// Override
-loadData = enhancedLoadData;
+// ── Compatibility: loadData for non-Alpine callers ──
+async function loadData() {
+  // 尝试通过 Alpine 组件加载数据
+  const appEl = document.querySelector('[x-data="app()"]');
+  if (appEl && appEl._x_dataStack) {
+    const app = appEl._x_dataStack[0];
+    if (app && app.loadCurrentView) {
+      await app.loadCurrentView();
+      return { success: true };
+    }
+  }
+  // Alpine 未初始化时的降级处理
+  return { success: false, error: 'alpine-not-ready' };
+}

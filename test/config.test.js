@@ -124,6 +124,9 @@ test('initConfig - Creates file if it doesn\'t exist', () => {
     const fileContent = JSON.parse(readFileSync(testConfigFile, 'utf-8'));
     assert.deepStrictEqual(fileContent, {
       claudeDir: join(homedir(), '.claude'),
+      codexDir: '',
+      opencodeDir: '',
+      enabledTools: [],
       repos: [],
       excludeProjects: [],
       blockQuota: null,

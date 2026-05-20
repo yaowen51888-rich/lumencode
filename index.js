@@ -7,6 +7,15 @@ import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 import { identifyBillingBlocks } from './lib/blocks.js';
+import { registerParser, parseAllEnabledTools } from './lib/parsers/index.js';
+import { ClaudeParser } from './lib/parsers/claude.js';
+import { CodexParser } from './lib/parsers/codex.js';
+import { OpencodeParser } from './lib/parsers/opencode.js';
+
+// 注册所有解析器
+registerParser(ClaudeParser);
+registerParser(CodexParser);
+registerParser(OpencodeParser);
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -63,11 +72,17 @@ function loadCliConfig() {
 }
 
 async function buildReportData(period, dateArg, config, effectiveIncludeProjects) {
-  const { records } = collectAllRecords(config.claudeDir, config.excludeProjects, effectiveIncludeProjects);
+  // 使用新的多工具解析入口
+  const { records, toolBreakdown } = await parseAllEnabledTools(config, {
+    excludeProjects: config.excludeProjects,
+    includeProjects: effectiveIncludeProjects,
+  });
+
   if (records.length === 0) {
     return null;
   }
 
+  // 其余逻辑保持不变
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
   const sessions = groupBySessions(filtered);
@@ -80,7 +95,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
 
   const trendData = computeTrendData(records, period, dateArg);
 
-  // Previous period stats for trend comparison
+  // Previous period stats
   const prevRange = computePrevPeriodRange(period, dateArg);
   const prevFiltered = records.filter(r => {
     if (!r.timestamp) return false;
@@ -89,7 +104,6 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   });
   const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
 
-  // 精简 sessions 仅保留 UI/导出需要的字段，避免 payload 膨胀
   const slimSessions = sessions.map(s => ({
     id: s.id,
     project: s.project,
@@ -99,10 +113,9 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     commits: s.commits || [],
   }));
 
-  // 5-hour billing blocks
   const billingBlocks = identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode);
 
-  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks };
+  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown };
 }
 
 if (!command || command === 'help' || command === '--help') {
