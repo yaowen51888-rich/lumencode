@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
-import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats } from './lib/git.js';
+import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
@@ -71,7 +71,7 @@ function loadCliConfig() {
   return { config, dateArg, effectiveIncludeProjects, configPath };
 }
 
-async function buildReportData(period, dateArg, config, effectiveIncludeProjects) {
+async function buildReportData(period, dateArg, config, effectiveIncludeProjects, tool = 'all') {
   // 使用新的多工具解析入口
   const { records, toolBreakdown } = await parseAllEnabledTools(config, {
     excludeProjects: config.excludeProjects,
@@ -82,22 +82,54 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     return null;
   }
 
+  // 按工具过滤
+  const toolRecords = tool !== 'all' ? records.filter(r => r.tool === tool) : records;
+  if (toolRecords.length === 0) {
+    return null;
+  }
+
   // 其余逻辑保持不变
-  const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
+  const { filtered, start, end } = filterRecordsByPeriod(toolRecords, period, dateArg);
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
   const sessions = groupBySessions(filtered);
 
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
-    gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
-    gitStats = finalizeGitStats(gitStats, sessions);
+    // 按工具过滤后，只统计该工具覆盖的项目对应的 repos
+    const coveredBases = new Set(filtered.map(r => {
+      const p = r.project || '';
+      return p.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop();
+    }).filter(Boolean));
+    const toolRepos = config.repos.filter(r => coveredBases.has(r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop()));
+    if (toolRepos.length > 0) {
+      // 扩展 git 查询窗口 +2 天，以匹配 session 跨天的延迟提交
+      const extendedEnd = new Date(end);
+      extendedEnd.setDate(extendedEnd.getDate() + 2);
+      const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
+      gitStats = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
+      gitStats = finalizeGitStats(gitStats, sessions);
+      // 归因已完成，过滤 commitList 到原始窗口，重算基础统计
+      if (gitStats.commitList) {
+        const windowStart = start;
+        const windowEnd = end + 'T23:59:59';
+        const inWindow = gitStats.commitList.filter(c => (c.date || '') >= windowStart && (c.date || '') <= windowEnd);
+        gitStats.commits = inWindow.length;
+        gitStats.linesAdded = inWindow.reduce((s, c) => s + (c.linesAdded || 0), 0);
+        gitStats.linesDeleted = inWindow.reduce((s, c) => s + (c.linesDeleted || 0), 0);
+        gitStats.filesChanged = new Set(inWindow.flatMap(c => (c.files || []).map(f => f.path))).size;
+        // commitList 保留全部（含跨天），前端 drill-down 需要
+        // 但提交类型和热点只基于窗口内
+        gitStats.commitTypes = computeCommitTypes(inWindow);
+        gitStats.fileHotspots = computeFileHotspots(inWindow, 10);
+      }
+    }
   }
 
-  const trendData = computeTrendData(records, period, dateArg);
+  const trendData = computeTrendData(toolRecords, period, dateArg);
 
   // Previous period stats
   const prevRange = computePrevPeriodRange(period, dateArg);
-  const prevFiltered = records.filter(r => {
+  const prevFiltered = toolRecords.filter(r => {
     if (!r.timestamp) return false;
     const date = r.timestamp.slice(0, 10);
     return date >= prevRange.start && date <= prevRange.end;
@@ -115,7 +147,8 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
 
   const billingBlocks = identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode);
 
-  return { usageStats, gitStats, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown };
+  const reposConfigured = !!(config.repos && config.repos.length > 0);
+  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown };
 }
 
 if (!command || command === 'help' || command === '--help') {
@@ -172,32 +205,36 @@ if (command === 'serve') {
   const isBrief = args.includes('--brief');
   const { config, dateArg, effectiveIncludeProjects } = loadCliConfig();
 
-  console.log('正在扫描 Claude Code 日志...');
-  const { records, projects } = collectAllRecords(config.claudeDir, config.excludeProjects, effectiveIncludeProjects);
+  console.log('正在扫描 AI 编码助手日志...');
+  const { records, toolBreakdown } = await parseAllEnabledTools(config, {
+    excludeProjects: config.excludeProjects,
+    includeProjects: effectiveIncludeProjects,
+  });
 
   if (records.length === 0) {
     console.log('未找到任何会话记录。可能原因：');
-    console.log(`  1. Claude 日志目录不存在或路径错误: ${config.claudeDir}`);
-    console.log(`  2. 该目录下没有 projects/ 子目录`);
+    console.log(`  1. 日志目录不存在或路径错误`);
+    console.log(`  2. 该目录下没有可解析的数据`);
     console.log('请运行 ccusage-report init 创建配置文件，或在 Web 模式下点击设置按钮配置。');
     process.exit(1);
   }
 
-  const subagentCount = records.filter(r => r.isSubagent).length;
-  console.log(`已加载 ${records.length} 条记录（含 ${subagentCount} 条子 agent），${Object.keys(projects).length} 个项目`);
+  const projectSet = new Set(records.map(r => r.project).filter(Boolean));
+  const toolNames = Object.keys(toolBreakdown || {});
+  console.log(`已加载 ${records.length} 条记录，${projectSet.size} 个项目，工具: ${toolNames.join(', ')}`);
 
   const { filtered, start, end } = filterRecordsByPeriod(records, period, dateArg);
   console.log(`筛选 ${period} 数据: ${start} ~ ${end}，共 ${filtered.length} 条记录`);
 
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
-  if (usageStats.subagentTokens > 0) {
-    console.log(`子 agent Token 消耗: ${fmtNum(usageStats.subagentTokens)}（占比 ${(usageStats.subagentTokens / usageStats.totalTokens * 100).toFixed(1)}%）`);
-  }
+  usageStats.toolBreakdown = toolBreakdown;
 
   let gitStats = null;
   if (config.repos && config.repos.length > 0) {
     console.log('正在统计 Git 指标...');
+    const sessions = groupBySessions(filtered);
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
+    gitStats = finalizeGitStats(gitStats, sessions);
   }
 
   // 上一周期数据（用于工作汇报环比）
