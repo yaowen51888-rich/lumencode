@@ -24,6 +24,30 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* 全局自定义滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c4 transparent;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: #999; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+[data-theme="dark"] * {
+  scrollbar-color: #4b5563 transparent;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 html { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; }
 
 body {
@@ -408,7 +432,18 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border: 1px solid var(--hairline);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+.ai-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--ink);
 }
 .ai-summary-left {
   display: flex;
@@ -458,24 +493,41 @@ body {
 }
 
 /* Tool theme colors */
-.ai-summary-card.theme-all .ai-summary-pct { color: var(--ink); }
-.ai-summary-card.theme-all .ai-summary-bar-fill { background: var(--ink); }
+.ai-summary-card.theme-all .ai-summary-pct {
+  background: linear-gradient(135deg, #d97757, #10a37f, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ai-summary-card.theme-all .ai-summary-bar-fill {
+  background: linear-gradient(90deg, #d97757, #10a37f, #6366f1);
+}
+.ai-summary-card.theme-all::before {
+  background: linear-gradient(90deg, #d97757, #10a37f, #6366f1);
+}
 
 .ai-summary-card.theme-claude .ai-summary-pct { color: #d97757; }
 .ai-summary-card.theme-claude .ai-summary-bar-fill { background: #d97757; }
-.ai-summary-card.theme-claude { border-left: 3px solid #d97757; }
+.ai-summary-card.theme-claude::before { background: #d97757; }
 
 .ai-summary-card.theme-codex .ai-summary-pct { color: #10a37f; }
 .ai-summary-card.theme-codex .ai-summary-bar-fill { background: #10a37f; }
-.ai-summary-card.theme-codex { border-left: 3px solid #10a37f; }
+.ai-summary-card.theme-codex::before { background: #10a37f; }
 
 .ai-summary-card.theme-opencode .ai-summary-pct { color: #6366f1; }
 .ai-summary-card.theme-opencode .ai-summary-bar-fill { background: #6366f1; }
-.ai-summary-card.theme-opencode { border-left: 3px solid #6366f1; }
+.ai-summary-card.theme-opencode::before { background: #6366f1; }
 
 /* Dark mode adjustments for tool colors */
-[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-pct { color: var(--ink); }
-[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-bar-fill { background: #e5e7eb; }
+[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-pct {
+  background: linear-gradient(135deg, #e8956e, #3dd9a8, #8b80f5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-bar-fill {
+  background: linear-gradient(90deg, #e8956e, #3dd9a8, #8b80f5);
+}
 
 /* AI Metrics — compact key-value list */
 .ai-metrics-list {
@@ -571,21 +623,6 @@ body {
   font-size: 12px;
   max-height: 280px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
-}
-.hotspots-table::-webkit-scrollbar {
-  width: 6px;
-}
-.hotspots-table::-webkit-scrollbar-track {
-  background: transparent;
-}
-.hotspots-table::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 9999px;
-}
-.hotspots-table::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
 }
 .hotspots-tbl {
   width: 100%;
@@ -639,15 +676,6 @@ body {
 }
 
 /* 暗色主题适配 */
-[data-theme="dark"] .hotspots-table {
-  scrollbar-color: #475569 transparent;
-}
-[data-theme="dark"] .hotspots-table::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-[data-theme="dark"] .hotspots-table::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
 [data-theme="dark"] .hotspots-tbl th {
   background: var(--surface-dark-soft, #1f2937);
 }
@@ -934,24 +962,9 @@ body {
   color: var(--body);
   border: 1px solid var(--hairline);
   transition: box-shadow 0.2s ease;
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
 }
 .work-report-content:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-}
-.work-report-content::-webkit-scrollbar {
-  width: 6px;
-}
-.work-report-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.work-report-content::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 9999px;
-}
-.work-report-content::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
 }
 
 /* Markdown 标题层级 */
@@ -1108,13 +1121,6 @@ body {
 /* 暗色主题适配 */
 [data-theme="dark"] .work-report-content {
   border-color: var(--hairline);
-  scrollbar-color: #475569 transparent;
-}
-[data-theme="dark"] .work-report-content::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-[data-theme="dark"] .work-report-content::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
 }
 [data-theme="dark"] .work-report-content:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);

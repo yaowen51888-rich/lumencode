@@ -50,6 +50,10 @@
         </button>
       </div>
       <nav class="tool-nav">
+        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')" title="汇总">
+          <span class="tool-dot tool-dot-all"></span>
+          <span class="tool-nav-label" x-show="!collapsed">汇总</span>
+        </button>
         <template x-for="tool in availableTools" :key="tool.name">
           <button
             class="tool-nav-item"
@@ -62,10 +66,6 @@
             <span class="tool-nav-label" x-show="!collapsed" x-text="tool.displayName"></span>
           </button>
         </template>
-        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')" title="汇总">
-          <span class="tool-dot tool-dot-all"></span>
-          <span class="tool-nav-label" x-show="!collapsed">汇总</span>
-        </button>
       </nav>
       <!-- 添加数据源功能暂未实现，先隐藏
       <div class="tool-sidebar-footer">
