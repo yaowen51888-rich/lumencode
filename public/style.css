@@ -388,18 +388,169 @@ body {
   margin-top: 2px;
 }
 
-/* Git AI cards row（3 列） */
+/* Git AI cards — compact metrics */
 .git-ai-stats {
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--border, #e5e7eb);
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .git-ai-stats:empty {
   display: none;
 }
-.git-ai-card .git-stat-value {
-  color: #3b82f6;
+
+/* AI Summary Card — hero band */
+.ai-summary-card {
+  background: var(--surface-card);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--hairline);
+}
+.ai-summary-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.ai-summary-pct {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  color: var(--ink);
+  line-height: 1;
+}
+.ai-summary-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.ai-summary-desc strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.ai-summary-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 180px;
+}
+.ai-summary-commits {
+  font-size: 13px;
+  color: var(--body);
+  font-weight: 500;
+}
+.ai-summary-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-strong);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.ai-summary-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--ink);
+  transition: width 0.4s ease;
+}
+
+/* Tool theme colors */
+.ai-summary-card.theme-all .ai-summary-pct { color: var(--ink); }
+.ai-summary-card.theme-all .ai-summary-bar-fill { background: var(--ink); }
+
+.ai-summary-card.theme-claude .ai-summary-pct { color: #d97757; }
+.ai-summary-card.theme-claude .ai-summary-bar-fill { background: #d97757; }
+.ai-summary-card.theme-claude { border-left: 3px solid #d97757; }
+
+.ai-summary-card.theme-codex .ai-summary-pct { color: #10a37f; }
+.ai-summary-card.theme-codex .ai-summary-bar-fill { background: #10a37f; }
+.ai-summary-card.theme-codex { border-left: 3px solid #10a37f; }
+
+.ai-summary-card.theme-opencode .ai-summary-pct { color: #6366f1; }
+.ai-summary-card.theme-opencode .ai-summary-bar-fill { background: #6366f1; }
+.ai-summary-card.theme-opencode { border-left: 3px solid #6366f1; }
+
+/* Dark mode adjustments for tool colors */
+[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-pct { color: var(--ink); }
+[data-theme="dark"] .ai-summary-card.theme-all .ai-summary-bar-fill { background: #e5e7eb; }
+
+/* AI Metrics — compact key-value list */
+.ai-metrics-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.ai-kv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--hairline-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ai-kv-row:nth-child(odd) {
+  border-right: 1px solid var(--hairline-soft);
+}
+.ai-kv-val {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 48px;
+}
+.ai-kv-lbl {
+  color: var(--muted);
+}
+
+/* Dark mode AI summary */
+[data-theme="dark"] .ai-summary-card {
+  border-color: var(--hairline);
+}
+[data-theme="dark"] .ai-summary-bar-fill {
+  background: var(--on-primary);
+}
+
+/* Metric tooltip */
+.metric-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border, #d1d5db);
+  color: var(--muted, #6b7280);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: help;
+  margin-left: 3px;
+  vertical-align: middle;
+  position: relative;
+  line-height: 1;
+}
+.metric-tip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 11px;
+  font-weight: 400;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  line-height: 1.4;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
 /* Git skeleton grid */
@@ -488,9 +639,6 @@ body {
 }
 
 /* 暗色主题适配 */
-[data-theme="dark"] .git-ai-card .git-stat-value {
-  color: #60a5fa;
-}
 [data-theme="dark"] .hotspots-table {
   scrollbar-color: #475569 transparent;
 }
@@ -1283,6 +1431,10 @@ body {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .chart-row { grid-template-columns: 1fr; }
   .git-stats { grid-template-columns: repeat(2, 1fr); }
+  .ai-metrics-list { grid-template-columns: 1fr; }
+  .ai-kv-row:nth-child(odd) { border-right: none; }
+  .ai-summary-card { flex-direction: column; gap: 12px; }
+  .ai-summary-right { align-items: flex-start; min-width: auto; width: 100%; }
 }
 
 @media (max-width: 768px) {
@@ -1293,6 +1445,9 @@ body {
   .hero-band { padding: 16px 0 10px; }
   .container { padding: 0 16px; }
   .git-stats { grid-template-columns: 1fr; }
+  .ai-metrics-list { grid-template-columns: 1fr; }
+  .ai-kv-row:nth-child(odd) { border-right: none; }
+  .ai-summary-pct { font-size: 24px; }
   .cta-band-light { padding: 14px; }
   .hero-row { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
@@ -1342,6 +1497,13 @@ body {
   .hero-band { padding: 12px 0; }
 }
 
+.no-data-hint {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 /* ========== 工具侧边栏 ========== */
 
 .tool-sidebar {
@@ -1359,6 +1521,9 @@ body {
 }
 
 .tool-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 8px 12px;
   margin-bottom: 8px;
   border-bottom: 1px solid var(--hairline);
@@ -1370,6 +1535,46 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.tool-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.tool-sidebar-toggle:hover {
+  background: var(--hairline-soft);
+  color: var(--ink);
+}
+
+.tool-sidebar.collapsed {
+  width: 56px;
+  padding: 16px 8px;
+}
+
+.tool-sidebar.collapsed .tool-sidebar-header {
+  justify-content: center;
+  padding: 0 0 12px;
+}
+
+.tool-sidebar.collapsed .tool-nav-item,
+.tool-sidebar.collapsed .tool-nav-add {
+  justify-content: center;
+  padding: 8px;
+}
+
+.tool-sidebar.collapsed .tool-nav-add {
+  border: none;
 }
 
 .tool-nav {
@@ -1555,6 +1760,11 @@ body {
   background: rgba(255,255,255,0.05);
 }
 
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+}
+
 [data-theme="dark"] .loading-overlay {
   background: rgba(0,0,0,0.7);
 }
@@ -1625,14 +1835,7 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-  .tool-sidebar {
-    background: #1a1a1a;
-    border-color: #374151;
-  }
   .tool-nav-item:hover {
     background: rgba(255,255,255,0.05);
-  }
-  .tool-nav-item.active {
-    background: #2a2a2a;
   }
 }

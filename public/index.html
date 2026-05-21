@@ -30,7 +30,8 @@
           </button>
         </div>
         <button id="themeBtn" class="icon-btn" title="切换暗色模式">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
         </button>
         <button id="settingsBtn" class="icon-btn" title="设置">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -40,9 +41,13 @@
   </nav>
 
   <div class="app-layout">
-    <aside class="tool-sidebar" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
+    <aside class="tool-sidebar" :class="{ collapsed: collapsed }" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
       <div class="tool-sidebar-header">
-        <span class="tool-sidebar-title">数据源</span>
+        <span class="tool-sidebar-title" x-show="!collapsed">数据源</span>
+        <button class="tool-sidebar-toggle" @click="toggleCollapse()" :title="collapsed ? '展开' : '收起'">
+          <svg x-show="!collapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
+          <svg x-show="collapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+        </button>
       </div>
       <nav class="tool-nav">
         <template x-for="tool in availableTools" :key="tool.name">
@@ -51,25 +56,28 @@
             :class="{ active: activeTool === tool.name, disabled: !tool.detected && !tool.enabled }"
             :disabled="!tool.detected && !tool.enabled"
             @click="setTool(tool.name)"
+            :title="tool.displayName"
           >
             <span class="tool-dot" :class="'tool-dot-' + tool.name"></span>
-            <span class="tool-nav-label" x-text="tool.displayName"></span>
+            <span class="tool-nav-label" x-show="!collapsed" x-text="tool.displayName"></span>
           </button>
         </template>
-        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')">
+        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')" title="汇总">
           <span class="tool-dot tool-dot-all"></span>
-          <span class="tool-nav-label">汇总</span>
+          <span class="tool-nav-label" x-show="!collapsed">汇总</span>
         </button>
       </nav>
+      <!-- 添加数据源功能暂未实现，先隐藏
       <div class="tool-sidebar-footer">
         <button class="tool-nav-add" @click="showAddTool = true" title="添加数据源">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span class="tool-nav-label">添加</span>
+          <span class="tool-nav-label" x-show="!collapsed">添加</span>
         </button>
       </div>
+      -->
     </aside>
 
-    <main class="container" x-data="app()" x-init="init()">
+    <main class="container" x-data="app()">
     <section class="hero-band">
       <div class="hero-row">
         <div>
@@ -113,7 +121,7 @@
       <div class="cta-band-light">
         <h3 class="title-lg">Git 代码产出</h3>
         <div class="git-stats" id="gitStats"></div>
-        <div class="git-stats git-ai-stats" id="gitAiStats"></div>
+        <div class="git-ai-stats" id="gitAiStats"></div>
       </div>
       <div class="chart-row git-insights-row" id="gitInsightsRow" style="display:none;">
         <div class="chart-card">
@@ -131,7 +139,10 @@
     <div class="section-header">
       <h2 class="title-md">数据分析</h2>
     </div>
-    <div class="charts-dashboard">
+    <div class="no-data-hint" id="noDataHint" style="display:none;">
+      <p>该时间段暂无使用数据</p>
+    </div>
+    <div class="charts-dashboard" id="chartsDashboard">
       <section class="charts-section">
         <div class="chart-row">
           <div class="chart-card">
@@ -171,7 +182,7 @@
             <path d="M16 22L22 28L32 18" stroke="#111111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           </svg>
           <h1 class="welcome-title">欢迎使用 ccusage-report</h1>
-          <p class="welcome-subtitle">Claude Code 使用统计与代码产出分析工具</p>
+          <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
         </div>
 
         <div class="welcome-features">
@@ -307,7 +318,7 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <p>ccusage-report · Claude Code 使用统计</p>
+      <p>ccusage-report · AI 编码助手使用统计</p>
       <p class="muted-soft">数据来自本地日志，不上传至任何服务器</p>
     </div>
   </footer>

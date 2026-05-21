@@ -24,6 +24,7 @@ document.addEventListener('alpine:init', () => {
     activeTool: 'all',
     availableTools: [],
     showAddTool: false,
+    collapsed: localStorage.getItem('ccusage-sidebar-collapsed') === 'true',
 
     async init() {
       await this.loadTools();
@@ -41,6 +42,11 @@ document.addEventListener('alpine:init', () => {
     setTool(name) {
       this.activeTool = name;
       window.dispatchEvent(new CustomEvent('tool-changed', { detail: name }));
+    },
+
+    toggleCollapse() {
+      this.collapsed = !this.collapsed;
+      localStorage.setItem('ccusage-sidebar-collapsed', String(this.collapsed));
     },
   }));
 
@@ -82,9 +88,12 @@ document.addEventListener('alpine:init', () => {
     },
 
     bindDateControls() {
+      if (this._dateControlsBound) return;
+      this._dateControlsBound = true;
       const dateInput = document.getElementById('dateInput');
       if (dateInput) {
         dateInput.value = this.currentDate;
+        dateInput.max = new Date().toISOString().slice(0, 10);
         dateInput.addEventListener('change', e => this.setDate(e.target.value));
       }
       document.getElementById('prevDate')?.addEventListener('click', () => this.shiftDate(-1));
@@ -146,12 +155,14 @@ document.addEventListener('alpine:init', () => {
     },
 
     renderData(data) {
-      const { usageStats, gitStats, start, end } = data;
+      const { usageStats, gitStats, start, end, reposConfigured } = data;
 
       // 更新标题
-      const toolName = this.activeTool === 'all' ? 'Claude Code' : this.activeTool;
+      const toolName = this.activeTool === 'all' ? '全部工具' : this.activeTool;
       const periodName = this.activePeriod === 'daily' ? '日报' : this.activePeriod === 'weekly' ? '周报' : '月报';
       document.getElementById('reportTitle').textContent = `${toolName} 使用${periodName}`;
+      const analyticsTitle = document.querySelector('#analyticsSection .title-md');
+      if (analyticsTitle) analyticsTitle.textContent = this.activeTool === 'all' ? '数据分析' : `${toolName} 数据分析`;
       document.getElementById('reportDate').textContent =
         this.activePeriod === 'daily' ? start :
         this.activePeriod === 'weekly' ? `${start} ~ ${end}` :
@@ -192,6 +203,13 @@ document.addEventListener('alpine:init', () => {
       renderTrendArrow('trendTokens', usageStats.totalTokens, data.prevStats?.totalTokens);
       renderTrendArrow('trendCost', usageStats.estimatedCost, data.prevStats?.estimatedCost);
 
+      // 没有数据时显示空状态，隐藏图表
+      const hasData = usageStats.requestCount > 0;
+      const noDataHint = document.getElementById('noDataHint');
+      const chartsDashboard = document.getElementById('chartsDashboard');
+      if (noDataHint) noDataHint.style.display = hasData ? 'none' : 'block';
+      if (chartsDashboard) chartsDashboard.style.display = hasData ? 'flex' : 'none';
+
       // Trend chart
       const trendSection = document.getElementById('trendSection');
       if (data.trendData && Object.keys(data.trendData.dailyStats).length > 0) {
@@ -199,6 +217,16 @@ document.addEventListener('alpine:init', () => {
         renderTrend(data.trendData);
       } else {
         trendSection.style.display = 'none';
+      }
+
+      if (!hasData) {
+        // 清空已有图表避免残留
+        destroyChart('scenarioChart');
+        destroyChart('modelChart');
+        destroyChart('projectChart');
+        destroyChart('toolChart');
+        this.updateGitPanel(gitStats, this.activeTool, reposConfigured);
+        return;
       }
 
       // Scenarios
@@ -239,7 +267,7 @@ document.addEventListener('alpine:init', () => {
             if (elements.length === 0) return;
             const project = projEntries[elements[0].index][0];
             showDrill(project, '<div class="drill-empty">加载中...</div>');
-            fetch(`/api/sessions?project=${encodeURIComponent(project)}&period=${this.activePeriod}&date=${this.currentDate}`).then(r => r.json()).then(rows => {
+            fetch(`/api/sessions?project=${encodeURIComponent(project)}&period=${this.activePeriod}&date=${this.currentDate}${this.activeTool !== 'all' ? '&tool=' + this.activeTool : ''}`).then(r => r.json()).then(rows => {
               if (!rows.length) { showDrill(project, '<div class="drill-empty">无数据</div>'); return; }
               const html = '<table class="drill-table">'
                 + '<tr><th></th><th>会话ID</th><th>开始时间</th><th>请求数</th><th>提交数</th></tr>'
@@ -285,13 +313,13 @@ document.addEventListener('alpine:init', () => {
       renderBar('toolChart', toolEntries.map(([k]) => k), toolEntries.map(([, v]) => v), '调用次数');
 
       // Git
-      this.updateGitPanel(gitStats, this.activeTool);
+      this.updateGitPanel(gitStats, this.activeTool, reposConfigured);
     },
 
-    updateGitPanel(gitStats, activeTool = 'all') {
+    updateGitPanel(gitStats, activeTool = 'all', reposConfigured = false) {
       const gitSection = document.getElementById('gitSection');
       const gitInsightsRow = document.getElementById('gitInsightsRow');
-      const gitConfigured = gitStats !== null;
+      const gitConfigured = gitStats !== null || reposConfigured;
       const hasGit = gitStats && (gitStats.commits > 0 || gitStats.filesChanged > 0);
       if (hasGit) {
         gitSection.style.display = 'block';
@@ -335,6 +363,8 @@ document.addEventListener('alpine:init', () => {
     },
 
     setDate(date) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (date > today) date = today;
       this.currentDate = date;
       currentDate = date;
       document.getElementById('dateInput').value = date;
@@ -408,58 +438,90 @@ function renderTrendArrow(elId, current, previous) {
 }
 
 function renderGitInsights(gitStats, activeTool = 'all') {
-  // AI 贡献度卡片
   const aiStatsEl = document.getElementById('gitAiStats');
   const ai = gitStats.aiContribution;
-  if (ai && gitStats.commits > 0) {
-    const commitPct = Math.round((ai.aiCommitRatio ?? (ai.aiCommits / gitStats.commits)) * 100);
-    const linePct = Math.round(((ai.aiLineRatio ?? ai.aiRatio) || 0) * 100);
-    const toolNames = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' };
-    const toolLabel = activeTool !== 'all' ? ((toolNames[activeTool] || activeTool) + ' ') : '';
+  if (!ai || gitStats.commits <= 0) { aiStatsEl.innerHTML = ''; return; }
 
-    let extraCards = '';
-    if (activeTool !== 'all' && gitStats.aiContributionByTool) {
-      const globalAi = gitStats.aiContributionByTool;
-      const allAiCommits = (globalAi.claude?.aiCommits || 0) + (globalAi.codex?.aiCommits || 0) + (globalAi.opencode?.aiCommits || 0) + (globalAi['generic-ai']?.aiCommits || 0);
-      const globalPct = gitStats.commits > 0 ? Math.round((allAiCommits / gitStats.commits) * 100) : 0;
-      extraCards = `<div class="git-stat-item git-ai-card"><div class="git-stat-value">${globalPct}%</div><div class="git-stat-label">全局 AI 提交率</div></div>`;
-      const genericCount = globalAi['generic-ai']?.aiCommits || 0;
-      if (genericCount > 0) {
-        extraCards += `<div class="git-stat-item git-ai-card"><div class="git-stat-value">${genericCount}</div><div class="git-stat-label">通用 AI 标记提交</div></div>`;
-      }
-    }
+  const commitPct = Math.round((ai.aiCommitRatio ?? (ai.aiCommits / gitStats.commits)) * 100);
+  const linePct = Math.round(((ai.aiLineRatio ?? ai.aiRatio) || 0) * 100);
+  const toolNames = { claude: 'Claude', codex: 'Codex', opencode: 'OpenCode' };
+  const toolLabel = activeTool !== 'all' ? ((toolNames[activeTool] || activeTool) + ' ') : '';
 
-    let summaryCards = '';
-    if (gitStats.attributionSummary) {
-      const s = gitStats.attributionSummary;
-      const total = s.totalLinesChanged || 1;
-      const confirmedPct = Math.round((s.confirmedAILines / total) * 100);
-      const upperPct = Math.round(((s.confirmedAILines + s.probableAILines + s.possibleAILines) / total) * 100);
-      const unknownPct = Math.round((s.unknownLines / total) * 100);
-      summaryCards = `
-        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${confirmedPct}%</div><div class="git-stat-label">确认 AI 改动</div></div>
-        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${upperPct}%</div><div class="git-stat-label">可能 AI 上限</div></div>
-        <div class="git-stat-item git-ai-card"><div class="git-stat-value">${unknownPct}%</div><div class="git-stat-label">未归因改动</div></div>
-      `;
-      if (s.unknownReasons?.length) {
-        summaryCards += `
-          <div class="git-stat-item git-ai-card"><div class="git-stat-value">${s.unknownReasons.length}</div><div class="git-stat-label">未归因原因</div></div>
-        `;
-      }
-    }
+  // ── Summary card ──
+  const totalLines = ai.totalLinesChanged || (ai.aiFileLinesAdded + ai.aiFileLinesDeleted + (ai.humanLinesChanged || 0)) || 1;
+  const aiLinePct = Math.round((ai.aiLinesChanged / totalLines) * 100) || linePct;
 
-    aiStatsEl.innerHTML = `
-      ${summaryCards}
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${linePct}%</div><div class="git-stat-label">${toolLabel}AI 代码改写占比（${ai.aiFileLinesAdded + ai.aiFileLinesDeleted} 行）</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${commitPct}%</div><div class="git-stat-label">${toolLabel}高/中置信 AI 提交（${ai.aiCommits}/${gitStats.commits}）</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}</div><div class="git-stat-label">${toolLabel}高/中置信提交数</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">+${fmt(ai.aiFileLinesAdded)}</div><div class="git-stat-label">${toolLabel}AI 命中文件新增行</div></div>
-      <div class="git-stat-item git-ai-card"><div class="git-stat-value">-${fmt(ai.aiFileLinesDeleted)}</div><div class="git-stat-label">${toolLabel}AI 命中文件删除行</div></div>
-      ${extraCards}
-    `;
+  const toolTheme = activeTool !== 'all' ? `theme-${activeTool}` : 'theme-all';
+
+  let summaryDesc = '';
+  if (activeTool !== 'all') {
+    summaryDesc = `${toolLabel}代码变更有 AI 参与`;
+  } else if (gitStats.attributionSummary) {
+    const s = gitStats.attributionSummary;
+    const upperPct = Math.round(((s.confirmedAILines + s.probableAILines + s.possibleAILines) / (s.totalLinesChanged || 1)) * 100);
+    summaryDesc = `代码变更有 AI 参与（可能上限 <strong>${upperPct}%</strong>）`;
   } else {
-    aiStatsEl.innerHTML = '';
+    summaryDesc = '代码变更有 AI 参与';
   }
+
+  const summaryHtml = `
+    <div class="ai-summary-card ${toolTheme}">
+      <div class="ai-summary-left">
+        <span class="ai-summary-pct">${aiLinePct}%</span>
+        <span class="ai-summary-desc">${summaryDesc}</span>
+      </div>
+      <div class="ai-summary-right">
+        <span class="ai-summary-commits">${ai.aiCommits}/${gitStats.commits} 提交使用 AI (${commitPct}%)</span>
+        <div class="ai-summary-bar">
+          <div class="ai-summary-bar-fill" style="width:${commitPct}%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── Metric list ──
+  const tip = (text) => `<span class="metric-tip" data-tip="${text}">?</span>`;
+  const kv = (value, label, tipText) =>
+    `<div class="ai-kv-row"><span class="ai-kv-val">${value}</span><span class="ai-kv-lbl">${label}${tipText ? tip(tipText) : ''}</span></div>`;
+
+  let metrics = [];
+
+  if (activeTool !== 'all') {
+    const total = ai.totalLinesChanged || 1;
+    const confirmedPct = Math.round((ai.aiLinesChanged / total) * 100);
+    const humanPct = 100 - confirmedPct;
+    metrics.push(kv(`${confirmedPct}%`, `${toolLabel}确认 AI`, '该工具关联的 AI 提交代码行占总变更行比例'));
+    metrics.push(kv(`${humanPct}%`, `${toolLabel}未归因`, '未关联到该工具 AI session 的代码行'));
+  } else if (gitStats.attributionSummary) {
+    const s = gitStats.attributionSummary;
+    const total = s.totalLinesChanged || 1;
+    const confirmedPct = Math.round((s.confirmedAILines / total) * 100);
+    const upperPct = Math.round(((s.confirmedAILines + s.probableAILines + s.possibleAILines) / total) * 100);
+    const unknownPct = Math.round((s.unknownLines / total) * 100);
+    metrics.push(kv(`${confirmedPct}%`, '确认 AI 改动', '有明确 AI 签名或高置信 session 关联+文件交集的代码行占比'));
+    metrics.push(kv(`${upperPct}%`, '可能 AI 上限', '确认+弱信号匹配的最大覆盖面，实际 AI 参与度在此区间内'));
+    metrics.push(kv(`${unknownPct}%`, '未归因改动', '未能关联到任何 AI session 的代码行'));
+  }
+
+  metrics.push(kv(`${linePct}%`, `${toolLabel}AI 代码改写`, 'AI 命中文件的新增+删除行占总变更行比例'));
+  metrics.push(kv(`${ai.aiCommits}/${gitStats.commits}`, `${toolLabel}AI 提交 (${commitPct}%)`, '高/中置信度 AI 提交占总提交比'));
+  metrics.push(kv(`${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}`, `${toolLabel}高/中置信`, '高=签名或Bash关联+交集；中=时间窗关联+交集'));
+  metrics.push(kv(`+${fmt(ai.aiFileLinesAdded)}`, `${toolLabel}AI 新增行`, 'AI 提交中与 session 文件有交集的新增行'));
+  metrics.push(kv(`-${fmt(ai.aiFileLinesDeleted)}`, `${toolLabel}AI 删除行`, 'AI 提交中与 session 文件有交集的删除行'));
+
+  if (activeTool !== 'all' && gitStats.aiContributionByTool) {
+    const globalAi = gitStats.aiContributionByTool;
+    const allAiCommits = (globalAi.claude?.aiCommits || 0) + (globalAi.codex?.aiCommits || 0) + (globalAi.opencode?.aiCommits || 0) + (globalAi['generic-ai']?.aiCommits || 0);
+    const globalPct = gitStats.commits > 0 ? Math.round((allAiCommits / gitStats.commits) * 100) : 0;
+    metrics.push(kv(`${globalPct}%`, '全局 AI 提交率', '所有工具的 AI 归因提交数占总提交数比例'));
+  }
+
+  aiStatsEl.innerHTML = `
+    ${summaryHtml}
+    <div class="ai-metrics-list">
+      ${metrics.join('')}
+    </div>
+  `;
 
   // 提交类型分布 + 文件热点
   const row = document.getElementById('gitInsightsRow');
@@ -1372,8 +1434,19 @@ document.getElementById('downloadMdBtn').addEventListener('click', () => {
 
 // ── Dark mode ──
 const themeBtn = document.getElementById('themeBtn');
+const moonIcon = document.getElementById('moonIcon');
+const sunIcon = document.getElementById('sunIcon');
 const savedTheme = localStorage.getItem('ccusage-theme');
+
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (moonIcon) moonIcon.style.display = isDark ? 'none' : '';
+  if (sunIcon) sunIcon.style.display = isDark ? '' : 'none';
+  if (themeBtn) themeBtn.title = isDark ? '切换日间模式' : '切换暗色模式';
+}
+
 if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+updateThemeIcon();
 
 themeBtn.addEventListener('click', () => {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1384,6 +1457,7 @@ themeBtn.addEventListener('click', () => {
     document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('ccusage-theme', 'dark');
   }
+  updateThemeIcon();
   // 触发 Alpine 组件重新加载数据
   const appEl = document.querySelector('[x-data="app()"]');
   if (appEl && appEl._x_dataStack) {
