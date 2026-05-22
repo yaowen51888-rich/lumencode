@@ -11,6 +11,7 @@ import { registerParser, parseAllEnabledTools } from './lib/parsers/index.js';
 import { ClaudeParser } from './lib/parsers/claude.js';
 import { CodexParser } from './lib/parsers/codex.js';
 import { OpencodeParser } from './lib/parsers/opencode.js';
+import { initPricing, preloadUnknownPricing } from './lib/pricing-loader.js';
 
 // 注册所有解析器
 registerParser(ClaudeParser);
@@ -81,6 +82,9 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   if (records.length === 0) {
     return null;
   }
+
+  // 预加载未知模型定价
+  await preloadUnknownPricing(records);
 
   // 按工具过滤
   const toolRecords = tool !== 'all' ? records.filter(r => r.tool === tool) : records;
@@ -210,6 +214,9 @@ if (command === 'serve') {
     excludeProjects: config.excludeProjects,
     includeProjects: effectiveIncludeProjects,
   });
+
+  // 预加载未知模型定价
+  await preloadUnknownPricing(records);
 
   if (records.length === 0) {
     console.log('未找到任何会话记录。可能原因：');

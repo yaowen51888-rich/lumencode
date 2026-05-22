@@ -1462,7 +1462,9 @@ themeBtn.addEventListener('click', () => {
     localStorage.setItem('ccusage-theme', 'dark');
   }
   updateThemeIcon();
-  // 触发 Alpine 组件重新加载数据
+  // 若用户在工作汇报页面，主题只切 CSS 即可，不要重渲染主报告（会把工作汇报覆盖回去）
+  if (workReportSection && workReportSection.style.display !== 'none') return;
+  // 主报告页面：触发 Alpine 组件重新加载数据，让图表用新主题色重绘
   const appEl = document.querySelector('[x-data="app()"]');
   if (appEl && appEl._x_dataStack) {
     const app = appEl._x_dataStack[0];

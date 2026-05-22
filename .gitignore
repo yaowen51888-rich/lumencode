@@ -19,3 +19,7 @@ docs/
 .playwright-mcp/
 .spec-workflow/
 .claude/
+.gstack/
+
+# Pricing cache — auto-generated at runtime
+data/pricing-cache.json

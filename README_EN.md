@@ -1,99 +1,185 @@
 <div align="center">
   <img src="doc/logo.png" alt="ccusage-report logo" width="160">
   <h1>ccusage-report</h1>
+  <p><strong>How much code did AI coding tools write for you? One command to find out.</strong></p>
 </div>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square" alt="npm downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square" alt="license"></a>
+  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
+  <a href="#-get-started-in-3-seconds"><img src="https://img.shields.io/badge/zero--config-✓-success?style=flat-square" alt="Zero Config"></a>
 </p>
 
-> **How much code did Claude Code write for you? One command to find out.**
+<p align="center">
+  Supports <b>Claude Code · Codex · OpenCode</b> · 600+ model pricing · AI contribution attribution · One-click Lark/DingTalk weekly reports
+</p>
 
-Answer the boss's ultimate question — "Is this AI tool worth it?" — with real data. Token usage, cost estimates, AI contribution, code output — all auto-generated. Copy-paste into Lark or DingTalk weekly reports in seconds.
+<p align="center">
+  <a href="README.md">中文版</a> · <a href="#-cli-usage">CLI</a> · <a href="#-faq">FAQ</a> · <a href="#-changelog">Changelog</a>
+</p>
 
-![Daily Report Screenshot](doc/%E6%97%A5%E6%8A%A5v0.2.0.png)
+![AI Tools Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
 
-[中文版](README.md)
+---
 
-## What problem does it solve?
+## 🎯 What problem does it solve?
 
-**Writing your weekly report** — Open ccusage-report, switch to weekly, click "Work Summary → Copy", paste into your team chat. Done.
+> "How much code did AI write this week?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
 
-**Proving AI ROI** — "Last week 67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." Real numbers, real confidence.
+| Scenario | Solved by ccusage-report |
+|----------|--------------------------|
+| 💼 **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
+| 📈 **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
+| 🔍 **Understanding usage habits** | Which project uses it most? Which model burns the most tokens? When's your coding peak? **All at a glance.** |
+| 💸 **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
 
-**Understanding your Claude Code habits** — Which project uses it most? Which model burns the most tokens? When's your coding peak? All at a glance.
+---
 
-## Get Started in 3 Seconds
+## ⚡ Get Started in 3 Seconds
 
 ```bash
 # Global install
 npm install -g ccusage-report
+ccusage-report serve            # Start Web server, auto-opens browser
 
-# Start Web server (auto-opens browser)
-ccusage-report serve
-```
-
-Zero-config startup — automatically detects `~/.claude` log directory and project paths.
-
-```bash
-# Or use without installation
+# Or run without installing
 npx ccusage-report serve
 ```
 
-## Key Features
+**Zero-config startup** — Auto-detects `~/.claude`, `~/.codex`, OpenCode log directories. Derives project paths from session metadata.
 
-- **AI Contribution Analysis** — Detect AI-assisted commits via `Co-Authored-By: Claude`, `🤖 Generated` signatures. Quantify AI's actual share in your codebase.
-- **Natural Language Work Summary** — No more dry tables. Auto-generate paragraph-style reports with trend analysis, project highlights, and efficiency insights. Supports Lark/DingTalk formats.
-- **Zero-Config Out of the Box** — First run auto-detects log directory and project paths. No manual config file editing needed.
-- **Multi-Period Reports** — Daily, weekly, monthly reports with one-click switching and period-over-period trend comparison.
-- **Cost Estimation** — Automatic API cost calculation based on model pricing.
-- **Data Drill-Down** — Click any chart to dive into detailed data.
-- **Dark Mode** — Full-site dark theme with consistent chart color schemes.
+---
 
-## Feature Overview
+## ✨ v0.4.0 Major Upgrade
 
-| Feature | Description |
-|---------|-------------|
+> Evolved from "Claude Code single-tool report" to "**AI Coding Full-Stack Analysis Platform**."
+
+| Upgrade | Value |
+|---------|-------|
+| 🔧 **Three-Tool Unified** | Claude Code / OpenAI Codex / OpenCode data auto-aggregated, sidebar tab to switch |
+| 🤖 **AI Attribution Engine** | Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching |
+| 💰 **600+ Model Pricing** | Integrates [Portkey-AI/models](https://github.com/Portkey-AI/models) database. Covers OpenAI/Anthropic/Google + Chinese vendors (GLM/Kimi/Qwen/DeepSeek/MiniMax) |
+| 📊 **Work Report Insights** | Each section now includes diagnostic commentary, not just data dumps |
+| 🎯 **Tool Usage Patterns** | Tool calls reclassified into 5 categories (editing/reading/execution/planning/research) |
+| 📈 **Time Trend Analysis** | Weekly/monthly reports add peak day, consecutive active days, trend direction detection |
+| 🏷️ **Dynamic Section Numbering** | Sections without data auto-skip numbering, no more empty placeholders |
+
+---
+
+## 🚀 Core Capabilities
+
+- **Multi-Tool Unified Platform** — Supports Claude Code, OpenAI Codex, OpenCode. Three tools auto-aggregated.
+- **Quantified AI Contribution** — Detects `Co-Authored-By: Claude`, `🤖 Generated` signatures. Measures AI's actual share in your codebase.
+- **Natural Language Work Summary** — Paragraph-style reports with insight commentary, trend analysis, project highlights. Detailed/Brief × Lark/DingTalk format toggle.
+- **Precise Cost Estimation** — 600+ model local pricing + Portkey API fallback. Unknown models auto-cached.
+- **Zero-Config Out of the Box** — First run auto-detects tool directories and derives project paths.
+- **Data Drill-Down** — Click any chart to dive into details, from aggregate stats to individual sessions/commits.
+
+---
+
+## 📋 Feature Overview
+
+| Module | Description |
+|--------|-------------|
+| 🔧 **Multi-Tool Support** | Claude Code / Codex / OpenCode unified, auto-detect tool versions |
 | 📊 **Multi-Period Reports** | Daily / Weekly / Monthly, supports any date range |
-| 🤖 **AI Contribution** | Identify AI-assisted commits, measure AI add/delete line ratios |
-| 📝 **Work Summary** | Natural language summary, supports Markdown / Lark / DingTalk formats |
-| 📈 **Usage Trends** | Line charts showing request count and Token consumption over time |
-| 💰 **Cost Estimation** | Automatic API cost calculation based on model pricing |
-| 🏷️ **Commit Type Distribution** | Auto-categorize by Conventional Commit (feat/fix/refactor etc.) |
+| 🤖 **AI Contribution** | Multi-layer attribution engine, AI commit detection, per-tool filtering |
+| 📝 **Work Summary** | Natural language summary + insight commentary, Standard / Lark / DingTalk formats |
+| 📈 **Usage Trends** | Line charts of request count and Token consumption over time, with peak detection in weekly/monthly |
+| 💰 **Cost Estimation** | 600+ model local pricing + API fallback, unknown models won't be guessed |
+| 🎯 **Work Type Analysis** | Categorize by coding/testing/debugging/docs/review/planning |
 | 🔥 **File Hotspots Top 10** | Rank files by touch frequency |
-| 🎯 **Scenario Analysis** | Categorize work type: coding/testing/debugging/docs/review/planning |
-| 📤 **Export** | One-click CSV / PDF / Markdown export |
-| 🌙 **Dark Mode** | Light/dark theme toggle |
+| 🏷️ **Commit Type Distribution** | Auto-categorize by Conventional Commit (feat/fix/refactor etc.) |
+| 🧰 **Tool Usage Patterns** | Categorize tool calls (editing/reading/execution/planning/research) |
+| 🌙 **Dark Mode** | Light/dark theme toggle, all charts auto-adapt |
 
-### Weekly Report
+---
 
-![Weekly Report](doc/%E5%91%A8%E6%8A%A5v0.2.0.png)
+## 🖼️ Screenshots
 
-### Monthly Report
+### Multi-Tool Summary View
 
-![Monthly Report](doc/%E6%9C%88%E6%8A%A5-v0.2.0.png)
+> All-tools aggregate dashboard. AI contribution ratio, Token usage, cost, activity time, model distribution, scenario breakdown — all in one screen.
 
-### Work Summary (Natural Language + Multi-Platform)
+![Multi-Tool Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
 
-![Work Summary](doc/%E5%B7%A5%E4%BD%9C%E6%B1%87%E6%8A%A5v0.2.0.png)
+### Per-Tool Reports
+
+> Click sidebar tabs to view any single tool's data.
+
+<table>
+  <tr>
+    <td><img src="doc/claude_code%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="Claude Code" width="400"></td>
+    <td><img src="doc/codex%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="Codex" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Claude Code</b></td>
+    <td align="center"><b>OpenAI Codex</b></td>
+  </tr>
+  <tr>
+    <td><img src="doc/opencode%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="OpenCode" width="400"></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><b>OpenCode</b></td>
+    <td></td>
+  </tr>
+</table>
+
+### Scenario Analysis & Model Distribution
+
+> Categorize by work type (coding / testing / debugging / docs / review / planning), drill down to per-model token usage.
+
+<table>
+  <tr>
+    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E7%B1%BB%E5%9E%8B%E5%88%86%E5%B8%83_%E5%8C%B9%E9%85%8D%E7%A4%BA%E4%BE%8B.png" alt="Scenarios" width="400"></td>
+    <td><img src="doc/%E6%A8%A1%E5%9E%8B%E4%BD%BF%E7%94%A8%E5%88%86%E5%B8%83_%E5%85%B7%E4%BD%93%E7%94%A8%E9%87%8F.png" alt="Models" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center">Work Type Distribution (with matched keywords)</td>
+    <td align="center">Model Distribution (with detailed token usage)</td>
+  </tr>
+</table>
+
+### Work Report · One-Click Publishable Weekly Report
+
+> Natural-language paragraph reports covering Token / cost / AI contribution / project highlights / code output, each section with insight commentary.
+
+- **Detailed** — Full data + insights + numbered sections, ideal for weekly/monthly reports
+- **Brief** — 3-5 sentence core summary, ideal for daily reports or group chat
+- **Multi-Platform Format** — Standard Markdown / Lark / DingTalk, one-click toggle
+
+<table>
+  <tr>
+    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E6%B1%87%E6%8A%A5_%E8%AF%A6%E6%8A%A5.png" alt="Work Report - Detailed" width="400"></td>
+    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E6%B1%87%E6%8A%A5_%E7%AE%80%E6%8A%A5.png" alt="Work Report - Brief" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Detailed</b></td>
+    <td align="center"><b>Brief</b></td>
+  </tr>
+</table>
 
 ### Dark Mode
 
-![Dark Mode](doc/%E6%9A%97%E8%89%B2%E6%A8%A1%E5%BC%8Fv0.2.0.png)
+> All chart colors auto-adapt for comfortable long sessions.
 
-## CLI Usage
+![Dark Mode](doc/%E6%9A%97%E8%89%B2%E6%A8%A1%E5%BC%8F.png)
+
+---
+
+## 💻 CLI Usage
 
 ```bash
-node index.js <command> [period] [date] [options]
+ccusage-report <command> [period] [date] [options]
 ```
 
 | Command | Description |
 |---------|-------------|
 | `serve` | Start Web server (default port 4567) |
-| `report` | Generate usage report (default command) |
+| `report` | Generate CLI report (default command) |
 | `init` | Initialize config file |
 
 | Period | Description |
@@ -105,7 +191,7 @@ node index.js <command> [period] [date] [options]
 ### Examples
 
 ```bash
-# Web mode
+# Web mode (recommended)
 ccusage-report serve
 
 # CLI daily report
@@ -117,68 +203,113 @@ ccusage-report report weekly
 ccusage-report report monthly 2026-05-01
 
 # Specific projects only
-ccusage-report report daily --projects D://fzwork,E://play/idea
+ccusage-report report daily --projects D:/fzwork,E:/play/idea
 
-# Work summary format (copy-ready for daily/weekly reports)
-ccusage-report report daily --work
+# One-click publishable work summary
+ccusage-report report daily --work          # Detailed
+ccusage-report report daily --work --brief  # Brief
 ccusage-report report weekly --work
 ```
 
-## Requirements
+---
 
-- Node.js >= 18.0.0
+## ⚙️ Configuration
 
-## Configuration
+v0.4.0+ supports Claude Code, Codex, and OpenCode. **Auto-detects** installed tools' log directories and project paths on first run.
 
-v0.2.0+ auto-detects Claude log directory and project paths on first run. Usually no manual configuration needed.
-
-For customization, click the settings button (top-right corner) in the Web UI. Settings are saved in browser localStorage.
+For customization, click the settings button (top-right corner) in the Web UI.
 
 | Setting | Description |
 |---------|-------------|
-| Claude Log Directory | Claude Code data directory (contains `projects/` subdirectory), auto-detects `~/.claude` by default |
-| Local Project Paths | Associated Git repo paths for code commit and AI contribution stats |
+| Claude Log Directory | Claude Code data directory (contains `projects/`), defaults to `~/.claude` |
+| Codex Log Directory | Codex data directory (contains `sessions/`), auto-detected |
+| OpenCode Log Directory | OpenCode data directory, auto-detected |
+| Enabled Tools | Specify which tools to enable, defaults to all detected |
+| Local Project Paths | Git repo paths for code commit stats and AI attribution |
 | Excluded Projects | Project names to exclude |
-| Scenario Keywords | Scenario classification keywords JSON |
+| Scenario Keywords | Work type classification keyword JSON |
 
-## FAQ
+### Model Pricing Data
+
+- **Local table** — 590 models pre-synced from [Portkey-AI/models](https://github.com/Portkey-AI/models) with vendor canonical names
+- **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
+- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`
+- **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
+
+---
+
+## ❓ FAQ
 
 | Issue | Solution |
 |-------|----------|
-| Browser shows "No Data" | First run will guide you through config; if skipped, click the settings button (top-right) |
+| Browser shows "No Data" | First run will guide you through config; if skipped, click settings button (top-right) |
 | Log directory not found on Windows | Default path is `C:\Users\<username>\.claude`, ensure `projects/` subdirectory exists |
 | Port 4567 in use | Set env variable: `set CCUSAGE_PORT=8080 && ccusage-report serve` |
 | Git stats not found | v0.2.0+ auto-derives project path from session `cwd`. Manual override available in settings |
+| Cost showing $0 | Model not in pricing table — try with network connection to let API fallback resolve, or add an `aliasOf` entry in `data/pricing.json` overrides |
 
-## Changelog
+---
+
+## 🔧 Requirements
+
+- Node.js >= 18.0.0
+- At least one of Claude Code / Codex / OpenCode installed with existing session logs
+
+---
+
+## 📅 Changelog
+
+### v0.4.0 (2026-05-22) — Multi-Tool Unified Platform
+
+Upgraded from Claude Code single-tool report to AI Coding Full-Stack Analysis Platform.
+
+- **Multi-Tool Support** — Added OpenAI Codex CLI and OpenCode parsers, three-tool data auto-aggregated
+- **Tool Version Detection** — Auto-reads each tool's version number and displays in sidebar
+- **AI Attribution Engine** — Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching, per-tool filtering
+- **600+ Model Pricing** — Integrated [Portkey-AI/models](https://github.com/Portkey-AI/models) database covering OpenAI/Anthropic/Google + Chinese vendors. API fallback for unknown models; graceful $0 on API failure (no guessing)
+- **Work Report Insights** — Each section now includes diagnostic commentary, not just data
+- **Tool Usage Patterns** — Tool calls reclassified into 5 categories (editing/reading/execution/planning/research)
+- **Time Trends** — Weekly/monthly reports add daily activity trend analysis (peak day, consecutive active days, trend direction)
+- **Dynamic Numbering** — Report sections numbered dynamically based on available data, no more gaps
+- **Scenario Classification Expansion** — Added Codex/OpenCode/Serena MCP tool scenario mappings
+- **UI Polish** — Redesigned AI attribution section, tool theme colors (Claude orange, Codex green, OpenCode purple), dark mode refinements
+- **Work Report Fix** — Dark mode toggle no longer accidentally switches back to main report
 
 ### v0.3.0 (2026-05-19)
 
-- **Work summary platform support**: Lark and DingTalk format output with one-click switching
-- **Brief/Detailed report toggle**: Compact or full report modes
-- **Fix layout jumping on refresh**: Resolved cards clustering in center before data loads
-- **Markdown rendering improvements**: Custom list markers, dividers, table hover effects, code styling
-- **AI attribution enhancements**: Improved confidence scoring and file-level metrics
-- **Dark mode refinements**: Work summary area, platform badges, and more
+- **Work summary platform support** — Added Lark and DingTalk format output
+- **Brief/Detailed report toggle** — Two output modes for work summary
+- **Fix layout jumping on refresh** — Resolved cards clustering in center before data loads
+- **Markdown rendering improvements** — Custom list markers, dividers, table hover effects, code styling
+- **AI attribution enhancements** — Improved confidence scoring and file-level metrics
+- **Dark mode refinements**
 
-### v0.2.7 (2026-05-18)
+### v0.2.0 (2026-05-17) — Git Deep Analysis
 
-- Fix package.json format, ensure zero-warnings on npm publish
+Major refactor around "AI Contribution" and "Work Summary Experience."
 
-### v0.2.0 (2026-05-17)
-
-Major refactor around "AI Contribution" and "Work Summary Experience".
-
-- **Git Deep Analysis**: AI-assisted commit detection, AI contribution metrics, Conventional Commit parsing, File Hotspots Top 10, Session ↔ Commit correlation
-- **Work Summary Refactor**: Natural language summary engine, multi-platform formats (Standard/Lark/DingTalk)
-- **Zero-Config Startup**: Auto-detect log directory and project paths
-- **Sub-agent Stats**: Auto-parse `subagents/` directory Token consumption
-- **Dark Mode**: Full chart color rewrite with monochrome grayscale palette
+- **Git Deep Analysis** — AI-assisted commit detection, AI contribution metrics, Conventional Commit parsing, File Hotspots Top 10, Session ↔ Commit correlation
+- **Work Summary Refactor** — Natural language summary engine, multi-platform formats
+- **Zero-Config Startup** — Auto-detect log directory and project paths
+- **Sub-agent Stats** — Auto-parse sub-agent Token consumption
+- **Dark Mode** — Full chart color rewrite with monochrome grayscale palette
 
 ### v0.1.0 (2026-05-17)
 
 Initial release with complete report generation and visualization.
 
-## License
+---
 
-[MIT](LICENSE)
+## 🌟 Support This Project
+
+If this tool helps you write weekly reports, prove AI ROI, or just satisfies your curiosity about how much you burn on tokens — consider:
+
+- ⭐ **Star this repo** to help others discover it
+- 🐛 **File an issue** for bugs or feature requests
+- 🤝 **Open a PR** for model pricing, scenario keywords, or new tool adapters
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © [zhangyaowen](https://github.com/yaowen51888-rich)
