@@ -1,4 +1,11 @@
 // DESIGN.md monochrome 灰阶（按视觉权重从重到轻）— 用于 doughnut/bar 等需要区分类目的场景
+
+// HTML 实体转义，防止 XSS
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 const COLORS = [
   '#111111', // ink
   '#374151', // body
@@ -60,6 +67,7 @@ document.addEventListener('alpine:init', () => {
     error: null,
     cache: {},
     lastReportData: null,
+    reportRequestGuard: createLatestRequestGuard(),
 
     async init() {
       this.loadStateFromHash();
@@ -110,9 +118,15 @@ document.addEventListener('alpine:init', () => {
     },
 
     async loadCurrentView() {
-      const cacheKey = `${this.activeTool}-${this.activePeriod}-${this.currentDate}`;
+      const tool = this.activeTool;
+      const period = this.activePeriod;
+      const date = this.currentDate;
+      const cacheKey = `${tool}-${period}-${date}`;
+      const request = this.reportRequestGuard.next();
       if (this.cache[cacheKey]) {
         this.renderData(this.cache[cacheKey]);
+        this.loading = false;
+        hideSkeleton();
         return;
       }
 
@@ -122,8 +136,10 @@ document.addEventListener('alpine:init', () => {
       hideError();
 
       try {
-        const res = await fetch(`/api/report?tool=${this.activeTool}&period=${this.activePeriod}&date=${this.currentDate}`);
+        const params = new URLSearchParams({ tool, period, date });
+        const res = await fetch(`/api/report?${params.toString()}`, { signal: request.signal });
         const data = await res.json();
+        if (!request.isCurrent() || tool !== this.activeTool || period !== this.activePeriod || date !== this.currentDate) return;
 
         if (!data || data.error) {
           if (data?.hint) this.error = data.hint;
@@ -139,6 +155,9 @@ document.addEventListener('alpine:init', () => {
                 if (welcomeRepos) welcomeRepos.value = (cfg.repos || []).join(', ');
               }
             } catch {}
+          } else {
+            // 有错误但非"未配置"（如"未找到数据"）：清空残留数据，显示无数据状态
+            clearReportUI();
           }
           return;
         }
@@ -149,11 +168,15 @@ document.addEventListener('alpine:init', () => {
         lastReportData = data;
         this.renderData(data);
       } catch (err) {
+        if (err.name === 'AbortError') return;
+        if (!request.isCurrent()) return;
         this.error = '网络错误: ' + err.message;
         showError(this.error);
       } finally {
-        this.loading = false;
-        hideSkeleton();
+        if (request.isCurrent()) {
+          this.loading = false;
+          hideSkeleton();
+        }
       }
     },
 
@@ -246,10 +269,10 @@ document.addEventListener('alpine:init', () => {
           onClick: (evt, elements) => {
             if (elements.length === 0) return;
             const model = modelEntries[elements[0].index][0];
-            showDrill(model, '<div class="drill-empty">加载中...</div>');
+            showDrill(esc(model), '<div class="drill-empty">加载中...</div>');
             fetch(`/api/details?period=${this.activePeriod}&date=${this.currentDate}&dimension=model&key=${encodeURIComponent(model)}`).then(r => r.json()).then(rows => {
-              if (!rows.length) { showDrill(model, '<div class="drill-empty">无数据</div>'); return; }
-              showDrill(model + ' 按日分布', '<table class="drill-table"><tr><th>日期</th><th>请求数</th><th>输入Token</th><th>输出Token</th></tr>' + rows.map(r => `<tr><td>${r.date}</td><td>${r.requests}</td><td>${fmtShort(r.inputTokens)}</td><td>${fmtShort(r.outputTokens)}</td></tr>`).join('') + '</table>');
+              if (!rows.length) { showDrill(esc(model), '<div class="drill-empty">无数据</div>'); return; }
+              showDrill(esc(model) + ' 按日分布', '<table class="drill-table"><tr><th>日期</th><th>请求数</th><th>输入Token</th><th>输出Token</th></tr>' + rows.map(r => `<tr><td>${esc(r.date)}</td><td>${r.requests}</td><td>${fmtShort(r.inputTokens)}</td><td>${fmtShort(r.outputTokens)}</td></tr>`).join('') + '</table>');
             });
           }
         }
@@ -269,9 +292,9 @@ document.addEventListener('alpine:init', () => {
           onClick: (evt, elements) => {
             if (elements.length === 0) return;
             const project = projEntries[elements[0].index][0];
-            showDrill(project, '<div class="drill-empty">加载中...</div>');
+            showDrill(esc(project), '<div class="drill-empty">加载中...</div>');
             fetch(`/api/sessions?project=${encodeURIComponent(project)}&period=${this.activePeriod}&date=${this.currentDate}${this.activeTool !== 'all' ? '&tool=' + this.activeTool : ''}`).then(r => r.json()).then(rows => {
-              if (!rows.length) { showDrill(project, '<div class="drill-empty">无数据</div>'); return; }
+              if (!rows.length) { showDrill(esc(project), '<div class="drill-empty">无数据</div>'); return; }
               const html = '<table class="drill-table">'
                 + '<tr><th></th><th>会话ID</th><th>开始时间</th><th>请求数</th><th>提交数</th></tr>'
                 + rows.map((r, i) => {
@@ -284,7 +307,7 @@ document.addEventListener('alpine:init', () => {
                            ${r.commits.map(c => `<tr>
                              <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
                              <td><span class="commit-type-tag type-${c.type}">${c.type}</span></td>
-                             <td class="commit-subject" title="${(c.subject || '').replace(/"/g, '&quot;')}">${c.subject || ''}</td>
+                             <td class="commit-subject" title="${esc(c.subject)}">${esc(c.subject)}</td>
                              <td class="num pos">+${fmt(c.linesAdded || 0)}</td>
                              <td class="num neg">-${fmt(c.linesDeleted || 0)}</td>
                              <td>${c.aiConfidence === 'high' ? 'H' : c.aiConfidence === 'medium' ? 'M' : c.aiConfidence === 'low' ? 'L' : ''}</td>
@@ -292,10 +315,10 @@ document.addEventListener('alpine:init', () => {
                            </tr>`).join('')}
                          </table></td></tr>`
                       : '';
-                    return `<tr><td>${toggle}</td><td class="drill-text" title="${r.id}">${r.id}</td><td>${start}</td><td>${r.requests || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
+                    return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${r.requests || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
                   }).join('')
                 + '</table>';
-              showDrill(project + ' 会话记录', html);
+              showDrill(esc(project) + ' 会话记录', html);
               // 绑定展开/折叠
               document.querySelectorAll('.commit-toggle').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -560,7 +583,7 @@ function renderGitInsights(gitStats, activeTool = 'all') {
           ${hotspots.map(h => {
             const pct = Math.max(8, Math.round((h.touches / maxTouch) * 100));
             return `<tr>
-              <td class="hotspot-path" title="${h.path}">${truncate(h.path)}</td>
+              <td class="hotspot-path" title="${esc(h.path)}">${esc(truncate(h.path))}</td>
               <td class="num">${h.touches}</td>
               <td class="num pos">+${fmt(h.added)}</td>
               <td class="num neg">-${fmt(h.deleted)}</td>
@@ -629,10 +652,10 @@ function renderDoughnut(canvasId, dataMap, label) {
         const scenarioKeyMap = { '编码': 'coding', '测试/QA': 'testing', '调试/排错': 'debugging', '文档': 'documentation', '阅读/研究': 'reading', '规划/设计': 'planning', '代码审查': 'review' };
         const key = scenarioKeyMap[label];
         if (!key) return;
-        showDrill(label + ' 匹配示例', '<div class="drill-empty">加载中...</div>');
+        showDrill(esc(label) + ' 匹配示例', '<div class="drill-empty">加载中...</div>');
         fetch(`/api/details?period=${currentPeriod}&date=${currentDate}&dimension=scenario&key=${encodeURIComponent(key)}`).then(r => r.json()).then(rows => {
-          if (!rows.length) { showDrill(label, '<div class="drill-empty">无匹配记录</div>'); return; }
-          showDrill(label + ' 匹配示例', '<table class="drill-table"><tr><th>用户消息</th><th>时间</th></tr>' + rows.map(r => `<tr><td class="drill-text" title="${r.text.replace(/"/g, '&quot;')}">${r.text}</td><td>${r.timestamp.slice(0, 16).replace('T', ' ')}</td></tr>`).join('') + '</table>');
+          if (!rows.length) { showDrill(esc(label), '<div class="drill-empty">无匹配记录</div>'); return; }
+          showDrill(esc(label) + ' 匹配示例', '<table class="drill-table"><tr><th>用户消息</th><th>时间</th></tr>' + rows.map(r => `<tr><td class="drill-text" title="${esc(r.text)}">${esc(r.text)}</td><td>${esc(r.timestamp?.slice(0, 16)?.replace('T', ' '))}</td></tr>`).join('') + '</table>');
         });
       },
     },
@@ -890,6 +913,20 @@ function hideEmpty() {
   });
 }
 
+// 清除报告区域残留数据（切换到无数据的工具时使用）
+function clearReportUI() {
+  // 统计卡片归零
+  document.querySelectorAll('.card-value').forEach(el => el.textContent = '-');
+  document.querySelectorAll('.trend-arrow').forEach(el => el.textContent = '');
+  // 隐藏图表，显示"暂无数据"
+  document.getElementById('analyticsSection').style.display = 'block';
+  document.getElementById('noDataHint').style.display = 'block';
+  document.getElementById('chartsDashboard').style.display = 'none';
+  document.getElementById('trendSection').style.display = 'none';
+  document.getElementById('gitSection').style.display = 'none';
+  ['scenarioChart', 'modelChart', 'projectChart', 'toolChart'].forEach(destroyChart);
+}
+
 // ── Welcome page config ──
 document.getElementById('welcomeStartBtn')?.addEventListener('click', async () => {
   const claudeDir = document.getElementById('welcomeClaudeDir').value.trim();
@@ -1030,7 +1067,9 @@ function renderMarkdown(md) {
   let inTable = false;
 
   function inline(s) {
-    return s
+    // 先转义 HTML，再应用 Markdown 格式
+    const safe = esc(s);
+    return safe
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/`([^`]+)`/g, '<code>$1</code>');
   }
@@ -1323,7 +1362,7 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => {
 // ── Print / PDF (formatted report) ──
 function printTable(title, headers, rows) {
   if (!rows || rows.length === 0) return '';
-  return `<h2>${title}</h2><table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
+  return `<h2>${esc(title)}</h2><table><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`;
 }
 
 document.getElementById('printBtn').addEventListener('click', () => {
