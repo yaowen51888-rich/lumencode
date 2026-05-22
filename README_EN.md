@@ -19,8 +19,6 @@
 
 ![Highlights](doc/%E4%BA%AE%E7%82%B9%E8%AF%B4%E6%98%8E.png)
 
-![AI Tools Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
-
 ---
 
 ## What problem does it solve?
