@@ -51,48 +51,18 @@ npx ccusage-report serve
 
 ---
 
-## v0.4.0 Major Upgrade
+## Highlights
 
-> Evolved from "Claude Code single-tool report" to "**AI Coding Full-Stack Analysis Platform**."
-
-| Upgrade | Value |
-|---------|-------|
-| **Three-Tool Unified** | Claude Code / OpenAI Codex / OpenCode data auto-aggregated, sidebar tab to switch |
-| **AI Attribution Engine** | Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching |
-| **600+ Model Pricing** | Integrates [Portkey-AI/models](https://github.com/Portkey-AI/models) database. Covers OpenAI/Anthropic/Google + Chinese vendors (GLM/Kimi/Qwen/DeepSeek/MiniMax) |
-| **Work Report Insights** | Each section now includes diagnostic commentary, not just data dumps |
-| **Tool Usage Patterns** | Tool calls reclassified into 5 categories (editing/reading/execution/planning/research) |
-| **Time Trend Analysis** | Weekly/monthly reports add peak day, consecutive active days, trend direction detection |
-| **Dynamic Section Numbering** | Sections without data auto-skip numbering, no more empty placeholders |
-
----
-
-## Core Capabilities
-
-- **Multi-Tool Unified Platform** — Supports Claude Code, OpenAI Codex, OpenCode. Three tools auto-aggregated.
-- **Quantified AI Contribution** — Detects `Co-Authored-By: Claude`, `🤖 Generated` signatures. Measures AI's actual share in your codebase.
-- **Natural Language Work Summary** — Paragraph-style reports with insight commentary, trend analysis, project highlights. Detailed/Brief × Lark/DingTalk format toggle.
-- **Precise Cost Estimation** — 600+ model local pricing + Portkey API fallback. Unknown models auto-cached.
-- **Zero-Config Out of the Box** — First run auto-detects tool directories and derives project paths.
-- **Data Drill-Down** — Click any chart to dive into details, from aggregate stats to individual sessions/commits.
-
----
-
-## Feature Overview
-
-| Module | Description |
-|--------|-------------|
-| Multi-Tool Support | Claude Code / Codex / OpenCode unified, auto-detect tool versions |
-| Multi-Period Reports | Daily / Weekly / Monthly, supports any date range |
-| AI Contribution | Multi-layer attribution engine, AI commit detection, per-tool filtering |
-| Work Summary | Natural language summary + insight commentary, Standard / Lark / DingTalk formats |
-| Usage Trends | Line charts of request count and Token consumption over time, with peak detection in weekly/monthly |
-| Cost Estimation | 600+ model local pricing + API fallback, unknown models won't be guessed |
-| Work Type Analysis | Categorize by coding/testing/debugging/docs/review/planning |
-| File Hotspots Top 10 | Rank files by touch frequency |
-| Commit Type Distribution | Auto-categorize by Conventional Commit (feat/fix/refactor etc.) |
-| Tool Usage Patterns | Categorize tool calls (editing/reading/execution/planning/research) |
-| Dark Mode | Light/dark theme toggle, all charts auto-adapt |
+| Highlight | Description |
+|-----------|-------------|
+| 🌐 **Three-Tool Unified** | Claude Code / Codex / OpenCode data auto-aggregated, sidebar tab to switch |
+| 🤖 **AI Contribution Attribution** | Detects `Co-Authored-By: Claude` signatures. Multi-layer engine measures AI's actual share in your codebase |
+| 📝 **Natural Language Work Summary** | Detailed / Brief reports with insight commentary. Standard Markdown / Lark / DingTalk formats, one-click toggle |
+| 💰 **Precise Cost Estimation** | 600+ model local pricing (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback. Unknown models counted at $0, never guessed |
+| 📦 **Zero-Config Out of the Box** | First run auto-detects tool directories and derives project paths |
+| 🔍 **Data Drill-Down** | Click any chart to dive from aggregate stats to individual sessions/commits |
+| 📈 **Trends & Insights** | Peak day detection, consecutive active streaks, tool usage 5-category distribution (editing/reading/execution/planning/research) |
+| 🌙 **Dark Mode** | Light/dark theme toggle, all charts auto-adapt |
 
 ---
 
@@ -276,26 +246,17 @@ Upgraded from Claude Code single-tool report to AI Coding Full-Stack Analysis Pl
 
 ### v0.3.0 (2026-05-19)
 
-- **Work summary platform support** — Added Lark and DingTalk format output
-- **Brief/Detailed report toggle** — Two output modes for work summary
-- **Fix layout jumping on refresh** — Resolved cards clustering in center before data loads
-- **Markdown rendering improvements** — Custom list markers, dividers, table hover effects, code styling
-- **AI attribution enhancements** — Improved confidence scoring and file-level metrics
-- **Dark mode refinements**
+- Added Lark and DingTalk format support for work summaries, with Detailed/Brief toggle
+- Fixed layout jumping on refresh, improved Markdown rendering and dark mode
+- Enhanced AI attribution confidence scoring and file-level metrics
 
 ### v0.2.0 (2026-05-17) — Git Deep Analysis
 
-Major refactor around "AI Contribution" and "Work Summary Experience."
-
-- **Git Deep Analysis** — AI-assisted commit detection, AI contribution metrics, Conventional Commit parsing, File Hotspots Top 10, Session ↔ Commit correlation
-- **Work Summary Refactor** — Natural language summary engine, multi-platform formats
-- **Zero-Config Startup** — Auto-detect log directory and project paths
-- **Sub-agent Stats** — Auto-parse sub-agent Token consumption
-- **Dark Mode** — Full chart color rewrite with monochrome grayscale palette
+Added AI-assisted commit detection, contribution metrics, Conventional Commit parsing, File Hotspots Top 10, Session ↔ Commit correlation, and zero-config startup.
 
 ### v0.1.0 (2026-05-17)
 
-Initial release with complete report generation and visualization.
+Initial release.
 
 ---
 
