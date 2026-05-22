@@ -9,7 +9,6 @@
   <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
-  <a href="#-get-started-in-3-seconds"><img src="https://img.shields.io/badge/zero--config-✓-success?style=flat-square" alt="Zero Config"></a>
 </p>
 
 <p align="center">
@@ -17,27 +16,27 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文版</a> · <a href="#-cli-usage">CLI</a> · <a href="#-faq">FAQ</a> · <a href="#-changelog">Changelog</a>
+  <a href="README.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#faq">FAQ</a> · <a href="#changelog">Changelog</a>
 </p>
 
 ![AI Tools Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
 
 ---
 
-## 🎯 What problem does it solve?
+## What problem does it solve?
 
 > "How much code did AI write this week?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
 
 | Scenario | Solved by ccusage-report |
 |----------|--------------------------|
-| 💼 **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
-| 📈 **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
-| 🔍 **Understanding usage habits** | Which project uses it most? Which model burns the most tokens? When's your coding peak? **All at a glance.** |
-| 💸 **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
+| **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
+| **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
+| **Understanding usage habits** | Which project uses it most? Which model burns the most tokens? When's your coding peak? **All at a glance.** |
+| **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
 
 ---
 
-## ⚡ Get Started in 3 Seconds
+## Get Started in 3 Seconds
 
 ```bash
 # Global install
@@ -52,23 +51,23 @@ npx ccusage-report serve
 
 ---
 
-## ✨ v0.4.0 Major Upgrade
+## v0.4.0 Major Upgrade
 
 > Evolved from "Claude Code single-tool report" to "**AI Coding Full-Stack Analysis Platform**."
 
 | Upgrade | Value |
 |---------|-------|
-| 🔧 **Three-Tool Unified** | Claude Code / OpenAI Codex / OpenCode data auto-aggregated, sidebar tab to switch |
-| 🤖 **AI Attribution Engine** | Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching |
-| 💰 **600+ Model Pricing** | Integrates [Portkey-AI/models](https://github.com/Portkey-AI/models) database. Covers OpenAI/Anthropic/Google + Chinese vendors (GLM/Kimi/Qwen/DeepSeek/MiniMax) |
-| 📊 **Work Report Insights** | Each section now includes diagnostic commentary, not just data dumps |
-| 🎯 **Tool Usage Patterns** | Tool calls reclassified into 5 categories (editing/reading/execution/planning/research) |
-| 📈 **Time Trend Analysis** | Weekly/monthly reports add peak day, consecutive active days, trend direction detection |
-| 🏷️ **Dynamic Section Numbering** | Sections without data auto-skip numbering, no more empty placeholders |
+| **Three-Tool Unified** | Claude Code / OpenAI Codex / OpenCode data auto-aggregated, sidebar tab to switch |
+| **AI Attribution Engine** | Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching |
+| **600+ Model Pricing** | Integrates [Portkey-AI/models](https://github.com/Portkey-AI/models) database. Covers OpenAI/Anthropic/Google + Chinese vendors (GLM/Kimi/Qwen/DeepSeek/MiniMax) |
+| **Work Report Insights** | Each section now includes diagnostic commentary, not just data dumps |
+| **Tool Usage Patterns** | Tool calls reclassified into 5 categories (editing/reading/execution/planning/research) |
+| **Time Trend Analysis** | Weekly/monthly reports add peak day, consecutive active days, trend direction detection |
+| **Dynamic Section Numbering** | Sections without data auto-skip numbering, no more empty placeholders |
 
 ---
 
-## 🚀 Core Capabilities
+## Core Capabilities
 
 - **Multi-Tool Unified Platform** — Supports Claude Code, OpenAI Codex, OpenCode. Three tools auto-aggregated.
 - **Quantified AI Contribution** — Detects `Co-Authored-By: Claude`, `🤖 Generated` signatures. Measures AI's actual share in your codebase.
@@ -79,25 +78,25 @@ npx ccusage-report serve
 
 ---
 
-## 📋 Feature Overview
+## Feature Overview
 
 | Module | Description |
 |--------|-------------|
-| 🔧 **Multi-Tool Support** | Claude Code / Codex / OpenCode unified, auto-detect tool versions |
-| 📊 **Multi-Period Reports** | Daily / Weekly / Monthly, supports any date range |
-| 🤖 **AI Contribution** | Multi-layer attribution engine, AI commit detection, per-tool filtering |
-| 📝 **Work Summary** | Natural language summary + insight commentary, Standard / Lark / DingTalk formats |
-| 📈 **Usage Trends** | Line charts of request count and Token consumption over time, with peak detection in weekly/monthly |
-| 💰 **Cost Estimation** | 600+ model local pricing + API fallback, unknown models won't be guessed |
-| 🎯 **Work Type Analysis** | Categorize by coding/testing/debugging/docs/review/planning |
-| 🔥 **File Hotspots Top 10** | Rank files by touch frequency |
-| 🏷️ **Commit Type Distribution** | Auto-categorize by Conventional Commit (feat/fix/refactor etc.) |
-| 🧰 **Tool Usage Patterns** | Categorize tool calls (editing/reading/execution/planning/research) |
-| 🌙 **Dark Mode** | Light/dark theme toggle, all charts auto-adapt |
+| Multi-Tool Support | Claude Code / Codex / OpenCode unified, auto-detect tool versions |
+| Multi-Period Reports | Daily / Weekly / Monthly, supports any date range |
+| AI Contribution | Multi-layer attribution engine, AI commit detection, per-tool filtering |
+| Work Summary | Natural language summary + insight commentary, Standard / Lark / DingTalk formats |
+| Usage Trends | Line charts of request count and Token consumption over time, with peak detection in weekly/monthly |
+| Cost Estimation | 600+ model local pricing + API fallback, unknown models won't be guessed |
+| Work Type Analysis | Categorize by coding/testing/debugging/docs/review/planning |
+| File Hotspots Top 10 | Rank files by touch frequency |
+| Commit Type Distribution | Auto-categorize by Conventional Commit (feat/fix/refactor etc.) |
+| Tool Usage Patterns | Categorize tool calls (editing/reading/execution/planning/research) |
+| Dark Mode | Light/dark theme toggle, all charts auto-adapt |
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 ### Multi-Tool Summary View
 
@@ -170,7 +169,7 @@ npx ccusage-report serve
 
 ---
 
-## 💻 CLI Usage
+## CLI Usage
 
 ```bash
 ccusage-report <command> [period] [date] [options]
@@ -213,7 +212,7 @@ ccusage-report report weekly --work
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 v0.4.0+ supports Claude Code, Codex, and OpenCode. **Auto-detects** installed tools' log directories and project paths on first run.
 
@@ -238,7 +237,7 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 | Issue | Solution |
 |-------|----------|
@@ -250,14 +249,14 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 ---
 
-## 🔧 Requirements
+## Requirements
 
 - Node.js >= 18.0.0
 - At least one of Claude Code / Codex / OpenCode installed with existing session logs
 
 ---
 
-## 📅 Changelog
+## Changelog
 
 ### v0.4.0 (2026-05-22) — Multi-Tool Unified Platform
 
@@ -300,16 +299,16 @@ Initial release with complete report generation and visualization.
 
 ---
 
-## 🌟 Support This Project
+## Support This Project
 
-If this tool helps you write weekly reports, prove AI ROI, or just satisfies your curiosity about how much you burn on tokens — consider:
+If this tool helps you:
 
-- ⭐ **Star this repo** to help others discover it
-- 🐛 **File an issue** for bugs or feature requests
-- 🤝 **Open a PR** for model pricing, scenario keywords, or new tool adapters
+- **Star this repo** — Help others discover it
+- **File an issue** — Report bugs or request features
+- **Open a PR** — Contributions welcome for model pricing, scenario keywords, or new tool adapters
 
 ---
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © [zhangyaowen](https://github.com/yaowen51888-rich)

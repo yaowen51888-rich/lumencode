@@ -9,7 +9,6 @@
   <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
-  <a href="#-3-秒上手"><img src="https://img.shields.io/badge/zero--config-✓-success?style=flat-square" alt="Zero Config"></a>
 </p>
 
 <p align="center">
@@ -17,27 +16,27 @@
 </p>
 
 <p align="center">
-  <a href="README_EN.md">English</a> · <a href="#-命令用法">命令</a> · <a href="#-常见问题">FAQ</a> · <a href="#-更新日志">更新日志</a>
+  <a href="README_EN.md">English</a> · <a href="#命令用法">命令</a> · <a href="#常见问题">FAQ</a> · <a href="#更新日志">更新日志</a>
 </p>
 
 ![AI 工具汇总报告](doc/全量Ai工具汇总报告.png)
 
 ---
 
-## 🎯 它解决什么问题？
+## 它解决什么问题？
 
 > 「这周 AI 帮你写了多少代码？」「订阅这些工具值不值？」—— 与其每周手算，不如一条命令搞定。
 
 | 场景 | 用 ccusage-report 解决 |
 |------|----------------------|
-| 💼 **写周报** | 选周报 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
-| 📈 **证明 AI ROI** | 「本周 67% 提交有 AI 参与，AI 辅助新增 4,200 行，费用 $12.5」**有数据，有底气。** |
-| 🔍 **理解使用习惯** | 哪个项目用得最多？哪个模型最费 Token？什么时段是编码高峰？**一目了然。** |
-| 💸 **追踪 AI 成本** | 内置 **600+ 模型定价**（含 GLM、Kimi、Qwen、DeepSeek 等），自动算出等效 API 花销 |
+| **写周报** | 选周报 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
+| **证明 AI ROI** | 「本周 67% 提交有 AI 参与，AI 辅助新增 4,200 行，费用 $12.5」**有数据，有底气。** |
+| **理解使用习惯** | 哪个项目用得最多？哪个模型最费 Token？什么时段是编码高峰？**一目了然。** |
+| **追踪 AI 成本** | 内置 **600+ 模型定价**（含 GLM、Kimi、Qwen、DeepSeek 等），自动算出等效 API 花销 |
 
 ---
 
-## ⚡ 3 秒上手
+## 3 秒上手
 
 ```bash
 # 全局安装
@@ -52,23 +51,23 @@ npx ccusage-report serve
 
 ---
 
-## ✨ v0.4.0 重磅升级
+## v0.4.0 重磅升级
 
 > 从「Claude Code 单工具报告」进化为「**AI 编码全栈分析平台**」。
 
 | 升级 | 价值 |
 |------|------|
-| 🔧 **三工具统一** | Claude Code / OpenAI Codex / OpenCode 数据全自动汇总，左侧标签一键切换 |
-| 🤖 **AI 归因引擎** | 多层置信度（显式签名 / 会话强关联 / 文件重叠），支持跨天提交匹配 |
-| 💰 **600+ 模型定价** | 集成 Portkey-AI/models 数据库，覆盖 OpenAI/Anthropic/Google/中国厂商（GLM/Kimi/Qwen/DeepSeek/MiniMax）等 |
-| 📊 **工作汇报洞察** | 每个板块自动生成一句话诊断解读，不只是数据罗列 |
-| 🎯 **工具使用模式** | 工具调用从排行升级为五类分布（编辑/阅读/执行/规划/研究） |
-| 📈 **时间趋势分析** | 周报/月报新增峰值日、连续活跃、趋势方向识别 |
-| 🏷️ **动态板块编号** | 没数据的板块自动跳过编号，告别空板块 |
+| **三工具统一** | Claude Code / OpenAI Codex / OpenCode 数据全自动汇总，左侧标签一键切换 |
+| **AI 归因引擎** | 多层置信度（显式签名 / 会话强关联 / 文件重叠），支持跨天提交匹配 |
+| **600+ 模型定价** | 集成 Portkey-AI/models 数据库，覆盖 OpenAI/Anthropic/Google/中国厂商（GLM/Kimi/Qwen/DeepSeek/MiniMax）等 |
+| **工作汇报洞察** | 每个板块自动生成一句话诊断解读，不只是数据罗列 |
+| **工具使用模式** | 工具调用从排行升级为五类分布（编辑/阅读/执行/规划/研究） |
+| **时间趋势分析** | 周报/月报新增峰值日、连续活跃、趋势方向识别 |
+| **动态板块编号** | 没数据的板块自动跳过编号，告别空板块 |
 
 ---
 
-## 🚀 核心能力
+## 核心能力
 
 - **多工具统一平台** —— 同时支持 Claude Code、OpenAI Codex、OpenCode，三工具数据自动汇总
 - **AI 贡献度量化** —— 识别 `Co-Authored-By: Claude`、`🤖 Generated` 等签名，量化 AI 在你代码中的实际占比
@@ -79,25 +78,25 @@ npx ccusage-report serve
 
 ---
 
-## 📋 功能速览
+## 功能速览
 
 | 模块 | 说明 |
 |------|------|
-| 🔧 **多工具支持** | Claude Code / Codex / OpenCode 三合一，自动检测工具版本号 |
-| 📊 **多周期报告** | 日报 / 周报 / 月报，支持指定任意日期 |
-| 🤖 **AI 贡献度** | 多层归因引擎，识别 AI 辅助提交、统计行数占比、按工具维度过滤 |
-| 📝 **工作汇报** | 自然语言摘要 + 洞察解读，标准 / 飞书 / 钉钉三种格式 |
-| 📈 **使用趋势** | 折线图展示请求数与 Token 消耗时序，周/月报附峰值识别 |
-| 💰 **费用估算** | 600+ 模型本地定价 + API 兜底，未知模型不计费而非乱算 |
-| 🎯 **工作类型分析** | 按编码/测试/调试/文档/审查/规划分类，匹配场景一目了然 |
-| 🔥 **文件热点 Top 10** | 按触碰次数排行最频繁变更的文件 |
-| 🏷️ **提交类型分布** | 按 Conventional Commit 自动分类（feat/fix/refactor 等） |
-| 🧰 **工具使用模式** | 工具调用分类统计（代码编辑/阅读/执行/规划/研究） |
-| 🌙 **暗色模式** | 亮/暗主题一键切换，全图表自适配 |
+| 多工具支持 | Claude Code / Codex / OpenCode 三合一，自动检测工具版本号 |
+| 多周期报告 | 日报 / 周报 / 月报，支持指定任意日期 |
+| AI 贡献度 | 多层归因引擎，识别 AI 辅助提交、统计行数占比、按工具维度过滤 |
+| 工作汇报 | 自然语言摘要 + 洞察解读，标准 / 飞书 / 钉钉三种格式 |
+| 使用趋势 | 折线图展示请求数与 Token 消耗时序，周/月报附峰值识别 |
+| 费用估算 | 600+ 模型本地定价 + API 兜底，未知模型不计费而非乱算 |
+| 工作类型分析 | 按编码/测试/调试/文档/审查/规划分类，匹配场景一目了然 |
+| 文件热点 Top 10 | 按触碰次数排行最频繁变更的文件 |
+| 提交类型分布 | 按 Conventional Commit 自动分类（feat/fix/refactor 等） |
+| 工具使用模式 | 工具调用分类统计（代码编辑/阅读/执行/规划/研究） |
+| 暗色模式 | 亮/暗主题一键切换，全图表自适配 |
 
 ---
 
-## 🖼️ 产品截图
+## 产品截图
 
 ### 多工具汇总视图
 
@@ -170,7 +169,7 @@ npx ccusage-report serve
 
 ---
 
-## 💻 命令用法
+## 命令用法
 
 ```bash
 ccusage-report <命令> [周期] [日期] [选项]
@@ -213,7 +212,7 @@ ccusage-report report weekly --work
 
 ---
 
-## ⚙️ 配置
+## 配置
 
 v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自动检测**已安装工具的日志目录与项目路径。
 
@@ -238,7 +237,7 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 
 ---
 
-## ❓ 常见问题
+## 常见问题
 
 | 问题 | 解决方案 |
 |------|----------|
@@ -250,14 +249,14 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 
 ---
 
-## 🔧 环境要求
+## 环境要求
 
 - Node.js >= 18.0.0
 - 已安装 Claude Code / Codex / OpenCode 中至少一个，并产生过会话日志
 
 ---
 
-## 📅 更新日志
+## 更新日志
 
 ### v0.4.0 (2026-05-22) — 多工具统一平台
 
@@ -300,16 +299,16 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 
 ---
 
-## 🌟 支持项目
+## 支持项目
 
-如果这个工具帮到你写周报、证明 AI ROI、或者就是好奇自己 Token 烧得多狠 —— 不妨：
+如果这个工具帮到你，不妨：
 
-- ⭐ **给个 Star** ：让更多人看到这个工具
-- 🐛 **提 Issue** ：报告 Bug 或建议新功能
-- 🤝 **提 PR** ：欢迎贡献模型定价、场景关键词、工具适配
+- **给个 Star** —— 让更多人看到这个工具
+- **提 Issue** —— 报告 Bug 或建议新功能
+- **提 PR** —— 欢迎贡献模型定价、场景关键词、工具适配
 
 ---
 
-## 📄 许可证
+## 许可证
 
 [MIT](LICENSE) © [zhangyaowen](https://github.com/yaowen51888-rich)
