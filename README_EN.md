@@ -1,7 +1,5 @@
 <div align="center">
-  <img src="doc/logo.png" alt="ccusage-report logo" width="160">
-  <h1>ccusage-report</h1>
-  <p><strong>How much code did AI coding tools write for you? One command to find out.</strong></p>
+  <img src="doc/logo-new.png" alt="ccusage-report" width="520">
 </div>
 
 <p align="center">
@@ -18,6 +16,8 @@
 <p align="center">
   <a href="README.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#faq">FAQ</a> · <a href="#changelog">Changelog</a>
 </p>
+
+![Highlights](doc/%E4%BA%AE%E7%82%B9%E8%AF%B4%E6%98%8E.png)
 
 ![AI Tools Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
 

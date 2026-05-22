@@ -1,7 +1,5 @@
 <div align="center">
-  <img src="doc/logo.png" alt="ccusage-report logo" width="160">
-  <h1>ccusage-report</h1>
-  <p><strong>AI 编码工具帮你写了多少代码？一条命令见分晓。</strong></p>
+  <img src="doc/logo-new.png" alt="ccusage-report" width="520">
 </div>
 
 <p align="center">
@@ -18,6 +16,8 @@
 <p align="center">
   <a href="README_EN.md">English</a> · <a href="#命令用法">命令</a> · <a href="#常见问题">FAQ</a> · <a href="#更新日志">更新日志</a>
 </p>
+
+![亮点说明](doc/亮点说明.png)
 
 ![AI 工具汇总报告](doc/全量Ai工具汇总报告.png)
 
