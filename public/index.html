@@ -63,7 +63,10 @@
             :title="tool.displayName"
           >
             <span class="tool-dot" :class="'tool-dot-' + tool.name"></span>
-            <span class="tool-nav-label" x-show="!collapsed" x-text="tool.displayName"></span>
+            <span class="tool-nav-text" x-show="!collapsed">
+              <span class="tool-nav-label" x-text="tool.displayName"></span>
+              <span class="tool-nav-version" x-show="tool.version" x-text="'v' + tool.version"></span>
+            </span>
           </button>
         </template>
       </nav>

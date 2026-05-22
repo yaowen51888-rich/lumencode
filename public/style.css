@@ -1639,10 +1639,21 @@ body {
   background: conic-gradient(#d97757 0deg 120deg, #10a37f 120deg 240deg, #6366f1 240deg 360deg);
 }
 
+.tool-nav-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 .tool-nav-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.tool-nav-version {
+  font-size: 10px;
+  color: var(--muted-soft);
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .tool-sidebar-footer {

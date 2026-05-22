@@ -12,6 +12,7 @@ const COLORS = [
 
 let currentPeriod = 'daily';
 let currentDate = new Date().toISOString().slice(0, 10);
+let currentTool = 'all';
 let lastReportData = null;
 
 const charts = {};
@@ -65,6 +66,8 @@ document.addEventListener('alpine:init', () => {
 
       window.addEventListener('tool-changed', e => {
         this.activeTool = e.detail;
+        currentTool = e.detail;
+        resetToReportView();
         this.loadCurrentView();
       });
 
@@ -1116,7 +1119,8 @@ workReportBtn.addEventListener('click', async () => {
 async function loadWorkReport(platform, level) {
   currentPlatform = platform || currentPlatform;
   currentLevel = level || currentLevel;
-  const res = await fetch(`/api/report?period=${currentPeriod}&date=${currentDate}&format=work&platform=${currentPlatform}&level=${currentLevel}`);
+
+  const res = await fetch(`/api/report?tool=${currentTool}&period=${currentPeriod}&date=${currentDate}&format=work&platform=${currentPlatform}&level=${currentLevel}`);
   if (!res.ok) return;
   const markdown = await res.text();
   currentWorkReportMarkdown = markdown;
