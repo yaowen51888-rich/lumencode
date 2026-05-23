@@ -1,7 +1,7 @@
 import { COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, renderTrendArrow, destroyChart, destroyAllCharts, setChart } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions } from './api.js';
-import { renderDoughnut, renderBar, renderTrend, renderCommitTypeChart, renderCacheEfficiency, renderModelCostChart } from './charts.js';
+import { renderDoughnut, renderBar, renderTrend, renderCommitTypeChart, renderModelCostChart } from './charts.js';
 import { renderGitInsights } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
@@ -247,17 +247,6 @@ function registerAlpineComponents() {
         trendSection.style.display = 'none';
       }
 
-      // Cache efficiency chart
-      const cacheSection = document.getElementById('cacheSection');
-      if (cacheSection) {
-        if (usageStats.cacheRead > 0 || usageStats.cacheCreate > 0) {
-          cacheSection.style.display = 'block';
-          renderCacheEfficiency(ID.CACHE_CHART, usageStats.cacheRead, usageStats.cacheCreate, usageStats.inputTokens, data.costBreakdown);
-        } else {
-          cacheSection.style.display = 'none';
-        }
-      }
-
       // Model cost chart
       const modelCostSection = document.getElementById('modelCostSection');
       if (modelCostSection) {
@@ -270,7 +259,7 @@ function registerAlpineComponents() {
       }
 
       if (!hasData) {
-        destroyAllCharts([ID.SCENARIO_CHART, ID.MODEL_CHART, ID.PROJECT_CHART, ID.TOOL_CHART, ID.CACHE_CHART, ID.MODEL_COST_CHART]);
+        destroyAllCharts([ID.SCENARIO_CHART, ID.MODEL_CHART, ID.PROJECT_CHART, ID.TOOL_CHART, ID.MODEL_COST_CHART]);
         this.updateGitPanel(gitStats, this.activeTool, reposConfigured);
         return;
       }

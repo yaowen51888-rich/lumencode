@@ -108,48 +108,6 @@ export function renderTrend(trendData) {
   return instance;
 }
 
-// ── Cache Efficiency ──
-export function renderCacheEfficiency(canvasId, cacheRead, cacheCreate, inputTokens, costBreakdown) {
-  const total = cacheRead + inputTokens + cacheCreate;
-  if (total === 0) { destroyChart(canvasId); return null; }
-
-  destroyChart(canvasId);
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return null;
-  const ctx = canvas.getContext('2d');
-  const instance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Token 构成'],
-      datasets: [
-        { label: '缓存命中', data: [cacheRead], backgroundColor: '#22c55e', borderRadius: 4 },
-        { label: '新输入', data: [inputTokens], backgroundColor: '#3b82f6', borderRadius: 4 },
-        { label: '缓存写入', data: [cacheCreate], backgroundColor: '#f59e0b', borderRadius: 4 },
-      ],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      scales: {
-        x: { stacked: true, grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 }, callback: v => fmtShort(v) } },
-        y: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } },
-      },
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } },
-        tooltip: {
-          callbacks: {
-            label: (c) => {
-              const pct = total > 0 ? ((c.raw / total) * 100).toFixed(1) : 0;
-              return ` ${c.dataset.label}: ${fmtShort(c.raw)} (${pct}%)`;
-            },
-          },
-        },
-      },
-    },
-  });
-  setChart(canvasId, instance);
-  return instance;
-}
-
 // ── Model Cost ──
 export function renderModelCostChart(canvasId, models, costBreakdown) {
   if (!costBreakdown?.models?.length) { destroyChart(canvasId); return null; }
