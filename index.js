@@ -157,7 +157,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
 
 if (!command || command === 'help' || command === '--help') {
   console.log(`
-用法: ccusage-report <命令> [周期] [日期] [选项]
+用法: lumencode <命令> [周期] [日期] [选项]
 
 命令:
   report   生成使用报告（默认命令）
@@ -179,17 +179,17 @@ if (!command || command === 'help' || command === '--help') {
   --brief      配合 --work 使用，输出简报（3-5 句话）
 
 示例:
-  ccusage-report report daily 2026-05-15
-  ccusage-report report daily --projects D://fzwork
-  ccusage-report report weekly 2026-05-15 --projects D://fzwork,E://play/idea
-  ccusage-report report daily --work
-  ccusage-report report daily --work --brief
-  ccusage-report serve
-  ccusage-report init
+  lumencode report daily 2026-05-15
+  lumencode report daily --projects D://fzwork
+  lumencode report weekly 2026-05-15 --projects D://fzwork,E://play/idea
+  lumencode report daily --work
+  lumencode report daily --work --brief
+  lumencode serve
+  lumencode init
 
 零配置:
   首次运行自动检测 Claude 日志目录和项目路径，无需手动配置。
-  如需自定义，运行 ccusage-report init 或在 Web 模式下点击设置。
+  如需自定义，运行 lumencode init 或在 Web 模式下点击设置。
 `);
   process.exit(0);
 }
@@ -222,7 +222,7 @@ if (command === 'serve') {
     console.log('未找到任何会话记录。可能原因：');
     console.log(`  1. 日志目录不存在或路径错误`);
     console.log(`  2. 该目录下没有可解析的数据`);
-    console.log('请运行 ccusage-report init 创建配置文件，或在 Web 模式下点击设置按钮配置。');
+    console.log('请运行 lumencode init 创建配置文件，或在 Web 模式下点击设置按钮配置。');
     process.exit(1);
   }
 

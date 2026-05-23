@@ -1,0 +1,141 @@
+// API 路径
+export const API = {
+  TOOLS: '/api/tools',
+  REPORT: '/api/report',
+  CONFIG: '/api/config',
+  DETAILS: '/api/details',
+  SESSIONS: '/api/sessions',
+};
+
+// 灰阶色板（按视觉权重从重到轻）
+export const COLORS = [
+  '#111111',
+  '#374151',
+  '#4b5563',
+  '#6b7280',
+  '#898989',
+  '#9ca3af',
+  '#cbd5e1',
+  '#e5e7eb',
+];
+
+// 场景色板
+export const SCENARIO_COLORS = {
+  '编码': '#8ab8a0',
+  '测试/QA': '#c8b880',
+  '调试/排错': '#c49090',
+  '文档': '#90a8c8',
+  '阅读/研究': '#a090c0',
+  '规划/设计': '#c8a080',
+  '代码审查': '#80b8b8',
+  '其他': '#a8a8a8',
+};
+
+// 提交类型色板
+export const COMMIT_TYPE_COLORS = {
+  feat: '#8ab8a0',
+  fix: '#c49090',
+  refactor: '#a090c0',
+  docs: '#90a8c8',
+  test: '#c8b880',
+  chore: '#a8a8a8',
+  perf: '#c890b0',
+  style: '#80b8b8',
+  ci: '#c8a080',
+  build: '#a8c880',
+  revert: '#c49090',
+  other: '#b8b8b8',
+};
+
+// 中文字符串
+export const TEXT = {
+  ALL_TOOLS: '全部工具',
+  DAILY: '日报',
+  WEEKLY: '周报',
+  MONTHLY: '月报',
+  USAGE: '使用',
+  DATA_ANALYSIS: '数据分析',
+  LOADING: '加载中...',
+  NO_DATA: '无数据',
+  NO_MATCH: '无匹配记录',
+  COPIED: '已复制',
+  COPY: '复制',
+  NOT_CONFIGURED: '未配置',
+};
+
+// DOM 元素 ID
+export const ID = {
+  TOAST: 'toast',
+  DATE_INPUT: 'dateInput',
+  PREV_DATE: 'prevDate',
+  NEXT_DATE: 'nextDate',
+  THEME_BTN: 'themeBtn',
+  MOON_ICON: 'moonIcon',
+  SUN_ICON: 'sunIcon',
+  SETTINGS_BTN: 'settingsBtn',
+  SETTINGS_MODAL: 'settingsModal',
+  CLOSE_SETTINGS: 'closeSettings',
+  SAVE_SETTINGS: 'saveSettings',
+  REPORT_TITLE: 'reportTitle',
+  REPORT_DATE: 'reportDate',
+  EXPORT_CSV_BTN: 'exportCsvBtn',
+  PRINT_BTN: 'printBtn',
+  EXPORT_JSON_BTN: 'exportJsonBtn',
+  EXPORT_HTML_BTN: 'exportHtmlBtn',
+  WORK_REPORT_BTN: 'workReportBtn',
+  STAT_SESSIONS: 'statSessions',
+  STAT_REQUESTS: 'statRequests',
+  STAT_PROJECTS: 'statProjects',
+  STAT_TOKENS: 'statTokens',
+  STAT_TOKEN_BREAKDOWN: 'statTokenBreakdown',
+  STAT_COST: 'statCost',
+  STAT_COST_MODEL: 'statCostModel',
+  TREND_SESSIONS: 'trendSessions',
+  TREND_REQUESTS: 'trendRequests',
+  TREND_PROJECTS: 'trendProjects',
+  TREND_TOKENS: 'trendTokens',
+  TREND_COST: 'trendCost',
+  STATS_GRID: 'statsGrid',
+  ANALYTICS_SECTION: 'analyticsSection',
+  CHARTS_DASHBOARD: 'chartsDashboard',
+  NO_DATA_HINT: 'noDataHint',
+  TREND_SECTION: 'trendSection',
+  GIT_SECTION: 'gitSection',
+  GIT_STATS: 'gitStats',
+  GIT_AI_STATS: 'gitAiStats',
+  GIT_INSIGHTS_ROW: 'gitInsightsRow',
+  WELCOME_PAGE: 'welcomePage',
+  WELCOME_CLAUDE_DIR: 'welcomeClaudeDir',
+  WELCOME_REPOS: 'welcomeRepos',
+  WELCOME_START_BTN: 'welcomeStartBtn',
+  WELCOME_HINT: 'welcomeHint',
+  WORK_REPORT_SECTION: 'workReportSection',
+  WORK_REPORT_CONTENT: 'workReportContent',
+  COPY_WORK_REPORT: 'copyWorkReport',
+  DOWNLOAD_MD_BTN: 'downloadMdBtn',
+  BACK_TO_REPORT: 'backToReport',
+  DRILL_MODAL: 'drillModal',
+  DRILL_TITLE: 'drillTitle',
+  DRILL_BODY: 'drillBody',
+  CLOSE_DRILL: 'closeDrill',
+  SCENARIO_CHART: 'scenarioChart',
+  MODEL_CHART: 'modelChart',
+  PROJECT_CHART: 'projectChart',
+  TOOL_CHART: 'toolChart',
+  TREND_CHART: 'trendChart',
+  COMMIT_TYPE_CHART: 'commitTypeChart',
+  CACHE_CHART: 'cacheChart',
+  MODEL_COST_CHART: 'modelCostChart',
+  CFG_CLAUDE_DIR: 'cfgClaudeDir',
+  CFG_REPOS: 'cfgRepos',
+  CFG_EXCLUDE: 'cfgExclude',
+  CFG_KEYWORDS: 'cfgKeywords',
+  FILE_HOTSPOTS_TABLE: 'fileHotspotsTable',
+};
+
+// localStorage keys
+export const STORAGE = {
+  CONFIG: 'ccusage-config',
+  THEME: 'ccusage-theme',
+  SIDEBAR_COLLAPSED: 'ccusage-sidebar-collapsed',
+};

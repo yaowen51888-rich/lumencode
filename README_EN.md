@@ -1,11 +1,12 @@
 <div align="center">
-  <img src="doc/logo-new.png" alt="ccusage-report" width="520">
+  <img src="doc/logo.png" alt="LumenCode" width="520">
 </div>
 
+
 <p align="center">
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square&color=blue" alt="license"></a>
+  <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/v/lumencode.svg?style=flat-square&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
 
@@ -16,16 +17,13 @@
 <p align="center">
   <a href="README.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#faq">FAQ</a> · <a href="#changelog">Changelog</a>
 </p>
-
-![Highlights](doc/%E4%BA%AE%E7%82%B9%E8%AF%B4%E6%98%8E.png)
-
 ---
 
 ## What problem does it solve?
 
 > "How much code did AI write this week?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
 
-| Scenario | Solved by ccusage-report |
+| Scenario | Solved by lumencode |
 |----------|--------------------------|
 | **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
 | **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
@@ -38,11 +36,11 @@
 
 ```bash
 # Global install
-npm install -g ccusage-report
-ccusage-report serve            # Start Web server, auto-opens browser
+npm install -g lumencode
+lumencode serve            # Start Web server, auto-opens browser
 
 # Or run without installing
-npx ccusage-report serve
+npx lumencode serve
 ```
 
 **Zero-config startup** — Auto-detects `~/.claude`, `~/.codex`, OpenCode log directories. Derives project paths from session metadata.
@@ -140,7 +138,7 @@ npx ccusage-report serve
 ## CLI Usage
 
 ```bash
-ccusage-report <command> [period] [date] [options]
+lumencode <command> [period] [date] [options]
 ```
 
 | Command | Description |
@@ -159,23 +157,23 @@ ccusage-report <command> [period] [date] [options]
 
 ```bash
 # Web mode (recommended)
-ccusage-report serve
+lumencode serve
 
 # CLI daily report
-ccusage-report report daily
-ccusage-report report daily 2026-05-15
+lumencode report daily
+lumencode report daily 2026-05-15
 
 # Weekly / Monthly
-ccusage-report report weekly
-ccusage-report report monthly 2026-05-01
+lumencode report weekly
+lumencode report monthly 2026-05-01
 
 # Specific projects only
-ccusage-report report daily --projects D:/fzwork,E:/play/idea
+lumencode report daily --projects D:/fzwork,E:/play/idea
 
 # One-click publishable work summary
-ccusage-report report daily --work          # Detailed
-ccusage-report report daily --work --brief  # Brief
-ccusage-report report weekly --work
+lumencode report daily --work          # Detailed
+lumencode report daily --work --brief  # Brief
+lumencode report weekly --work
 ```
 
 ---
@@ -211,7 +209,7 @@ For customization, click the settings button (top-right corner) in the Web UI.
 |-------|----------|
 | Browser shows "No Data" | First run will guide you through config; if skipped, click settings button (top-right) |
 | Log directory not found on Windows | Default path is `C:\Users\<username>\.claude`, ensure `projects/` subdirectory exists |
-| Port 4567 in use | Set env variable: `set CCUSAGE_PORT=8080 && ccusage-report serve` |
+| Port 4567 in use | Set env variable: `set LUMENCODE_PORT=8080 && lumencode serve` |
 | Git stats not found | v0.2.0+ auto-derives project path from session `cwd`. Manual override available in settings |
 | Cost showing $0 | Model not in pricing table — try with network connection to let API fallback resolve, or add an `aliasOf` entry in `data/pricing.json` overrides |
 

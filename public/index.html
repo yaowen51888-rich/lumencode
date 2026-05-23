@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ccusage-report</title>
+  <title>LumenCode</title>
   <link rel="stylesheet" href="/fonts/inter.css">
   <script src="/vendor/chart.umd.min.js"></script>
-  <script defer src="/vendor/alpine.min.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div id="toast" class="toast" style="display:none;"></div>
   <nav class="top-nav">
     <div class="nav-inner">
-      <div class="logo">ccusage-report</div>
+      <div class="logo">LumenCode</div>
       <div class="nav-controls">
         <div class="nav-pill-group">
           <button class="category-tab active" data-period="daily">日报</button>
@@ -21,11 +20,12 @@
           <button class="category-tab" data-period="monthly">月报</button>
         </div>
         <div style="display:flex;align-items:center;gap:4px;">
-          <button id="prevDate" class="icon-btn" title="上一个">
+          <button id="prevDate" class="icon-btn" title="上一个" aria-label="上一个日期">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
+          <label for="dateInput" class="sr-only">选择日期</label>
           <input type="date" id="dateInput" class="text-input">
-          <button id="nextDate" class="icon-btn" title="下一个">
+          <button id="nextDate" class="icon-btn" title="下一个" aria-label="下一个日期">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
@@ -89,6 +89,8 @@
         </div>
         <div class="hero-actions" style="display:flex;gap:8px;">
           <button id="exportCsvBtn" class="btn-outline">导出 CSV</button>
+          <button id="exportJsonBtn" class="btn-outline">导出 JSON</button>
+          <button id="exportHtmlBtn" class="btn-outline">保存 HTML</button>
           <button id="printBtn" class="btn-outline">打印/PDF</button>
           <button id="workReportBtn" class="btn-outline">工作汇报</button>
         </div>
@@ -174,6 +176,18 @@
           <div class="chart-wrap chart-wrap-tall"><canvas id="trendChart"></canvas></div>
         </div>
       </section>
+      <section class="trend-section" id="cacheSection" style="display:none;">
+        <div class="chart-card">
+          <h3 class="title-md">缓存效率</h3>
+          <div class="chart-wrap"><canvas id="cacheChart"></canvas></div>
+        </div>
+      </section>
+      <section class="trend-section" id="modelCostSection" style="display:none;">
+        <div class="chart-card">
+          <h3 class="title-md">模型费用分布</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="modelCostChart"></canvas></div>
+        </div>
+      </section>
     </div>
     </section>
 
@@ -184,7 +198,7 @@
             <rect x="8" y="12" width="32" height="24" rx="6" stroke="#111111" stroke-width="2.5" fill="none"/>
             <path d="M16 22L22 28L32 18" stroke="#111111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           </svg>
-          <h1 class="welcome-title">欢迎使用 ccusage-report</h1>
+          <h1 class="welcome-title">欢迎使用 LumenCode</h1>
           <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
         </div>
 
@@ -229,6 +243,7 @@
               <h3>选择 Claude 日志目录</h3>
             </div>
             <p class="step-desc">Claude Code 会话日志的存放路径，通常是 <code>~/.claude</code></p>
+            <label for="welcomeClaudeDir" class="sr-only">Claude 日志目录</label>
             <input type="text" class="welcome-input" id="welcomeClaudeDir" placeholder="例如: C:/Users/xxx/.claude" />
           </div>
 
@@ -238,6 +253,7 @@
               <h3>选择项目仓库（可选）</h3>
             </div>
             <p class="step-desc">用于关联 Git 代码产出统计，多个仓库用逗号分隔</p>
+            <label for="welcomeRepos" class="sr-only">项目仓库路径</label>
             <input type="text" class="welcome-input" id="welcomeRepos" placeholder="例如: D:/project1, D:/project2" />
           </div>
         </div>
@@ -321,12 +337,11 @@
 
   <footer class="footer">
     <div class="footer-inner">
-      <p>ccusage-report · AI 编码助手使用统计</p>
+      <p>LumenCode · AI 编码助手使用统计</p>
       <p class="muted-soft">数据来自本地日志，不上传至任何服务器</p>
     </div>
   </footer>
 
-  <script src="/request-guard.js"></script>
-  <script src="/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

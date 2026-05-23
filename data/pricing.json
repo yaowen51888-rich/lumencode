@@ -52,6 +52,23 @@
       "tier": null,
       "fastMultiplier": 1
     },
+    "claude-opus-4-7": {
+      "input": 15,
+      "output": 75,
+      "cacheRead": 1.5,
+      "cacheCreate": 18.75,
+      "tier": {
+        "threshold": 200000,
+        "multiplier": 2
+      },
+      "fastMultiplier": 6
+    },
+    "claude-opus-4-7-20260515": {
+      "aliasOf": "claude-opus-4-7"
+    },
+    "claude-sonnet-4-6-20250514": {
+      "aliasOf": "claude-sonnet-4-6"
+    },
     "gpt-4.1": {
       "input": 2,
       "output": 8,

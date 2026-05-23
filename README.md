@@ -1,11 +1,12 @@
 <div align="center">
-  <img src="doc/logo-new.png" alt="ccusage-report" width="520">
+  <img src="doc/logo.png" alt="LumenCode" width="520">
 </div>
 
+
 <p align="center">
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/v/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/ccusage-report"><img src="https://img.shields.io/npm/dm/ccusage-report.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/npm/l/ccusage-report.svg?style=flat-square&color=blue" alt="license"></a>
+  <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/v/lumencode.svg?style=flat-square&color=cb3837" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
 
@@ -16,16 +17,13 @@
 <p align="center">
   <a href="README_EN.md">English</a> · <a href="#命令用法">命令</a> · <a href="#常见问题">FAQ</a> · <a href="#更新日志">更新日志</a>
 </p>
-
-![亮点说明](doc/亮点说明.png)
-
 ---
 
 ## 它解决什么问题？
 
 > 「这周 AI 帮你写了多少代码？」「订阅这些工具值不值？」—— 与其每周手算，不如一条命令搞定。
 
-| 场景 | 用 ccusage-report 解决 |
+| 场景 | 用 lumencode 解决 |
 |------|----------------------|
 | **写周报** | 选周报 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
 | **证明 AI ROI** | 「本周 67% 提交有 AI 参与，AI 辅助新增 4,200 行，费用 $12.5」**有数据，有底气。** |
@@ -38,11 +36,11 @@
 
 ```bash
 # 全局安装
-npm install -g ccusage-report
-ccusage-report serve            # 启动 Web 服务，自动打开浏览器
+npm install -g lumencode
+lumencode serve            # 启动 Web 服务，自动打开浏览器
 
 # 或零安装直接使用
-npx ccusage-report serve
+npx lumencode serve
 ```
 
 **零配置启动** —— 自动检测 `~/.claude`、`~/.codex`、OpenCode 日志目录，从会话里推导项目路径。
@@ -140,7 +138,7 @@ npx ccusage-report serve
 ## 命令用法
 
 ```bash
-ccusage-report <命令> [周期] [日期] [选项]
+lumencode <命令> [周期] [日期] [选项]
 ```
 
 | 命令 | 说明 |
@@ -159,23 +157,23 @@ ccusage-report <命令> [周期] [日期] [选项]
 
 ```bash
 # Web 模式（推荐）
-ccusage-report serve
+lumencode serve
 
 # 命令行日报
-ccusage-report report daily
-ccusage-report report daily 2026-05-15
+lumencode report daily
+lumencode report daily 2026-05-15
 
 # 周报 / 月报
-ccusage-report report weekly
-ccusage-report report monthly 2026-05-01
+lumencode report weekly
+lumencode report monthly 2026-05-01
 
 # 只统计指定项目
-ccusage-report report daily --projects D:/fzwork,E:/play/idea
+lumencode report daily --projects D:/fzwork,E:/play/idea
 
 # 一键生成可发布的工作汇报
-ccusage-report report daily --work          # 详报
-ccusage-report report daily --work --brief  # 简报
-ccusage-report report weekly --work
+lumencode report daily --work          # 详报
+lumencode report daily --work --brief  # 简报
+lumencode report weekly --work
 ```
 
 ---
@@ -211,7 +209,7 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 |------|----------|
 | 浏览器显示「暂无数据」 | 首次启动会引导配置；如已跳过，点击右上角设置按钮 |
 | Windows 下日志目录不存在 | 默认路径为 `C:\Users\<用户名>\.claude`，确认该目录下有 `projects/` 子目录 |
-| 端口 4567 被占用 | 设置环境变量：`set CCUSAGE_PORT=8080 && ccusage-report serve` |
+| 端口 4567 被占用 | 设置环境变量：`set LUMENCODE_PORT=8080 && lumencode serve` |
 | 找不到 Git 统计数据 | v0.2.0+ 已自动从会话 `cwd` 推导项目路径，仍未识别时可在设置中手动指定 |
 | 费用显示 $0 | 该模型未在定价表中，可临时联网让 API 兜底，或在 `data/pricing.json` 的 `overrides` 中添加 `aliasOf` 别名 |
 
