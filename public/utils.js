@@ -1,3 +1,13 @@
+// 获取今天日期字符串 YYYY-MM-DD
+export function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// 日期格式化 YYYY.MM.DD
+export function fmtDate(d) {
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // HTML 实体转义
 export function esc(s) {
   if (s == null) return '';

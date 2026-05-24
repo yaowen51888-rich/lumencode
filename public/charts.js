@@ -1,30 +1,59 @@
-import { COLORS, SCENARIO_COLORS, COMMIT_TYPE_COLORS, TEXT } from './config.js';
+import { COLORS, SCENARIO_COLORS, COMMIT_TYPE_COLORS } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, setChart } from './utils.js';
 
-// ── Doughnut ──
-export function renderDoughnut(canvasId, dataMap, label) {
+/* ── Work Type Pie (doughnut with inner radius) ── */
+export function renderWorkTypePie(canvasId, entries) {
   destroyChart(canvasId);
-  const entries = Object.entries(dataMap).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const wrap = document.getElementById(canvasId).parentElement;
-  wrap.style.height = '260px';
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  const colors = entries.map(([k]) => SCENARIO_COLORS[k] || COLORS[entries.length % COLORS.length]);
-  const instance = new Chart(ctx, {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const isDark = document.documentElement.classList.contains('dark');
+  const ttBg = isDark ? '#1f222a' : '#f0eee7';
+  const ttFg = isDark ? '#e8e9ef' : '#15151a';
+
+  const labels = entries.map(([k]) => k);
+  const data = entries.map(([, v]) => v);
+  const colors = labels.map(k => SCENARIO_COLORS[k] || '#888');
+
+  const chart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: entries.map(([k]) => k),
-      datasets: [{ data: entries.map(([, v]) => v), backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }],
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderWidth: 0,
+        hoverOffset: 4,
+      }],
     },
     options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
       plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 10, usePointStyle: true, pointStyle: 'circle' } },
-        tooltip: { callbacks: { label: (c) => { const total = c.dataset.data.reduce((s, v) => s + v, 0); return ` ${c.label}: ${c.raw} (${((c.raw / total) * 100).toFixed(1)}%)`; } } },
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ttBg,
+          titleColor: ttFg,
+          bodyColor: ttFg,
+          borderColor: isDark ? 'rgba(232,233,239,0.12)' : 'rgba(21,21,26,0.12)',
+          borderWidth: 1,
+          borderWidth: 0,
+          cornerRadius: 0,
+          padding: 8,
+          titleFont: { family: 'JetBrains Mono', size: 11 },
+          bodyFont: { family: 'JetBrains Mono', size: 11 },
+          callbacks: {
+            label: (c) => {
+              const total = c.dataset.data.reduce((s, v) => s + v, 0);
+              return ` ${c.label}: ${c.raw} (${((c.raw / total) * 100).toFixed(1)}%)`;
+            },
+          },
+        },
       },
       onClick: (evt, elements) => {
         if (elements.length === 0) return;
-        const clickEntries = Object.entries(dataMap).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-        const label = clickEntries[elements[0].index]?.[0];
+        const label = entries[elements[0].index]?.[0];
         const scenarioKeyMap = { '编码': 'coding', '测试/QA': 'testing', '调试/排错': 'debugging', '文档': 'documentation', '阅读/研究': 'reading', '规划/设计': 'planning', '代码审查': 'review' };
         const key = scenarioKeyMap[label];
         if (!key) return;
@@ -32,124 +61,281 @@ export function renderDoughnut(canvasId, dataMap, label) {
       },
     },
   });
-  setChart(canvasId, instance);
-  return instance;
+  setChart(canvasId, chart);
 }
 
-// ── Bar ──
-export function renderBar(canvasId, labels, data, datasetLabel) {
-  destroyChart(canvasId);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  const instance = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ label: datasetLabel, data, backgroundColor: '#374151', borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } },
-      plugins: { legend: { display: false } },
-    },
-  });
-  setChart(canvasId, instance);
-  return instance;
-}
-
-// ── Commit Type ──
-export function renderCommitTypeChart(typeEntries) {
-  destroyChart('commitTypeChart');
-  const canvas = document.getElementById('commitTypeChart');
-  const wrap = canvas.parentElement;
-  wrap.style.height = Math.max(180, typeEntries.length * 32 + 40) + 'px';
-  const labels = typeEntries.map(([k]) => k);
-  const data = typeEntries.map(([, v]) => v);
-  const colors = labels.map(k => COMMIT_TYPE_COLORS[k] || COMMIT_TYPE_COLORS.other);
-  const ctx = canvas.getContext('2d');
-  const instance = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ label: '提交数', data, backgroundColor: colors, borderRadius: 6, maxBarThickness: 20, barPercentage: 0.65, categoryPercentage: 0.85 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      scales: { x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 }, precision: 0 } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } } },
-      plugins: { legend: { display: false } },
-    },
-  });
-  setChart('commitTypeChart', instance);
-  return instance;
-}
-
-// ── Trend (dual-axis line) ──
-export function renderTrend(trendData) {
-  destroyChart('trendChart');
-  const dates = Object.keys(trendData.dailyStats).sort();
-  const requests = dates.map(d => trendData.dailyStats[d].requests);
-  const tokens = dates.map(d => ((trendData.dailyStats[d].inputTokens || 0) + (trendData.dailyStats[d].outputTokens || 0)) / 1000);
-  const labels = dates.map(d => d.slice(5));
-  const ctx = document.getElementById('trendChart');
-  if (!ctx) return null;
-  const instance = new Chart(ctx.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: '请求数', data: requests, borderColor: '#111111', backgroundColor: 'rgba(17,17,17,0.08)', fill: true, tension: 0.3, pointRadius: 3, yAxisID: 'y' },
-        { label: 'Token (K)', data: tokens, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', fill: true, tension: 0.3, pointRadius: 3, yAxisID: 'y1' },
-      ],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-      scales: {
-        y: { position: 'left', grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 } }, title: { display: true, text: '请求数', font: { family: 'Inter', size: 12 } } },
-        y1: { position: 'right', grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } }, title: { display: true, text: 'Token (K)', font: { family: 'Inter', size: 12 } } },
-        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } },
-      },
-      plugins: { legend: { position: 'top', labels: { font: { family: 'Inter', size: 12 }, padding: 16 } } },
-    },
-  });
-  setChart('trendChart', instance);
-  return instance;
-}
-
-// ── Model Cost ──
-export function renderModelCostChart(canvasId, models, costBreakdown) {
-  if (!costBreakdown?.models?.length) { destroyChart(canvasId); return null; }
-
-  const entries = costBreakdown.models.filter(m => m.cost > 0);
-  if (entries.length === 0) { destroyChart(canvasId); return null; }
-
-  const labels = entries.map(m => m.name.length > 22 ? '...' + m.name.slice(-19) : m.name);
-  const data = entries.map(m => m.cost);
-  const modeColors = { actual: '#22c55e', estimated: '#3b82f6', unknown: '#9ca3af' };
-  const colors = entries.map(m => modeColors[m.mode] || modeColors.unknown);
-
+/* ── Project Bars (horizontal bar, minimal style) ── */
+export function renderProjectBars(canvasId, entries) {
   destroyChart(canvasId);
   const canvas = document.getElementById(canvasId);
-  if (!canvas) return null;
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const instance = new Chart(ctx, {
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(232,233,239,0.06)' : 'rgba(21,21,26,0.06)';
+  const tickColor = isDark ? 'rgba(232,233,239,0.55)' : 'rgba(21,21,26,0.55)';
+  const barColor = isDark ? '#e8e9ef' : '#15151a';
+  const ttBg = isDark ? '#1f222a' : '#f0eee7';
+  const ttFg = isDark ? '#e8e9ef' : '#15151a';
+
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels,
-      datasets: [{ label: '费用 ($)', data, backgroundColor: colors, borderRadius: 6, maxBarThickness: 20, barPercentage: 0.7 }],
+      labels: entries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k),
+      datasets: [{
+        data: entries.map(([, v]) => v.requests),
+        backgroundColor: entries.map((_, i) => i === 0 ? 'var(--rust)' : barColor),
+        borderRadius: 4,
+        maxBarThickness: 14,
+        barPercentage: 0.7,
+      }],
     },
     options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
       scales: {
-        x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Inter', size: 11 }, callback: v => '$' + v.toFixed(2) } },
-        y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12 } } },
+        x: {
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: tickColor },
+          border: { display: false },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: 'JetBrains Mono', size: 11 }, color: tickColor },
+          border: { display: false },
+        },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: {
-            label: (c) => {
-              const entry = entries[c.dataIndex];
-              const modeLabel = { actual: '实际计费', estimated: '估算', unknown: '未知定价' };
-              return ` $${c.raw.toFixed(2)} (${modeLabel[entry?.mode] || entry?.mode}, ${entry?.requests || 0} 次)`;
-            },
-          },
+          backgroundColor: ttBg,
+          titleColor: ttFg,
+          bodyColor: ttFg,
+          borderColor: isDark ? 'rgba(232,233,239,0.12)' : 'rgba(21,21,26,0.12)',
+          borderWidth: 1,
+          cornerRadius: 4,
+          padding: 8,
+          titleFont: { family: 'JetBrains Mono', size: 11 },
+          bodyFont: { family: 'JetBrains Mono', size: 11 },
+        },
+      },
+      onClick: async (evt, elements) => {
+        if (elements.length === 0) return;
+        const project = entries[elements[0].index][0];
+        showDrill(esc(project), '<div class="drill-empty">加载中...</div>');
+        try {
+          const appEl = document.querySelector('[x-data]');
+          const app = appEl?._x_dataStack?.[0];
+          const params = { project, period: app?.period || 'daily', date: app?.currentDate || new Date().toISOString().slice(0, 10) };
+          if (app?.activeTool && app.activeTool !== 'all') params.tool = app.activeTool;
+          const { fetchSessions } = await import('./api.js');
+          const rows = await fetchSessions(params);
+          renderSessionDrill(project, rows);
+        } catch { showDrill(esc(project), '<div class="drill-empty">加载失败</div>'); }
+      },
+    },
+  });
+  setChart(canvasId, chart);
+}
+
+/* ── Timeline Area Chart ── */
+export function renderTimelineArea(canvasId, trendData) {
+  destroyChart(canvasId);
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const dates = Object.keys(trendData.dailyStats || {}).sort();
+  if (dates.length === 0) return;
+
+  const sessions = dates.map(d => trendData.dailyStats[d].requests || 0);
+  const tokens = dates.map(d => ((trendData.dailyStats[d].inputTokens || 0) + (trendData.dailyStats[d].outputTokens || 0)) / 1_000_000);
+  const labels = dates.map(d => d.slice(5));
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(232,233,239,0.06)' : 'rgba(21,21,26,0.06)';
+  const tickColor = isDark ? 'rgba(232,233,239,0.55)' : 'rgba(21,21,26,0.55)';
+  const sessionColor = isDark ? '#e8e9ef' : '#15151a';
+  const ttBg = isDark ? '#1f222a' : '#f0eee7';
+  const ttFg = isDark ? '#e8e9ef' : '#15151a';
+
+  /* Create gradient for tokens area */
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
+  gradient.addColorStop(0, 'rgba(116, 128, 232, 0.45)');
+  gradient.addColorStop(0.6, 'rgba(94, 194, 220, 0.18)');
+  gradient.addColorStop(1, 'rgba(94, 194, 168, 0)');
+
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Tokens (M)',
+          data: tokens,
+          borderColor: '#7480e8',
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderWidth: 1.4,
+        },
+        {
+          label: 'Sessions',
+          data: sessions,
+          borderColor: sessionColor,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          borderWidth: 1.5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { color: gridColor, borderDash: [2, 4], drawBorder: false },
+          ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: tickColor, maxTicksLimit: 12 },
+          border: { display: false },
+        },
+        y: {
+          grid: { color: gridColor, drawBorder: false },
+          ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: tickColor },
+          border: { display: false },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ttBg,
+          titleColor: ttFg,
+          bodyColor: ttFg,
+          borderColor: isDark ? 'rgba(232,233,239,0.12)' : 'rgba(21,21,26,0.12)',
+          borderWidth: 1,
+          cornerRadius: 4,
+          padding: 8,
+          titleFont: { family: 'JetBrains Mono', size: 11 },
+          bodyFont: { family: 'JetBrains Mono', size: 11 },
         },
       },
     },
   });
-  setChart(canvasId, instance);
-  return instance;
+  setChart(canvasId, chart);
+}
+
+/* ── Cache Stack (simple bar) ── */
+export function renderCacheStack(canvasId, cacheRead, cacheCreate, inputTokens) {
+  destroyChart(canvasId);
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const isDark = document.documentElement.classList.contains('dark');
+  const ttBg = isDark ? '#1f222a' : '#f0eee7';
+  const ttFg = isDark ? '#e8e9ef' : '#15151a';
+
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Token 构成'],
+      datasets: [
+        { label: '缓存命中', data: [cacheRead], backgroundColor: 'var(--forest)', borderRadius: 4 },
+        { label: '新输入', data: [inputTokens], backgroundColor: 'var(--rust)', borderRadius: 4 },
+        { label: '缓存写入', data: [cacheCreate], backgroundColor: 'var(--ochre)', borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { display: false },
+          border: { display: false },
+        },
+        y: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { display: false },
+          border: { display: false },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ttBg,
+          titleColor: ttFg,
+          bodyColor: ttFg,
+          borderColor: isDark ? 'rgba(232,233,239,0.12)' : 'rgba(21,21,26,0.12)',
+          borderWidth: 1,
+          cornerRadius: 4,
+          padding: 8,
+        },
+      },
+    },
+  });
+  setChart(canvasId, chart);
+}
+
+/* ── Model Bars (rendered as HTML, not Chart.js, but kept for compatibility) ── */
+export function renderModelBars(containerId, entries) {
+  /* This is rendered via Alpine reactive data in app.js */
+}
+
+/* ── Drill helpers ── */
+function showDrill(title, html) {
+  const modal = document.getElementById('drillModal');
+  const t = document.getElementById('drillTitle');
+  const b = document.getElementById('drillBody');
+  if (t) t.textContent = title;
+  if (b) b.innerHTML = html;
+  if (modal) modal.style.display = 'flex';
+}
+
+function renderSessionDrill(project, rows) {
+  if (!rows.length) { showDrill(esc(project), '<div class="drill-empty">无数据</div>'); return; }
+  const html = '<table class="drill-table">'
+    + '<tr><th></th><th>会话ID</th><th>开始</th><th>时长</th><th>请求</th><th>工具</th><th>文件</th><th>提交</th></tr>'
+    + rows.map((r, i) => {
+        const start = r.startTime ? r.startTime.slice(0, 16).replace('T', ' ') : '-';
+        const dur = r.duration ? (r.duration >= 3600 ? (r.duration / 3600).toFixed(1) + 'h' : r.duration >= 60 ? Math.round(r.duration / 60) + 'm' : r.duration + 's') : '-';
+        const cn = r.commits?.length || 0;
+        const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
+        const tools = [...new Set(r.toolSequence || [])].slice(0, 3).join(', ');
+        const fileCount = r.touchedFileCount || 0;
+        const commitRows = cn > 0
+          ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="8"><table class="commit-subtable">
+               <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th><th>证据</th></tr>
+               ${r.commits.map(c => `<tr>
+                 <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
+                 <td><span class="commit-type-tag type-${c.type}">${c.type}</span></td>
+                 <td class="commit-subject" title="${esc(c.subject)}">${esc(c.subject)}</td>
+                 <td class="num pos">+${fmt(c.linesAdded || 0)}</td>
+                 <td class="num neg">-${fmt(c.linesDeleted || 0)}</td>
+                 <td>${c.aiConfidence === 'high' ? 'H' : c.aiConfidence === 'medium' ? 'M' : c.aiConfidence === 'low' ? 'L' : ''}</td>
+                 <td>${c.aiEvidenceDetails?.matchedFileCount ? `文件交集 ${c.aiEvidenceDetails.matchedFileCount}` : (c.attributionType || '')}</td>
+               </tr>`).join('')}
+             </table></td></tr>`
+          : '';
+        return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${dur}</td><td>${r.requests || '-'}</td><td class="drill-text">${tools || '-'}</td><td>${fileCount || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
+      }).join('')
+    + '</table>';
+  showDrill(esc(project) + ' 会话记录', html);
+  document.querySelectorAll('.commit-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.dataset.idx;
+      const sub = document.querySelector(`.commit-subrow[data-idx="${idx}"]`);
+      const open = sub.style.display !== 'none';
+      sub.style.display = open ? 'none' : '';
+      btn.textContent = open ? '▸' : '▾';
+    });
+  });
 }

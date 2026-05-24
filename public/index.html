@@ -4,337 +4,708 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LumenCode</title>
-  <link rel="stylesheet" href="/fonts/inter.css">
-  <script src="/vendor/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap">
   <link rel="stylesheet" href="/style.css">
+  <script defer src="/vendor/chart.umd.min.js"></script>
 </head>
 <body>
-  <div id="toast" class="toast" style="display:none;"></div>
-  <nav class="top-nav">
-    <div class="nav-inner">
-      <div class="logo">LumenCode</div>
-      <div class="nav-controls">
-        <div class="nav-pill-group">
-          <button class="category-tab active" data-period="daily">日报</button>
-          <button class="category-tab" data-period="weekly">周报</button>
-          <button class="category-tab" data-period="monthly">月报</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <button id="prevDate" class="icon-btn" title="上一个" aria-label="上一个日期">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          </button>
-          <label for="dateInput" class="sr-only">选择日期</label>
-          <input type="date" id="dateInput" class="text-input">
-          <button id="nextDate" class="icon-btn" title="下一个" aria-label="下一个日期">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </button>
-        </div>
-        <button id="themeBtn" class="icon-btn" title="切换暗色模式">
-          <svg id="moonIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-          <svg id="sunIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        </button>
-        <button id="settingsBtn" class="icon-btn" title="设置">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
-      </div>
-    </div>
-  </nav>
+  <div id="app" class="app-grid" :class="railCollapsed ? 'rail-collapsed' : ''" x-data="app()" x-init="init()" x-cloak>
+    <!-- ── Rail ── -->
+    <aside class="rail" :class="railCollapsed ? 'collapsed' : ''">
+      <template x-if="!railCollapsed">
+        <div style="display:flex;flex-direction:column;flex:1;">
+          <div class="rail-header">
+            <div class="rail-brand-row">
+              <span class="rail-dot"></span>
+              <span class="rail-version" x-text="appName.toUpperCase() + ' / ' + appVersion"></span>
+              <div class="rail-actions">
+                <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
+                  <svg x-show="theme !== 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  <svg x-show="theme === 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </button>
+                <button class="rail-btn-icon" @click="railCollapsed = true" title="折叠">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;width:100%;">
+              <div class="rail-title"><span class="text-aurora-shimmer" x-text="appName.slice(0, 5)"></span><span x-text="appName.slice(5)"></span></div>
+              <a class="rail-gh-link" href="https://github.com/yaowen51888-rich/lumencode" target="_blank" rel="noopener" title="GitHub">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              </a>
+            </div>
+            <div class="rail-subtitle">AI coding observability</div>
+          </div>
 
-  <div class="app-layout">
-    <aside class="tool-sidebar" :class="{ collapsed: collapsed }" x-data="toolTabs()" x-init="init()" x-show="availableTools.length > 0">
-      <div class="tool-sidebar-header">
-        <span class="tool-sidebar-title" x-show="!collapsed">数据源</span>
-        <button class="tool-sidebar-toggle" @click="toggleCollapse()" :title="collapsed ? '展开' : '收起'">
-          <svg x-show="!collapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
-          <svg x-show="collapsed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
-        </button>
-      </div>
-      <nav class="tool-nav">
-        <button class="tool-nav-item" :class="{ active: activeTool === 'all' }" @click="setTool('all')" title="汇总">
-          <span class="tool-dot tool-dot-all"></span>
-          <span class="tool-nav-label" x-show="!collapsed">汇总</span>
-        </button>
-        <template x-for="tool in availableTools" :key="tool.name">
-          <button
-            class="tool-nav-item"
-            :class="{ active: activeTool === tool.name, disabled: !tool.detected && !tool.enabled }"
-            :disabled="!tool.detected && !tool.enabled"
-            @click="setTool(tool.name)"
-            :title="tool.displayName"
-          >
-            <span class="tool-dot" :class="'tool-dot-' + tool.name"></span>
-            <span class="tool-nav-text" x-show="!collapsed">
-              <span class="tool-nav-label" x-text="tool.displayName"></span>
-              <span class="tool-nav-version" x-show="tool.version" x-text="'v' + tool.version"></span>
-            </span>
+
+          <nav class="rail-nav">
+            <span class="rail-nav-label">DATA SOURCES</span>
+            <ul class="rail-nav-list">
+              <li>
+                <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" :style="activeTool === 'all' ? 'border-left-color: ' + colors.rust : ''">
+                  <span class="source-mark-stacked"><span style="background: var(--claude)"></span><span style="background: var(--codex)"></span><span style="background: var(--opencode)"></span></span>
+                  <div class="rail-nav-meta">
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">全部工具</span><span class="rail-nav-tokens" x-text="toolTokens.all"></span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">ALL SOURCES</span><span class="rail-nav-sessions" x-text="toolSessions.all + ' sess'"></span></div>
+                  </div>
+                </button>
+              </li>
+              <template x-for="tool in availableTools" :key="tool.name">
+                <li>
+                  <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :style="activeTool === tool.name ? 'border-left-color: ' + (toolColors[tool.name] || colors.rust) : ''">
+                    <span class="source-mark" :style="'background: ' + (toolColors[tool.name] || colors.rust)"></span>
+                    <div class="rail-nav-meta">
+                      <div class="rail-nav-meta-top"><span class="rail-nav-name" x-text="tool.displayName"></span><span class="rail-nav-tokens" x-text="toolTokens[tool.name] || '-'"></span></div>
+                      <div class="rail-nav-meta-bottom"><span class="rail-nav-sub" x-text="toolSubNames[tool.name] || tool.name.toUpperCase()"></span><span class="rail-nav-sessions" x-text="(toolSessions[tool.name] || 0) + ' sess'"></span></div>
+                    </div>
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </nav>
+
+          <div class="rail-footer">
+            <div class="rail-footer-row"><span class="rail-footer-label">UPDATED</span><span class="rail-footer-value">Just now</span></div>
+            <div class="rail-footer-row">
+              <span class="rail-footer-label">STATUS</span>
+              <span style="display:inline-flex;align-items:center;gap:6px">
+                <span class="rail-status-dot"></span>
+                <span class="rail-footer-value">LIVE</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="railCollapsed">
+        <div style="display:flex;flex-direction:column;align-items:center;padding-top:16px;gap:8px;">
+          <button class="rail-btn-icon" @click="railCollapsed = false" title="展开">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
           </button>
-        </template>
-      </nav>
-      <!-- 添加数据源功能暂未实现，先隐藏
-      <div class="tool-sidebar-footer">
-        <button class="tool-nav-add" @click="showAddTool = true" title="添加数据源">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span class="tool-nav-label" x-show="!collapsed">添加</span>
-        </button>
-      </div>
-      -->
+          <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
+            <svg x-show="theme !== 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg x-show="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
+          <div style="margin: 12px 0;"><span class="rail-dot"></span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" title="全部工具">
+              <span class="source-mark-stacked" style="width:10px;height:10px"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+            </button>
+            <template x-for="tool in availableTools" :key="tool.name">
+              <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :title="tool.displayName">
+                <span class="source-mark" :style="'background:' + (toolColors[tool.name] || colors.rust)"></span>
+              </button>
+            </template>
+          </div>
+          <div style="margin-top:auto;padding-bottom:16px;">
+            <span class="rail-status-dot" style="width:6px;height:6px"></span>
+          </div>
+        </div>
+      </template>
     </aside>
 
-    <main class="container" x-data="app()">
-    <section class="hero-band">
-      <div class="hero-row">
-        <div>
-          <h1 class="display-lg" id="reportTitle">Claude Code 使用日报</h1>
-          <p class="body-md muted" id="reportDate">加载中...</p>
-        </div>
-        <div class="hero-actions" style="display:flex;gap:8px;">
-          <button id="exportCsvBtn" class="btn-outline">导出 CSV</button>
-          <button id="exportJsonBtn" class="btn-outline">导出 JSON</button>
-          <button id="exportHtmlBtn" class="btn-outline">保存 HTML</button>
-          <button id="printBtn" class="btn-outline">打印/PDF</button>
-          <button id="workReportBtn" class="btn-outline">工作汇报</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="stats-grid" id="statsGrid">
-      <div class="feature-card">
-        <div class="card-label">独立会话</div>
-        <div class="card-value-row"><div class="card-value" id="statSessions">-</div><div class="card-trend" id="trendSessions"></div></div>
-      </div>
-      <div class="feature-card">
-        <div class="card-label">交互轮次</div>
-        <div class="card-value-row"><div class="card-value" id="statRequests">-</div><div class="card-trend" id="trendRequests"></div></div>
-      </div>
-      <div class="feature-card">
-        <div class="card-label">覆盖项目</div>
-        <div class="card-value-row"><div class="card-value" id="statProjects">-</div><div class="card-trend" id="trendProjects"></div></div>
-      </div>
-      <div class="feature-card">
-        <div class="card-label">Token 消耗</div>
-        <div class="card-value-row"><div class="card-value" id="statTokens">-</div><div class="card-trend" id="trendTokens"></div></div>
-        <div class="card-sub" id="statTokenBreakdown"></div>
-      </div>
-      <div class="feature-card">
-        <div class="card-label">预估费用</div>
-        <div class="card-value-row"><div class="card-value" id="statCost">-</div><div class="card-trend" id="trendCost"></div></div>
-        <div class="card-sub" id="statCostModel"></div>
-      </div>
-    </section>
-
-    <section class="git-section" id="gitSection" style="display:none;">
-      <div class="cta-band-light">
-        <h3 class="title-lg">Git 代码产出</h3>
-        <div class="git-stats" id="gitStats"></div>
-        <div class="git-ai-stats" id="gitAiStats"></div>
-      </div>
-      <div class="chart-row git-insights-row" id="gitInsightsRow" style="display:none;">
-        <div class="chart-card">
-          <h3 class="title-md">提交类型分布</h3>
-          <div class="chart-wrap"><canvas id="commitTypeChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <h3 class="title-md">文件热点 Top 10</h3>
-          <div id="fileHotspotsTable" class="hotspots-table"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="analyticsSection">
-    <div class="section-header">
-      <h2 class="title-md">数据分析</h2>
-    </div>
-    <div class="no-data-hint" id="noDataHint" style="display:none;">
-      <p>该时间段暂无使用数据</p>
-    </div>
-    <div class="charts-dashboard" id="chartsDashboard">
-      <section class="charts-section">
-        <div class="chart-row">
-          <div class="chart-card">
-            <h3 class="title-md">工作类型分布</h3>
-            <div class="chart-wrap"><canvas id="scenarioChart"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3 class="title-md">模型使用分布</h3>
-            <div class="chart-wrap"><canvas id="modelChart"></canvas></div>
-          </div>
-        </div>
-        <div class="chart-row">
-          <div class="chart-card">
-            <h3 class="title-md">项目使用分布</h3>
-            <div class="chart-wrap"><canvas id="projectChart"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3 class="title-md">工具调用排行</h3>
-            <div class="chart-wrap"><canvas id="toolChart"></canvas></div>
-          </div>
-        </div>
-      </section>
-      <section class="trend-section" id="trendSection" style="display:none;">
-        <div class="chart-card trend-card">
-          <h3 class="title-md">使用趋势</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="trendChart"></canvas></div>
-        </div>
-      </section>
-      <section class="trend-section" id="modelCostSection" style="display:none;">
-        <div class="chart-card">
-          <h3 class="title-md">模型费用分布</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="modelCostChart"></canvas></div>
-        </div>
-      </section>
-    </div>
-    </section>
-
-    <section class="welcome-page" id="welcomePage" style="display:none;">
-      <div class="welcome-content">
-        <div class="welcome-brand">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px;">
-            <rect x="8" y="12" width="32" height="24" rx="6" stroke="#111111" stroke-width="2.5" fill="none"/>
-            <path d="M16 22L22 28L32 18" stroke="#111111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-          <h1 class="welcome-title">欢迎使用 LumenCode</h1>
-          <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
-        </div>
-
-        <div class="welcome-features">
-          <div class="feature-item">
-            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M3 9h18M9 21V9"/>
-            </svg>
-            <div class="feature-text">
-              <h4>Token 消耗追踪</h4>
-              <p>按日/周/月统计输入、输出、缓存命中</p>
+    <!-- ── Main ── -->
+    <main class="main-content">
+      <!-- ===== LEDGER VIEW ===== -->
+      <div x-show="view === 'ledger'" style="display:block;">
+        <div style="padding: 32px 48px;">
+          <!-- Header -->
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span class="label" x-text="periodMeta.en + ' · ' + periodMeta.cn"></span>
+                <span style="width:4px;height:4px;border-radius:50%;background:var(--foreground);opacity:0.3"></span>
+                <span class="label" x-text="activeTool === 'all' ? 'ALL SOURCES' : (toolSubNames[activeTool] || activeTool.toUpperCase())"></span>
+              </div>
+              <h1 style="font-size:40px;line-height:1.05;font-weight:500;letter-spacing:-0.02em;">
+                使用<span x-text="periodMeta.cn"></span>报<span style="opacity:0.4;font-weight:200"> · <span x-text="periodMeta.en === 'DAY' ? 'Daily' : periodMeta.en === 'WEEK' ? 'Weekly' : 'Monthly'"></span> Report</span>
+              </h1>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-outline" @click="openSettings()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                设置
+              </button>
+              <button class="btn btn-outline" @click="exportCSV()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
+              <button class="btn btn-outline" @click="exportJSON()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> JSON</button>
+              <button class="btn btn-outline" @click="exportHTML()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> HTML</button>
+              <button class="btn btn-primary" @click="openReport()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                工作汇报 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
           </div>
-          <div class="feature-item">
-            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-            <div class="feature-text">
-              <h4>费用估算</h4>
-              <p>基于模型定价自动计算成本</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-            <div class="feature-text">
-              <h4>AI 贡献度</h4>
-              <p>关联 Git 提交，量化 AI 辅助占比</p>
-            </div>
-          </div>
-        </div>
 
-        <div class="welcome-steps">
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-number">1</span>
-              <h3>选择 Claude 日志目录</h3>
+          <!-- Period Switcher -->
+          <div style="margin-bottom:8px;">
+            <div class="period-switcher">
+              <template x-for="p in periods" :key="p.id">
+                <button class="period-btn" :class="period === p.id ? 'active' : ''" @click="setPeriod(p.id)">
+                  <span x-text="p.cn"></span>
+                  <span class="en" x-text="p.en"></span>
+                </button>
+              </template>
+              <div class="period-nav">
+                <button @click="shiftDate(-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                <span class="period-date" x-text="dateDisplay"></span>
+                <button @click="shiftDate(1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+                <input type="date" id="dateInput" x-model="currentDate" @change="onDateChange" :max="today" style="position:absolute;opacity:0;width:1px;height:1px;">
+                <button @click="document.getElementById('dateInput').showPicker()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+              </div>
             </div>
-            <p class="step-desc">Claude Code 会话日志的存放路径，通常是 <code>~/.claude</code></p>
-            <label for="welcomeClaudeDir" class="sr-only">Claude 日志目录</label>
-            <input type="text" class="welcome-input" id="welcomeClaudeDir" placeholder="例如: C:/Users/xxx/.claude" />
           </div>
 
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-number">2</span>
-              <h3>选择项目仓库（可选）</h3>
-            </div>
-            <p class="step-desc">用于关联 Git 代码产出统计，多个仓库用逗号分隔</p>
-            <label for="welcomeRepos" class="sr-only">项目仓库路径</label>
-            <input type="text" class="welcome-input" id="welcomeRepos" placeholder="例如: D:/project1, D:/project2" />
+          <!-- KPI Strip -->
+          <div class="kpi-strip" id="kpiStrip">
+            <template x-for="(k, i) in kpiData" :key="k.label">
+              <div class="kpi-cell" :style="i < kpiData.length - 1 ? 'border-right:1px solid var(--border)' : ''">
+                <span class="label" x-text="k.sub"></span>
+                <div style="display:flex;align-items:baseline;gap:6px;margin-top:10px;">
+                  <span class="kpi-value" x-text="k.value" :class="k.accent ? 'text-aurora-shimmer' : ''"></span>
+                  <span class="font-mono kpi-unit" x-text="k.unit" x-show="k.unit"></span>
+                </div>
+                <div class="kpi-bottom">
+                  <span style="font-size:11px;opacity:0.65" x-text="k.label"></span>
+                  <span class="delta" :class="k.trend" x-show="k.delta">
+                    <svg x-show="k.trend === 'up'" width="11" height="11" viewBox="0 0 24 24" fill="none" :stroke="'var(--forest)'" stroke-width="2"><polyline points="7 17 17 7"/><polyline points="7 7 17 7 17 17"/></svg>
+                    <svg x-show="k.trend === 'down'" width="11" height="11" viewBox="0 0 24 24" fill="none" :stroke="'var(--dest)'" stroke-width="2"><polyline points="7 7 17 17"/><polyline points="17 7 17 17 7 17"/></svg>
+                    <svg x-show="k.trend === 'flat'" width="11" height="11" viewBox="0 0 24 24" fill="none" :stroke="'var(--clay)'" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span x-text="k.delta"></span>
+                  </span>
+                </div>
+              </div>
+            </template>
           </div>
-        </div>
 
-        <div class="welcome-actions">
-          <button class="btn-primary welcome-start-btn" id="welcomeStartBtn">开始使用</button>
-          <p class="welcome-hint" id="welcomeHint"></p>
+          <!-- No data hint -->
+          <div class="no-data-hint" x-show="!hasData && !loading && !error" style="display:none;">该时间段暂无使用数据</div>
+
+          <!-- §01 AI Contribution -->
+          <div x-show="hasData" style="margin-top:56px;">
+            <div class="section-head">
+              <span class="label section-head-num">01</span>
+              <h2 class="section-head-title">AI 贡献率</h2>
+              <span class="label section-head-en">/ AI CONTRIBUTION</span>
+              <span class="section-head-line"></span>
+              <span class="section-head-meta font-mono" style="font-size:10px;opacity:0.55" x-text="aiContributionMeta"></span>
+            </div>
+
+            <div class="ai-hero-grid">
+              <div class="ai-hero-cell">
+                <div style="display:flex;align-items:baseline;gap:24px;">
+                  <div style="flex-shrink:0;">
+                    <div class="ai-hero-pct"><span class="text-aurora-shimmer" x-text="aiLinePctDisplay"></span><span :style="'color:' + colors.rust">%</span></div>
+                    <div class="ai-hero-desc" x-html="aiSummaryDesc"></div>
+                  </div>
+                  <div style="flex:1;padding-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span class="label">ATTRIBUTION · 归因构成</span>
+                      <span class="font-mono" style="font-size:10px;opacity:0.55" x-text="attributionPct"></span>
+                    </div>
+                    <div class="attribution-bar" id="attributionBar">
+                      <div class="bg-aurora-shimmer animate-bar-fill" :style="'width:' + confirmedPct + '%'"></div>
+                      <div class="animate-bar-fill" :style="'width:' + inferredPct + '%;background:' + colors.ochre + ';animation-delay:0.15s'"></div>
+                      <div class="animate-bar-fill" :style="'width:' + unattribPct + '%;background:var(--ink-18);animation-delay:0.3s'"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;">
+                      <div style="display:flex;align-items:baseline;gap:6px;">
+                        <span style="width:6px;height:6px;margin-top:6px;flex-shrink:0;background:var(--forest)"></span>
+                        <div style="flex:1;min-width:0;">
+                          <span class="font-mono" style="font-size:9px;letter-spacing:0.18em;opacity:0.55;display:block">CONFIRMED</span>
+                          <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:14px">确认</span><span class="font-mono" style="font-size:12px;opacity:0.7" x-text="confirmedPct + '%'"></span></div>
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:baseline;gap:6px;">
+                        <span style="width:6px;height:6px;margin-top:6px;flex-shrink:0;background:var(--ochre)"></span>
+                        <div style="flex:1;min-width:0;">
+                          <span class="font-mono" style="font-size:9px;letter-spacing:0.18em;opacity:0.55;display:block">INFERRED</span>
+                          <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:14px">推断</span><span class="font-mono" style="font-size:12px;opacity:0.7" x-text="inferredPct + '%'"></span></div>
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:baseline;gap:6px;">
+                        <span style="width:6px;height:6px;margin-top:6px;flex-shrink:0;background:var(--ink-50)"></span>
+                        <div style="flex:1;min-width:0;">
+                          <span class="font-mono" style="font-size:9px;letter-spacing:0.18em;opacity:0.55;display:block">UNATTRIB.</span>
+                          <div style="display:flex;align-items:baseline;gap:6px;"><span style="font-size:14px">未归因</span><span class="font-mono" style="font-size:12px;opacity:0.7" x-text="unattribPct + '%'"></span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="ai-hero-cell">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+                  <span class="label">BY SOURCE · 各工具占比</span>
+                  <span class="font-mono" style="font-size:10px;opacity:0.55">≈ stacked</span>
+                </div>
+                <div class="source-bar" id="sourceBar">
+                  <div :style="'width:' + sourceClaudePct + '%;background:var(--claude)'"></div>
+                  <div :style="'width:' + sourceCodexPct + '%;background:var(--codex)'"></div>
+                  <div :style="'width:' + sourceOpencodePct + '%;background:var(--opencode)'"></div>
+                </div>
+                <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;" id="sourceLegend">
+                  <template x-for="s in sourceBreakdown" :key="s.name">
+                    <div style="display:grid;grid-template-columns:14px 1fr 64px 72px;align-items:baseline;gap:12px;">
+                      <span style="width:10px;height:10px;" :style="'background:' + s.color"></span>
+                      <span style="font-size:13px" x-text="s.name"></span>
+                      <span class="font-mono" style="font-size:12px;text-align:right" x-text="s.pct + '%'"></span>
+                      <span class="font-mono" style="font-size:11px;text-align:right;opacity:0.55" x-text="s.tokens"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Git Output + Attribution Detail Strip -->
+            <div class="data-strip">
+              <div class="data-strip-row" style="grid-template-columns: 140px repeat(4, 1fr);">
+                <div class="data-strip-label"><span class="label">GIT 产出</span></div>
+                <template x-for="(k, i) in gitOutputCells" :key="k.en">
+                  <div class="data-strip-cell" :style="i < 3 ? 'border-right:1px solid var(--border)' : ''">
+                    <div style="display:flex;flex-direction:column;">
+                      <span class="data-strip-en" x-text="k.en"></span>
+                      <span class="data-strip-cn" x-text="k.l"></span>
+                    </div>
+                    <span class="data-strip-value" :style="k.c ? 'color:' + k.c : ''" x-text="k.v"></span>
+                  </div>
+                </template>
+              </div>
+              <div class="data-strip-row" style="grid-template-columns: 140px repeat(6, 1fr);">
+                <div class="data-strip-label"><span class="label">归因明细</span></div>
+                <template x-for="(k, i) in attributionCells" :key="k.en">
+                  <div class="data-strip-cell" :style="i < 5 ? 'border-right:1px solid var(--border)' : ''">
+                    <div style="display:flex;flex-direction:column;min-width:0;">
+                      <span class="data-strip-en truncate" x-text="k.en"></span>
+                      <span class="data-strip-cn truncate" x-text="k.l"></span>
+                    </div>
+                    <span class="data-strip-value" style="font-size:16px;flex-shrink:0;white-space:nowrap" :style="k.c ? 'color:' + k.c : ''" x-text="k.v"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- §02 + §03 -->
+          <div x-show="hasData" class="grid-5-7">
+            <!-- §02 Edit Types -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">02</span>
+                <h2 class="section-head-title">提交类型分析</h2>
+                <span class="label section-head-en">/ EDIT TYPES</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div id="editTypesContainer">
+                  <template x-for="(e, i) in editTypeData" :key="e.name">
+                    <div class="bar-item">
+                      <div class="bar-top">
+                        <span style="font-size:13px;display:flex;align-items:baseline;gap:10px;">
+                          <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                          <span x-text="e.name"></span>
+                        </span>
+                        <span class="font-mono" style="font-size:11px" x-text="e.value"></span>
+                      </div>
+                      <div class="bar-track"><div class="bar-fill" :style="'width:' + e.pct + '%;background:' + e.color"></div></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- §03 Top Files -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">03</span>
+                <h2 class="section-head-title">改动文件 Top 10</h2>
+                <span class="label section-head-en">/ TOP FILES</span>
+                <span class="section-head-line"></span>
+                <span class="section-head-meta font-mono" style="font-size:10px;opacity:0.55" x-text="topFilesMeta"></span>
+              </div>
+              <div class="card" id="topFilesContainer">
+                <div class="top-files-header">
+                  <span class="label">#</span>
+                  <span class="label">PATH</span>
+                  <span class="label text-right">COMMITS</span>
+                  <span class="label text-right" style="color:var(--forest)">+ ADDED</span>
+                  <span class="label text-right" style="color:var(--dest)">− REMOVED</span>
+                </div>
+                <template x-for="(f, i) in topFilesData" :key="f.path">
+                  <div class="top-files-row row-lift" :class="i < topFilesData.length - 1 ? 'with-border' : ''">
+                    <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                    <span class="font-mono truncate" style="font-size:12px" x-text="f.path" :title="f.path"></span>
+                    <span class="font-mono text-right" style="font-size:12px" x-text="f.commits"></span>
+                    <span class="font-mono text-right" style="font-size:12px;color:var(--forest)" x-text="'+' + f.plus"></span>
+                    <span class="font-mono text-right" style="font-size:12px;color:var(--dest)" x-text="'−' + f.minus"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- §04 + §05 + §06 -->
+          <div x-show="hasData" class="grid-3-cols">
+            <!-- §04 Work Type -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">04</span>
+                <h2 class="section-head-title">工作类型</h2>
+                <span class="label section-head-en">/ WORK TYPE</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div style="position:relative;height:200px;">
+                  <canvas id="workTypeChart"></canvas>
+                  <div class="pie-center">
+                    <div style="font-size:28px;font-weight:200;line-height:1;">100%</div>
+                    <span class="label" style="margin-top:4px" x-text="workTypeData.filter(w=>!w.hidden).length + ' CATEGORIES'"></span>
+                  </div>
+                </div>
+                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;" id="workTypeLegend">
+                  <template x-for="(w, i) in workTypeData" :key="w.name">
+                    <div @click="toggleWorkType(i)" :style="{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',userSelect:'none',opacity:w.hidden?0.3:1}">
+                      <span :style="{width:'10px',height:'10px',borderRadius:'2px',flexShrink:'0',background:w.color}"></span>
+                      <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" x-text="w.name"></span>
+                      <span class="font-mono text-right" style="font-size:11px;opacity:0.6;flex-shrink:0;" x-text="w.value + '%'"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- §05 Model Mix -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">05</span>
+                <h2 class="section-head-title">模型分布</h2>
+                <span class="label section-head-en">/ MODEL MIX</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div id="modelBarsContainer" style="display:flex;flex-direction:column;gap:14px;">
+                  <template x-for="(m, i) in modelData" :key="m.name">
+                    <div>
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                        <span class="font-mono truncate" style="font-size:11px;max-width:70%" x-text="m.name"></span>
+                        <span class="font-mono" style="font-size:11px;opacity:0.55" x-text="m.pct + '%'"></span>
+                      </div>
+                      <div class="bar-track"><div class="bar-fill" :style="'width:' + m.barPct + '%;background:' + (i === 0 ? colors.rust : 'var(--foreground)')"></div></div>
+                    </div>
+                  </template>
+                </div>
+                <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div><span class="label">TOP MODEL</span><div style="font-size:14px;margin-top:4px" x-text="topModelName"></div></div>
+                  <div><span class="label">ACTIVE</span><div style="font-size:14px;margin-top:4px" x-text="activeModels"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- §06 Cache -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">06</span>
+                <h2 class="section-head-title">缓存命中率</h2>
+                <span class="label section-head-en">/ CACHE EFFICACY</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+                  <div style="font-size:40px;font-weight:200;line-height:1;color:var(--forest)">
+                    <span x-text="cacheHitRate"></span><span style="font-size:20px">%</span>
+                  </div>
+                  <span class="delta up" x-show="cacheDelta">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><polyline points="7 17 17 7"/><polyline points="7 7 17 7 17 17"/></svg>
+                    <span x-text="cacheDelta"></span>
+                  </span>
+                </div>
+                <div style="display:flex;height:8px;margin-bottom:16px;">
+                  <template x-for="(c, i) in cacheData" :key="c.label">
+                    <div :style="'width:' + c.value + '%;background:' + c.color + (i < cacheData.length - 1 ? ';border-right:2px solid var(--card)' : '')"></div>
+                  </template>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <template x-for="c in cacheData" :key="c.label">
+                    <div style="display:grid;grid-template-columns:12px 1fr 40px 44px;align-items:baseline;gap:8px;">
+                      <span style="width:8px;height:8px;" :style="'background:' + c.color"></span>
+                      <span style="font-size:13px" x-text="c.label"></span>
+                      <span class="font-mono" style="font-size:10px;opacity:0.45" x-text="c.en"></span>
+                      <span class="font-mono text-right" style="font-size:12px" x-text="c.value + '%'"></span>
+                    </div>
+                  </template>
+                </div>
+                <div x-show="cacheSavingText" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;opacity:0.65;line-height:1.6;" x-html="cacheSavingText"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- §07 Time Series -->
+          <div x-show="hasData" style="margin-top:56px;">
+            <div class="section-head">
+              <span class="label section-head-num">07</span>
+              <h2 class="section-head-title">时间活动</h2>
+              <span class="label section-head-en">/ TIME SERIES</span>
+              <span class="section-head-line"></span>
+              <div class="section-head-meta" style="display:flex;align-items:center;gap:16px;">
+                <span class="font-mono" style="font-size:10px;opacity:0.55;display:inline-flex;align-items:center;gap:6px;">
+                  <span style="width:12px;height:1px;background:var(--foreground)"></span> SESSIONS
+                </span>
+                <span class="font-mono" style="font-size:10px;opacity:0.55;display:inline-flex;align-items:center;gap:6px;">
+                  <span style="width:12px;height:4px;background:var(--rust);opacity:0.35"></span> TOKENS (M)
+                </span>
+              </div>
+            </div>
+            <div class="card" style="padding:24px;">
+              <div class="chart-wrap-tall"><canvas id="timelineChart"></canvas></div>
+              <div style="margin-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-top:16px;border-top:1px solid var(--border);">
+                <template x-for="x in timelineMeta" :key="x.l">
+                  <div>
+                    <span class="label" x-text="x.l"></span>
+                    <div style="font-size:20px;font-weight:200;margin-top:4px;" x-text="x.v"></div>
+                    <div style="font-size:11px;opacity:0.45;margin-top:2px;" x-text="x.s"></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <!-- §08 + §09 -->
+          <div x-show="hasData" class="grid-2-cols">
+            <!-- §08 Projects -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">08</span>
+                <h2 class="section-head-title">项目分布</h2>
+                <span class="label section-head-en">/ PROJECTS</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div class="chart-wrap"><canvas id="projectChart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- §09 Tool Calls -->
+            <div>
+              <div class="section-head">
+                <span class="label section-head-num">09</span>
+                <h2 class="section-head-title">工具调用排行</h2>
+                <span class="label section-head-en">/ TOOL CALLS</span>
+                <span class="section-head-line"></span>
+              </div>
+              <div class="card" style="padding:24px;">
+                <div id="toolCallsContainer" style="display:flex;flex-direction:column;gap:12px;">
+                  <template x-for="(t, i) in toolRankData" :key="t.name">
+                    <div class="tool-rank">
+                      <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                      <span class="font-mono" style="font-size:12px" x-text="t.name"></span>
+                      <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + (i === 0 ? colors.rust : 'var(--foreground)')"></div></div>
+                      <span class="font-mono text-right" style="font-size:11px" x-text="t.value"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+            <span class="font-mono" style="font-size:10px;text-transform:uppercase;letter-spacing:0.18em;opacity:0.55" x-text="appName.toLowerCase() + ' · ' + appVersion"></span>
+            <span class="font-mono" style="font-size:10px;text-transform:uppercase;letter-spacing:0.18em;opacity:0.55" x-text="'generated ' + generatedAt"></span>
+          </div>
         </div>
       </div>
-    </section>
 
-    <section class="work-report-section" id="workReportSection" style="display:none;">
-      <div class="chart-card">
-        <div class="work-report-header">
-          <h3 class="title-md">工作汇报</h3>
-          <div class="work-report-actions">
-            <div class="level-tab-group">
-              <button class="level-tab active" data-level="detailed">详报</button>
-              <button class="level-tab" data-level="brief">简报</button>
+      <!-- ===== REPORT VIEW ===== -->
+      <div x-show="view === 'report'" style="display:none;">
+        <div style="padding: 32px 48px;">
+          <!-- Toolbar -->
+          <div class="report-toolbar">
+            <button class="btn btn-outline" @click="view = 'ledger'" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              返回数据分析
+            </button>
+            <span style="flex:1;height:1px;background:var(--border)"></span>
+            <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button class="period-btn" :class="reportLevel === 'detailed' ? 'active' : ''" @click="setReportLevel('detailed')" style="border-left:none">详细 Detail</button>
+              <button class="period-btn" :class="reportLevel === 'brief' ? 'active' : ''" @click="setReportLevel('brief')">简略 Brief</button>
             </div>
-            <div class="platform-pill-group">
-              <button class="platform-tab active" data-platform="default">标准</button>
-              <button class="platform-tab" data-platform="feishu">飞书</button>
-              <button class="platform-tab" data-platform="dingtalk">钉钉</button>
+            <button class="btn btn-outline" @click="copyReport()" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span x-text="copied ? '已复制' : '复制'"></span>
+            </button>
+            <button class="btn btn-outline" @click="downloadReport()" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              .md
+            </button>
+            <button class="btn btn-outline" @click="setReportPlatform('feishu')">飞书</button>
+            <button class="btn btn-outline" @click="setReportPlatform('dingtalk')">钉钉</button>
+          </div>
+
+          <!-- Report Header -->
+          <div class="report-header">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <span class="label">WORK REPORT · 工作汇报</span>
+                  <span style="width:4px;height:4px;border-radius:50%;background:var(--foreground);opacity:0.3"></span>
+                  <span class="label" x-text="periodMeta.en"></span>
+                  <span style="width:4px;height:4px;border-radius:50%;background:var(--foreground);opacity:0.3"></span>
+                  <span class="label" x-text="reportLevel === 'detailed' ? 'DETAIL' : 'BRIEF'"></span>
+                </div>
+                <h1 style="font-size:36px;line-height:1.05;font-weight:500;letter-spacing:-0.02em;">
+                  AI 编码助手 · 工作<span x-text="periodMeta.cn"></span>报
+                </h1>
+                <div style="margin-top:8px;font-size:13px;opacity:0.55" x-text="reportSubTitle"></div>
+              </div>
+              <span class="font-mono" style="font-size:10px;text-transform:uppercase;letter-spacing:0.18em;opacity:0.55">TRACE-ID <span x-text="traceId"></span></span>
             </div>
-            <span class="action-divider"></span>
-            <button id="copyWorkReport" class="btn-secondary">复制</button>
-            <button id="downloadMdBtn" class="btn-secondary">下载 .md</button>
-            <button id="backToReport" class="btn-primary">返回</button>
+            <div class="period-switcher">
+              <template x-for="p in periods" :key="p.id">
+                <button class="period-btn" :class="period === p.id ? 'active' : ''" @click="setPeriod(p.id)">
+                  <span x-text="p.cn"></span>
+                  <span class="en" x-text="p.en"></span>
+                </button>
+              </template>
+              <div class="period-nav">
+                <button @click="shiftDate(-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                <span class="period-date" x-text="dateDisplay"></span>
+                <button @click="shiftDate(1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Report KPIs -->
+          <div class="report-kpi-grid">
+            <template x-for="(x, i) in reportKpis" :key="x.l">
+              <div class="report-kpi-cell" :class="{ 'kpi-bottom-border': i < 2 }">
+                <span class="label" x-text="x.l"></span>
+                <div style="font-size:36px;font-weight:200;line-height:1;margin-top:12px;letter-spacing:-0.02em;" :class="x.accent ? 'text-aurora-shimmer' : ''" x-text="x.v"></div>
+                <div style="font-size:12px;opacity:0.55;margin-top:8px;" x-text="x.s"></div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Report Content -->
+          <div style="margin-top:48px;display:grid;grid-template-columns:5fr 2fr;gap:24px;">
+            <div class="work-report-content" id="reportContent" x-html="reportHtml"></div>
+
+            <!-- Sticky Meta Panel -->
+            <aside>
+              <div style="position:sticky;top:32px;display:flex;flex-direction:column;gap:20px;">
+                <div class="card" style="padding:20px;">
+                  <span class="label">SUMMARY · 摘要</span>
+                  <p style="font-size:13px;line-height:1.7;opacity:0.85;margin-top:12px;" x-html="reportSummary"></p>
+                </div>
+                <div class="card">
+                  <div style="padding:14px 20px;border-bottom:1px solid var(--border);"><span class="label">HIGHLIGHTS · 看点</span></div>
+                  <div style="display:flex;flex-direction:column;">
+                    <template x-for="h in reportHighlights" :key="h.l">
+                      <div :style="{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:'12px',padding:'12px 20px',borderBottom:h.last?'none':'1px solid var(--border)'}">
+                        <span style="font-size:13px;opacity:0.7;white-space:nowrap" x-text="h.l"></span>
+                        <span class="font-mono" style="font-size:13px;text-align:right;" :style="h.c ? 'color:' + h.c : ''" x-text="h.v"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div style="font-size:11px;opacity:0.55;line-height:1.6;padding:0 4px;">
+                  <span class="label">NOTE</span>
+                  <p style="margin-top:8px;">本报告基于本地 sessions 与 git commit 日志生成，不上传任何代码与环境变量。</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <!-- Report Footer -->
+          <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+            <span class="font-mono" style="font-size:10px;text-transform:uppercase;letter-spacing:0.18em;opacity:0.55" x-text="reportLevel === 'detailed' ? 'DETAIL EDITION' : 'BRIEF EDITION'"></span>
+            <span class="font-mono" style="font-size:10px;text-transform:uppercase;letter-spacing:0.18em;opacity:0.55" x-text="'compiled ' + generatedAt"></span>
           </div>
         </div>
-        <div id="workReportContent" class="work-report-content"></div>
       </div>
-    </section>
-    <!-- Drill-down Modal -->
-    <div id="drillModal" class="modal" style="display:none;">
-      <div class="modal-backdrop"></div>
-      <div class="modal-panel" style="max-width:640px;">
-        <div class="modal-header">
-          <h3 class="title-md" id="drillTitle">明细</h3>
-          <button id="closeDrill" class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-        </div>
-        <div class="modal-body" id="drillBody"></div>
-      </div>
-    </div>
-  </main>
+    </main>
   </div>
 
-  <!-- Settings Modal -->
-  <div id="settingsModal" class="modal" style="display:none;">
-    <div class="modal-backdrop"></div>
+  <!-- ── Settings Modal ── -->
+  <div id="settingsModal" class="modal-overlay" style="display:none;">
+    <div class="modal-backdrop" onclick="document.getElementById('settingsModal').style.display='none'"></div>
     <div class="modal-panel">
       <div class="modal-header">
-        <h3 class="title-md">配置</h3>
-        <button id="closeSettings" class="icon-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        <h3 style="font-size:15px;font-weight:500;">配置</h3>
+        <button class="rail-btn-icon" onclick="document.getElementById('settingsModal').style.display='none'" style="color:var(--foreground);opacity:0.65;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Claude 日志目录</label>
-          <input type="text" id="cfgClaudeDir" class="text-input form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">本地项目路径（每行一个）</label>
-          <textarea id="cfgRepos" class="text-input form-textarea" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">排除项目（每行一个）</label>
-          <textarea id="cfgExclude" class="text-input form-textarea" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">场景关键词</label>
-          <textarea id="cfgKeywords" class="text-input form-textarea" rows="5"></textarea>
-          <p class="form-hint">JSON 格式，如 { "coding": ["实现", "开发"] }</p>
-        </div>
+        <div class="form-group"><label class="form-label">Claude 日志目录</label><input type="text" id="cfgClaudeDir" class="form-input"></div>
+        <div class="form-group"><label class="form-label">本地项目路径（每行一个）</label><textarea id="cfgRepos" class="form-textarea" rows="3"></textarea></div>
+        <div class="form-group"><label class="form-label">排除项目（每行一个）</label><textarea id="cfgExclude" class="form-textarea" rows="3"></textarea></div>
+        <div class="form-group"><label class="form-label">场景关键词</label><textarea id="cfgKeywords" class="form-textarea" rows="5"></textarea><p class="form-hint">JSON 格式，如 { "coding": ["实现", "开发"] }</p></div>
       </div>
-      <div class="modal-footer">
-        <button id="saveSettings" class="btn-primary">保存</button>
-      </div>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
     </div>
   </div>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <p>LumenCode · AI 编码助手使用统计</p>
-      <p class="muted-soft">数据来自本地日志，不上传至任何服务器</p>
+  <!-- ── Drill Modal ── -->
+  <div id="drillModal" class="modal-overlay" style="display:none;">
+    <div class="modal-backdrop" onclick="document.getElementById('drillModal').style.display='none'"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 style="font-size:15px;font-weight:500;" id="drillTitle">明细</h3>
+        <button class="rail-btn-icon" onclick="document.getElementById('drillModal').style.display='none'" style="color:var(--foreground);opacity:0.65;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="drillBody"></div>
     </div>
-  </footer>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast" class="toast" style="display:none;"></div>
+
+  <!-- ── Welcome Page ── -->
+  <div id="welcomePage" class="welcome-page" style="display:none;">
+    <div class="welcome-card card">
+      <div class="welcome-brand">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin-bottom:16px;">
+          <rect x="8" y="12" width="32" height="24" rx="6" stroke="var(--foreground)" stroke-width="2.5" fill="none"/>
+          <path d="M16 22L22 28L32 18" stroke="var(--foreground)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <h1 class="welcome-title">欢迎使用 LumenCode</h1>
+        <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:32px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <div><h4 style="font-size:14px;font-weight:500;">Token 消耗追踪</h4><p style="font-size:12px;opacity:0.55;">按日/周/月统计输入、输出、缓存命中</p></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+          <div><h4 style="font-size:14px;font-weight:500;">费用估算</h4><p style="font-size:12px;opacity:0.55;">基于模型定价自动计算成本</p></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <div><h4 style="font-size:14px;font-weight:500;">AI 贡献度</h4><p style="font-size:12px;opacity:0.55;">关联 Git 提交，量化 AI 辅助占比</p></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">
+        <div style="padding:16px;border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--foreground);color:var(--background);font-size:11px;font-weight:600;">1</span><h3 style="font-size:14px;font-weight:500;">选择 Claude 日志目录</h3></div>
+          <p style="font-size:12px;opacity:0.55;margin-bottom:8px;">Claude Code 会话日志的存放路径，通常是 <code style="font-family:var(--font-mono);font-size:11px;background:var(--secondary);padding:2px 6px;border-radius:4px;">~/.claude</code></p>
+          <input type="text" id="welcomeClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
+        </div>
+        <div style="padding:16px;border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--foreground);color:var(--background);font-size:11px;font-weight:600;">2</span><h3 style="font-size:14px;font-weight:500;">选择项目仓库（可选）</h3></div>
+          <p style="font-size:12px;opacity:0.55;margin-bottom:8px;">用于关联 Git 代码产出统计，多个仓库用逗号分隔</p>
+          <input type="text" id="welcomeRepos" class="form-input" placeholder="例如: D:/project1, D:/project2">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="btn btn-primary" id="welcomeStartBtn" style="width:100%;">开始使用</button>
+        <p id="welcomeHint" style="margin-top:8px;font-size:12px;"></p>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="/app.js"></script>
 </body>

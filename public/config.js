@@ -124,6 +124,7 @@ export const ID = {
   TOOL_CHART: 'toolChart',
   TREND_CHART: 'trendChart',
   COMMIT_TYPE_CHART: 'commitTypeChart',
+  CACHE_CHART: 'cacheChart',
   MODEL_COST_CHART: 'modelCostChart',
   CFG_CLAUDE_DIR: 'cfgClaudeDir',
   CFG_REPOS: 'cfgRepos',
@@ -135,6 +136,6 @@ export const ID = {
 // localStorage keys
 export const STORAGE = {
   CONFIG: 'ccusage-config',
-  THEME: 'ccusage-theme',
+  THEME: 'lc-theme',
   SIDEBAR_COLLAPSED: 'ccusage-sidebar-collapsed',
 };

@@ -27,6 +27,7 @@ export function createLatestRequestGuard() {
 const cache = new Map();
 const pending = new Map();
 const DEFAULT_TTL = 30_000;
+const CACHE_MAX_SIZE = 50;
 
 export function clearApiCache() {
   cache.clear();
@@ -49,6 +50,11 @@ export async function cachedFetch(url, options = {}, ttl = DEFAULT_TTL) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       cache.set(key, { data, expire: Date.now() + ttl });
+      // LRU eviction
+      while (cache.size > CACHE_MAX_SIZE) {
+        const oldest = cache.keys().next().value;
+        cache.delete(oldest);
+      }
       return data;
     } finally {
       pending.delete(key);
