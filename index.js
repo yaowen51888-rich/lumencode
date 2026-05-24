@@ -72,12 +72,17 @@ function loadCliConfig() {
   return { config, dateArg, effectiveIncludeProjects, configPath };
 }
 
-async function buildReportData(period, dateArg, config, effectiveIncludeProjects, tool = 'all') {
-  // 使用新的多工具解析入口
-  const { records, toolBreakdown } = await parseAllEnabledTools(config, {
-    excludeProjects: config.excludeProjects,
-    includeProjects: effectiveIncludeProjects,
-  });
+async function buildReportData(period, dateArg, config, effectiveIncludeProjects, tool = 'all', preParsed = null) {
+  // 使用预解析结果或全量解析
+  let records, toolBreakdown;
+  if (preParsed) {
+    ({ records, toolBreakdown } = preParsed);
+  } else {
+    ({ records, toolBreakdown } = await parseAllEnabledTools(config, {
+      excludeProjects: config.excludeProjects,
+      includeProjects: effectiveIncludeProjects,
+    }));
+  }
 
   if (records.length === 0) {
     return null;
@@ -152,7 +157,37 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   const billingBlocks = identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode);
 
   const reposConfigured = !!(config.repos && config.repos.length > 0);
-  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown };
+
+  // 合并 toolBreakdown：usageStats 内含 token 粒度数据，parsers 提供 sessionCount
+  const statsTB = usageStats.toolBreakdown || {};
+  const mergedBreakdown = {};
+  // 以 parsers toolBreakdown 为基础（包含所有已启用工具），补充 stats 中的 token 数据
+  for (const [name, base] of Object.entries(toolBreakdown)) {
+    const s = statsTB[name] || {};
+    mergedBreakdown[name] = {
+      inputTokens: s.inputTokens || 0,
+      outputTokens: s.outputTokens || 0,
+      cacheRead: s.cacheRead || 0,
+      cacheCreate: s.cacheCreate || 0,
+      count: s.count || 0,
+      sessionCount: base.sessionCount || 0,
+    };
+  }
+  // 补充 stats 中有但 parsers 无的极端情况
+  for (const [name, data] of Object.entries(statsTB)) {
+    if (!mergedBreakdown[name]) {
+      mergedBreakdown[name] = {
+        inputTokens: data.inputTokens || 0,
+        outputTokens: data.outputTokens || 0,
+        cacheRead: data.cacheRead || 0,
+        cacheCreate: data.cacheCreate || 0,
+        count: data.count || 0,
+        sessionCount: 0,
+      };
+    }
+  }
+
+  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown };
 }
 
 if (!command || command === 'help' || command === '--help') {
