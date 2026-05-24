@@ -376,7 +376,7 @@ input, textarea { font-family: inherit; color: inherit; }
   border: 1px solid var(--border);
   color: var(--foreground);
 }
-.btn-outline:hover { border-color: var(--foreground); }
+.btn-outline:hover { border-color: var(--foreground); background: var(--ink-8); }
 .btn-ghost {
   padding: 6px 10px;
   color: var(--foreground);
@@ -448,7 +448,7 @@ input, textarea { font-family: inherit; color: inherit; }
   gap: 6px;
 }
 .period-btn:first-child { border-left: none; }
-.period-btn:hover { background: var(--foreground); opacity: 0.05; }
+.period-btn:hover { background: var(--ink-8); }
 .period-btn.active {
   background: var(--foreground);
   color: var(--background);
@@ -479,6 +479,76 @@ input, textarea { font-family: inherit; color: inherit; }
   font-size: 11px;
   min-width: 140px;
   text-align: center;
+}
+
+.custom-range-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--border);
+  padding: 0 12px;
+}
+.custom-date-input {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--foreground);
+  outline: none;
+  width: 130px;
+}
+.custom-date-input:focus {
+  border-color: var(--accent);
+}
+
+.proj-list {
+  margin-top: 10px;
+  max-height: 210px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.proj-list::-webkit-scrollbar { width: 3px; }
+.proj-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.proj-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: left;
+  opacity: 0.55;
+  transition: all 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proj-item:hover { opacity: 0.8; background: var(--ink-8); }
+.proj-item.active {
+  opacity: 1;
+  background: var(--ink-8);
+  font-weight: 500;
+}
+.proj-item.active::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--rust);
+  flex-shrink: 0;
 }
 
 /* ── AI Contribution Hero ── */
@@ -762,6 +832,10 @@ input, textarea { font-family: inherit; color: inherit; }
   padding-bottom: 8px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 6px; color: var(--foreground); opacity: 1;
   text-transform: uppercase; letter-spacing: 0.06em;
+}
+.work-report-content .md-h3 {
+  font-size: 15px; font-weight: 500; margin-top: 20px; margin-bottom: 8px;
+  padding-left: 10px; border-left: 3px solid var(--rust);
 }
 .work-report-content .md-p { margin-bottom: 10px; }
 .work-report-content .md-ul { margin-bottom: 12px; padding-left: 20px; }

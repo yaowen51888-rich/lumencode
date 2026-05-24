@@ -11,22 +11,29 @@
 </p>
 
 <p align="center">
-  Supports <b>Claude Code · Codex · OpenCode</b> · 600+ model pricing · AI contribution attribution · One-click Lark/DingTalk weekly reports
+  Supports <b>Claude Code · Codex · OpenCode</b> · 600+ model pricing · AI contribution attribution · Per-project reports · Custom date ranges · One-click Lark/DingTalk weekly reports
 </p>
 
 <p align="center">
   <a href="README.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#faq">FAQ</a> · <a href="#changelog">Changelog</a>
 </p>
+<div align="center">
+  <img src="doc/数据分析页面.png" alt="LumenCode Dashboard" width="800">
+</div>
+
 ---
+
 
 ## What problem does it solve?
 
-> "How much code did AI write this week?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
+> "How much code did AI write?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
 
 | Scenario | Solved by lumencode |
 |----------|--------------------------|
 | **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
 | **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
+| **Per-project reporting** | Configure multiple projects, then select one to generate an independent work report for each project lead |
+| **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
 | **Understanding usage habits** | Which project uses it most? Which model burns the most tokens? When's your coding peak? **All at a glance.** |
 | **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
 
@@ -49,64 +56,62 @@ npx lumencode serve
 
 ## Highlights
 
+<div align="center">
+  <img src="doc/核心能力-en.png" alt="LumenCode Core Capabilities" width="720">
+</div>
+
+
 | Highlight | Description |
 |-----------|-------------|
 | 🌐 **Three-Tool Unified** | Claude Code / Codex / OpenCode data auto-aggregated, sidebar tab to switch |
 | 🤖 **AI Contribution Attribution** | Detects `Co-Authored-By: Claude` signatures. Multi-layer engine measures AI's actual share in your codebase |
 | 📝 **Natural Language Work Summary** | Detailed / Brief reports with insight commentary. Standard Markdown / Lark / DingTalk formats, one-click toggle |
+| 📂 **Per-Project Reports** | Select a project from the right panel to generate an independent report (commits + AI interaction volume + hotspot files) |
+| 📅 **Custom Date Ranges** | Beyond daily/weekly/monthly — pick any start and end date, perfect for aligning with Sprint cycles |
 | 💰 **Precise Cost Estimation** | 600+ model local pricing (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback. Unknown models counted at $0, never guessed |
 | 📦 **Zero-Config Out of the Box** | First run auto-detects tool directories and derives project paths |
 | 🔍 **Data Drill-Down** | Click any chart to dive from aggregate stats to individual sessions/commits |
 | 📈 **Trends & Insights** | Peak day detection, consecutive active streaks, tool usage 5-category distribution (editing/reading/execution/planning/research) |
-| 🌙 **Dark Mode** | Light/dark theme toggle, all charts auto-adapt |
+| 🌙 **Light / Dark Theme** | Light/dark theme toggle, all charts auto-adapt |
 
 ---
 
 ## Screenshots
 
-### Multi-Tool Summary View
+### Data Analysis Overview
 
-> All-tools aggregate dashboard. AI contribution ratio, Token usage, cost, activity time, model distribution, scenario breakdown — all in one screen.
-
-![Multi-Tool Summary](doc/%E5%85%A8%E9%87%8FAi%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB%E6%8A%A5%E5%91%8A.png)
-
-### Per-Tool Reports
-
-> Click sidebar tabs to view any single tool's data.
+> Switch tools from the left sidebar. Main area shows Token usage, cost, model distribution, and AI contribution attribution.
 
 <table>
   <tr>
-    <td><img src="doc/claude_code%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="Claude Code" width="400"></td>
-    <td><img src="doc/codex%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="Codex" width="400"></td>
+    <td><img src="doc/数据分析页面.png" alt="Summary & Trends" width="400"></td>
+    <td><img src="doc/数据分析页面2.png" alt="Project & Hourly Distribution" width="400"></td>
   </tr>
   <tr>
-    <td align="center"><b>Claude Code</b></td>
-    <td align="center"><b>OpenAI Codex</b></td>
-  </tr>
-  <tr>
-    <td><img src="doc/opencode%E4%BD%BF%E7%94%A8%E6%8A%A5%E5%91%8A.png" alt="OpenCode" width="400"></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td align="center"><b>OpenCode</b></td>
-    <td></td>
+    <td align="center">Summary + Token Trends</td>
+    <td align="center">Project Distribution + Hourly Activity + Session List</td>
   </tr>
 </table>
 
-### Scenario Analysis & Model Distribution
+![AI Contribution & Commit Analysis](doc/数据分析页面3.png)
 
-> Categorize by work type (coding / testing / debugging / docs / review / planning), drill down to per-model token usage.
+### Multi-Tool Dimension
 
-<table>
-  <tr>
-    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E7%B1%BB%E5%9E%8B%E5%88%86%E5%B8%83_%E5%8C%B9%E9%85%8D%E7%A4%BA%E4%BE%8B.png" alt="Scenarios" width="400"></td>
-    <td><img src="doc/%E6%A8%A1%E5%9E%8B%E4%BD%BF%E7%94%A8%E5%88%86%E5%B8%83_%E5%85%B7%E4%BD%93%E7%94%A8%E9%87%8F.png" alt="Models" width="400"></td>
-  </tr>
-  <tr>
-    <td align="center">Work Type Distribution (with matched keywords)</td>
-    <td align="center">Model Distribution (with detailed token usage)</td>
-  </tr>
-</table>
+> Switch to "All Tools" view for cross-tool aggregate data and comparative analysis.
+
+![Multi-Tool Dimension](doc/多工具维度.png)
+
+### Project Distribution & Sessions
+
+> Per-project Token, cost, and session count stats. Click to drill down into individual session details.
+
+![Project Distribution & Sessions](doc/项目分布-会话记录.png)
+
+### Scenario Analysis
+
+> Categorize by work type (coding / testing / debugging / docs / review / planning), with matched keyword examples.
+
+![Scenario Analysis](doc/工作类型分布_匹配示例.png)
 
 ### Work Report · One-Click Publishable Weekly Report
 
@@ -115,11 +120,12 @@ npx lumencode serve
 - **Detailed** — Full data + insights + numbered sections, ideal for weekly/monthly reports
 - **Brief** — 3-5 sentence core summary, ideal for daily reports or group chat
 - **Multi-Platform Format** — Standard Markdown / Lark / DingTalk, one-click toggle
+- **Per-Project** — Select a project from the right panel to generate a project-specific report
 
 <table>
   <tr>
-    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E6%B1%87%E6%8A%A5_%E8%AF%A6%E6%8A%A5.png" alt="Work Report - Detailed" width="400"></td>
-    <td><img src="doc/%E5%B7%A5%E4%BD%9C%E6%B1%87%E6%8A%A5_%E7%AE%80%E6%8A%A5.png" alt="Work Report - Brief" width="400"></td>
+    <td><img src="doc/工作汇报_详报.png" alt="Work Report - Detailed" width="400"></td>
+    <td><img src="doc/工作汇报_简报.png" alt="Work Report - Brief" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Detailed</b></td>
@@ -127,11 +133,13 @@ npx lumencode serve
   </tr>
 </table>
 
-### Dark Mode
+### Light / Dark Theme
 
 > All chart colors auto-adapt for comfortable long sessions.
 
-![Dark Mode](doc/%E6%9A%97%E8%89%B2%E6%A8%A1%E5%BC%8F.png)
+![Light Mode](doc/浅色模式.png)
+
+> Dark mode is the default theme — the screenshots above were taken in dark mode.
 
 ---
 
@@ -223,6 +231,14 @@ For customization, click the settings button (top-right corner) in the Web UI.
 ---
 
 ## Changelog
+
+### v1.0.0 (2026-05-24) — Per-Project Reports & Custom Date Ranges
+
+- **Per-Project Reports** — Added project selector in the work report right panel. Select a project to auto-filter data and generate an independent report (commits + AI interaction volume + hotspot files)
+- **Custom Date Ranges** — New "Custom" period option supporting arbitrary start/end dates, ideal for Sprint cycle alignment
+- **Smart Date Navigation** — Arrow buttons auto-adjust step size based on period: daily ±1 day, weekly ±7 days, monthly ±1 month
+- **Sidebar Redesign** — Version info, theme toggle, and collapse button moved to footer. Header keeps only title and link, for a more compact layout
+- **UI Redesign** — New visual design with a more compact layout and intuitive data presentation
 
 ### v0.4.0 (2026-05-22) — Multi-Tool Unified Platform
 

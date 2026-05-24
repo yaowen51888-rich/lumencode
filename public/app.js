@@ -32,14 +32,19 @@ function appState() {
     /* report view state */
     reportLevel: 'detailed',
     reportPlatform: 'default',
+    reportProject: '',
+    reportProjects: [],
     copied: false,
     reportHtml: '',
 
     /* constants */
+    customStart: '',
+    customEnd: '',
     periods: [
       { id: 'daily', cn: '日', en: 'DAY' },
       { id: 'weekly', cn: '周', en: 'WEEK' },
       { id: 'monthly', cn: '月', en: 'MONTH' },
+      { id: 'custom', cn: '自定义', en: 'CUSTOM' },
     ],
     colors: {
       rust: 'var(--rust)', dest: 'var(--dest)', forest: 'var(--forest)',
@@ -51,6 +56,10 @@ function appState() {
     /* computed getters */
     get periodMeta() { return this.periods.find(p => p.id === this.period) || this.periods[0]; },
     get dateDisplay() {
+      if (this.period === 'custom') {
+        if (this.customStart && this.customEnd) return `${this.customStart.replace(/-/g, '.')} — ${this.customEnd.replace(/-/g, '.')}`;
+        return '选择日期范围';
+      }
       if (this.period === 'daily') return this.currentDate.replace(/-/g, '.');
       if (this.period === 'weekly') {
         const d = new Date(this.currentDate);
@@ -189,15 +198,38 @@ function appState() {
     /* ── period / date ── */
     setPeriod(p) {
       this.period = p;
-      this.saveStateToHash();
-      this.loadCurrentView();
-      if (this.view === 'report') this.loadReportContent();
+      if (p !== 'custom') {
+        this.customStart = '';
+        this.customEnd = '';
+        this.saveStateToHash();
+        this.loadCurrentView();
+        if (this.view === 'report') this.loadReportContent();
+      }
     },
 
-    shiftDate(days) {
+    onCustomStartChange() {
+      if (this.customStart && this.customEnd) {
+        this.loadCurrentView();
+        if (this.view === 'report') this.loadReportContent();
+      }
+    },
+
+    onCustomEndChange() {
+      if (this.customStart && this.customEnd) {
+        this.loadCurrentView();
+        if (this.view === 'report') this.loadReportContent();
+      }
+    },
+
+    shiftDate(dir) {
       const d = new Date(this.currentDate);
-      d.setDate(d.getDate() + days);
-      this.currentDate = d.toISOString().slice(0, 10); // keep inline for date arithmetic
+      if (this.period === 'monthly') {
+        d.setMonth(d.getMonth() + dir);
+      } else {
+        const step = this.period === 'weekly' ? 7 * dir : dir;
+        d.setDate(d.getDate() + step);
+      }
+      this.currentDate = d.toISOString().slice(0, 10);
       this.saveStateToHash();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
@@ -214,7 +246,7 @@ function appState() {
       const hash = location.hash.slice(1);
       if (!hash) return;
       const [p, d] = hash.split('/');
-      if (p && ['daily', 'weekly', 'monthly'].includes(p)) this.period = p;
+      if (p && ['daily', 'weekly', 'monthly', 'custom'].includes(p)) this.period = p;
       if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) this.currentDate = d;
     },
 
@@ -224,7 +256,7 @@ function appState() {
 
     /* ── data loading ── */
     async loadCurrentView() {
-      const cacheKey = `${this.activeTool}-${this.period}-${this.currentDate}`;
+      const cacheKey = `${this.activeTool}-${this.period}-${this.period === 'custom' ? this.customStart + '~' + this.customEnd : this.currentDate}`;
       const request = this.reportRequestGuard.next();
 
       if (this.cache[cacheKey]) {
@@ -239,7 +271,12 @@ function appState() {
       this.error = null;
 
       try {
-        const data = await fetchReport({ tool: this.activeTool, period: this.period, date: this.currentDate }, request.signal);
+        const params = { tool: this.activeTool, period: this.period, date: this.currentDate };
+        if (this.period === 'custom' && this.customStart && this.customEnd) {
+          params.start = this.customStart;
+          params.end = this.customEnd;
+        }
+        const data = await fetchReport(params, request.signal);
         if (!request.isCurrent()) return;
 
         if (!data || data.error) {
@@ -390,6 +427,9 @@ function appState() {
 
       /* Report view data pre-compute */
       this.computeReportData(data);
+
+      /* Project list for report view */
+      this.reportProjects = Object.keys(data.projectDetails || {}).sort();
 
       /* Charts (Chart.js) */
       this.$nextTick(() => this.renderCharts(data));
@@ -598,6 +638,13 @@ function appState() {
     async loadReportContent() {
       try {
         const params = { tool: this.activeTool, period: this.period, date: this.currentDate, format: 'work', platform: this.reportPlatform, level: this.reportLevel };
+        if (this.period === 'custom' && this.customStart && this.customEnd) {
+          params.start = this.customStart;
+          params.end = this.customEnd;
+        }
+        if (this.reportProject) {
+          params.project = this.reportProject;
+        }
         const qs = new URLSearchParams(params).toString();
         const res = await fetch(`/api/report?${qs}`);
         if (!res.ok) return;
@@ -614,6 +661,11 @@ function appState() {
 
     setReportPlatform(platform) {
       this.reportPlatform = platform;
+      this.loadReportContent();
+    },
+
+    setReportProject(project) {
+      this.reportProject = project;
       this.loadReportContent();
     },
 
@@ -645,6 +697,7 @@ function appState() {
         } else if (inTable) { inTable = false; out.push('</table>'); }
         if (line.startsWith('# ')) { out.push(`<h1 class="md-h1">${inline(line.slice(2))}</h1>`); continue; }
         if (line.startsWith('## ')) { out.push(`<h2 class="md-h2">${inline(line.slice(3))}</h2>`); continue; }
+        if (line.startsWith('### ')) { out.push(`<h3 class="md-h3">${inline(line.slice(4))}</h3>`); continue; }
         if (line.startsWith('- ') || line.startsWith('• ')) { out.push(`<li class="md-li">${inline(line.slice(2))}</li>`); continue; }
         if (/^[━─]+/.test(line.trim()) && line.trim().length >= 5) { out.push(`<div class="md-divider">${inline(line.trim())}</div>`); continue; }
         if (line.trim() === '') { out.push(''); continue; }

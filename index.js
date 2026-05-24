@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
-import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
+import { getGitStatsForMultipleReposAsync, getPerRepoGitStats, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
@@ -72,7 +72,7 @@ function loadCliConfig() {
   return { config, dateArg, effectiveIncludeProjects, configPath };
 }
 
-async function buildReportData(period, dateArg, config, effectiveIncludeProjects, tool = 'all', preParsed = null) {
+async function buildReportData(period, dateArg, config, effectiveIncludeProjects, tool = 'all', preParsed = null, options = {}) {
   // 使用预解析结果或全量解析
   let records, toolBreakdown;
   if (preParsed) {
@@ -98,7 +98,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   }
 
   // 其余逻辑保持不变
-  const { filtered, start, end } = filterRecordsByPeriod(toolRecords, period, dateArg);
+  const { filtered, start, end } = filterRecordsByPeriod(toolRecords, period, dateArg, { customStart: options.customStart, customEnd: options.customEnd });
   const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
   const sessions = groupBySessions(filtered);
 
@@ -137,7 +137,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   const trendData = computeTrendData(toolRecords, period, dateArg);
 
   // Previous period stats
-  const prevRange = computePrevPeriodRange(period, dateArg);
+  const prevRange = computePrevPeriodRange(period, dateArg, { customStart: options.customStart, customEnd: options.customEnd });
   const prevFiltered = toolRecords.filter(r => {
     if (!r.timestamp) return false;
     const date = r.timestamp.slice(0, 10);
@@ -187,7 +187,41 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     }
   }
 
-  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown };
+  // Per-project details
+  const projectDetails = {};
+  const projEntries = Object.entries(usageStats.projects || {}).sort((a, b) => b[1].requests - a[1].requests);
+  if (reposConfigured && gitStats) {
+    const repoMap = await getPerRepoGitStats(
+      config.repos.filter(r => projEntries.some(([name]) => {
+        const base = r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop();
+        return base === name;
+      })),
+      start, end + 'T23:59:59'
+    );
+    for (const [projName, projStats] of projEntries) {
+      const matchedRepo = [...repoMap.keys()].find(r => r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() === projName);
+      const repoGit = matchedRepo ? repoMap.get(matchedRepo) : null;
+      const topCommits = (repoGit?.commitList || [])
+        .filter(c => c.type === 'feat' || c.type === 'fix')
+        .slice(0, 5)
+        .map(c => ({ type: c.type, subject: c.subject, scope: c.scope }));
+      projectDetails[projName] = {
+        usage: projStats,
+        git: repoGit ? {
+          commits: repoGit.commits, linesAdded: repoGit.linesAdded, linesDeleted: repoGit.linesDeleted,
+          filesChanged: repoGit.filesChanged,
+          fileHotspots: (repoGit.fileHotspots || []).slice(0, 5),
+        } : null,
+        topCommits,
+      };
+    }
+  } else {
+    for (const [projName, projStats] of projEntries) {
+      projectDetails[projName] = { usage: projStats, git: null, topCommits: [] };
+    }
+  }
+
+  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown, projectDetails };
 }
 
 if (!command || command === 'help' || command === '--help') {

@@ -17,19 +17,6 @@
       <template x-if="!railCollapsed">
         <div style="display:flex;flex-direction:column;flex:1;">
           <div class="rail-header">
-            <div class="rail-brand-row">
-              <span class="rail-dot"></span>
-              <span class="rail-version" x-text="appName.toUpperCase() + ' / ' + appVersion"></span>
-              <div class="rail-actions">
-                <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
-                  <svg x-show="theme !== 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                  <svg x-show="theme === 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                </button>
-                <button class="rail-btn-icon" @click="railCollapsed = true" title="折叠">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
-                </button>
-              </div>
-            </div>
             <div style="display:flex;align-items:center;gap:8px;width:100%;">
               <div class="rail-title"><span class="text-aurora-shimmer" x-text="appName.slice(0, 5)"></span><span x-text="appName.slice(5)"></span></div>
               <a class="rail-gh-link" href="https://github.com/yaowen51888-rich/lumencode" target="_blank" rel="noopener" title="GitHub">
@@ -38,7 +25,6 @@
             </div>
             <div class="rail-subtitle">AI coding observability</div>
           </div>
-
 
           <nav class="rail-nav">
             <span class="rail-nav-label">DATA SOURCES</span>
@@ -67,13 +53,20 @@
           </nav>
 
           <div class="rail-footer">
-            <div class="rail-footer-row"><span class="rail-footer-label">UPDATED</span><span class="rail-footer-value">Just now</span></div>
-            <div class="rail-footer-row">
-              <span class="rail-footer-label">STATUS</span>
-              <span style="display:inline-flex;align-items:center;gap:6px">
-                <span class="rail-status-dot"></span>
-                <span class="rail-footer-value">LIVE</span>
-              </span>
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="rail-dot"></span>
+                <span class="font-mono" style="font-size:10px;letter-spacing:0.12em;opacity:0.4" x-text="appName.toUpperCase() + ' / ' + appVersion"></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
+                  <svg x-show="theme !== 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  <svg x-show="theme === 'dark'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </button>
+                <button class="rail-btn-icon" @click="railCollapsed = true" title="折叠">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -147,12 +140,17 @@
                   <span class="en" x-text="p.en"></span>
                 </button>
               </template>
-              <div class="period-nav">
+              <div class="period-nav" x-show="period !== 'custom'">
                 <button @click="shiftDate(-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
                 <span class="period-date" x-text="dateDisplay"></span>
                 <button @click="shiftDate(1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
                 <input type="date" id="dateInput" x-model="currentDate" @change="onDateChange" :max="today" style="position:absolute;opacity:0;width:1px;height:1px;">
                 <button @click="document.getElementById('dateInput').showPicker()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+              </div>
+              <div class="custom-range-picker" x-show="period === 'custom'" x-cloak>
+                <input type="date" x-model="customStart" @change="onCustomStartChange()" :max="today" class="custom-date-input" placeholder="开始日期">
+                <span style="opacity:0.4;font-size:12px;">—</span>
+                <input type="date" x-model="customEnd" @change="onCustomEndChange()" :max="today" class="custom-date-input" placeholder="结束日期">
               </div>
             </div>
           </div>
@@ -538,8 +536,11 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               .md
             </button>
-            <button class="btn btn-outline" @click="setReportPlatform('feishu')">飞书</button>
-            <button class="btn btn-outline" @click="setReportPlatform('dingtalk')">钉钉</button>
+            <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button class="period-btn" :class="reportPlatform === 'default' ? 'active' : ''" @click="setReportPlatform('default')" style="border-left:none">默认</button>
+              <button class="period-btn" :class="reportPlatform === 'feishu' ? 'active' : ''" @click="setReportPlatform('feishu')">飞书</button>
+              <button class="period-btn" :class="reportPlatform === 'dingtalk' ? 'active' : ''" @click="setReportPlatform('dingtalk')">钉钉</button>
+            </div>
           </div>
 
           <!-- Report Header -->
@@ -567,10 +568,15 @@
                   <span class="en" x-text="p.en"></span>
                 </button>
               </template>
-              <div class="period-nav">
+              <div class="period-nav" x-show="period !== 'custom'">
                 <button @click="shiftDate(-1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
                 <span class="period-date" x-text="dateDisplay"></span>
                 <button @click="shiftDate(1)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+              </div>
+              <div class="custom-range-picker" x-show="period === 'custom'" x-cloak>
+                <input type="date" x-model="customStart" @change="onCustomStartChange()" :max="today" class="custom-date-input">
+                <span style="opacity:0.4;font-size:12px;">—</span>
+                <input type="date" x-model="customEnd" @change="onCustomEndChange()" :max="today" class="custom-date-input">
               </div>
             </div>
           </div>
@@ -596,6 +602,16 @@
                 <div class="card" style="padding:20px;">
                   <span class="label">SUMMARY · 摘要</span>
                   <p style="font-size:13px;line-height:1.7;opacity:0.85;margin-top:12px;" x-html="reportSummary"></p>
+                </div>
+                <!-- Project Selector -->
+                <div class="card" style="padding:16px 20px;" x-show="reportProjects.length > 1" x-cloak>
+                  <span class="label">PROJECTS · 项目</span>
+                  <div class="proj-list">
+                    <button class="proj-item" :class="reportProject === '' ? 'active' : ''" @click="setReportProject('')">全部</button>
+                    <template x-for="p in reportProjects" :key="p">
+                      <button class="proj-item" :class="reportProject === p ? 'active' : ''" @click="setReportProject(p)" x-text="p"></button>
+                    </template>
+                  </div>
                 </div>
                 <div class="card">
                   <div style="padding:14px 20px;border-bottom:1px solid var(--border);"><span class="label">HIGHLIGHTS · 看点</span></div>

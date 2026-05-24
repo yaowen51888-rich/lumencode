@@ -75,6 +75,7 @@ export function renderProjectBars(canvasId, entries) {
   const gridColor = isDark ? 'rgba(232,233,239,0.06)' : 'rgba(21,21,26,0.06)';
   const tickColor = isDark ? 'rgba(232,233,239,0.55)' : 'rgba(21,21,26,0.55)';
   const barColor = isDark ? '#e8e9ef' : '#15151a';
+  const accentColor = isDark ? '#7480e8' : '#4a52a8';
   const ttBg = isDark ? '#1f222a' : '#f0eee7';
   const ttFg = isDark ? '#e8e9ef' : '#15151a';
 
@@ -84,7 +85,7 @@ export function renderProjectBars(canvasId, entries) {
       labels: entries.map(([k]) => k.length > 20 ? '...' + k.slice(-17) : k),
       datasets: [{
         data: entries.map(([, v]) => v.requests),
-        backgroundColor: entries.map((_, i) => i === 0 ? 'var(--rust)' : barColor),
+        backgroundColor: entries.map((_, i) => i === 0 ? accentColor : barColor),
         borderRadius: 4,
         maxBarThickness: 14,
         barPercentage: 0.7,
@@ -239,15 +240,18 @@ export function renderCacheStack(canvasId, cacheRead, cacheCreate, inputTokens) 
   const isDark = document.documentElement.classList.contains('dark');
   const ttBg = isDark ? '#1f222a' : '#f0eee7';
   const ttFg = isDark ? '#e8e9ef' : '#15151a';
+  const forestColor = isDark ? '#5ec2a8' : '#3d7558';
+  const rustColor = isDark ? '#7480e8' : '#4a52a8';
+  const ochreColor = isDark ? '#c9a86b' : '#9a7836';
 
   const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: ['Token 构成'],
       datasets: [
-        { label: '缓存命中', data: [cacheRead], backgroundColor: 'var(--forest)', borderRadius: 4 },
-        { label: '新输入', data: [inputTokens], backgroundColor: 'var(--rust)', borderRadius: 4 },
-        { label: '缓存写入', data: [cacheCreate], backgroundColor: 'var(--ochre)', borderRadius: 4 },
+        { label: '缓存命中', data: [cacheRead], backgroundColor: forestColor, borderRadius: 4 },
+        { label: '新输入', data: [inputTokens], backgroundColor: rustColor, borderRadius: 4 },
+        { label: '缓存写入', data: [cacheCreate], backgroundColor: ochreColor, borderRadius: 4 },
       ],
     },
     options: {

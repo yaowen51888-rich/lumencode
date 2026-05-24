@@ -26,13 +26,16 @@ function renderCommitTypeChart(typeEntries) {
   const labels = typeEntries.map(([k]) => k);
   const data = typeEntries.map(([, v]) => v);
   const colors = labels.map(k => COMMIT_TYPE_COLORS[k] || COMMIT_TYPE_COLORS.other);
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(232,233,239,0.10)' : 'rgba(21,21,26,0.12)';
+  const tickColor = isDark ? 'rgba(232,233,239,0.55)' : 'rgba(21,21,26,0.55)';
   const ctx = canvas.getContext('2d');
   const instance = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{ label: '提交数', data, backgroundColor: colors, borderRadius: 6, maxBarThickness: 20, barPercentage: 0.65, categoryPercentage: 0.85 }] },
     options: {
       responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      scales: { x: { grid: { color: 'var(--border)' }, ticks: { font: { family: 'JetBrains Mono', size: 11 }, precision: 0 } }, y: { grid: { display: false }, ticks: { font: { family: 'JetBrains Mono', size: 12 } } } },
+      scales: { x: { grid: { color: gridColor }, ticks: { font: { family: 'JetBrains Mono', size: 11 }, color: tickColor, precision: 0 }, border: { display: false } }, y: { grid: { display: false }, ticks: { font: { family: 'JetBrains Mono', size: 12 }, color: tickColor }, border: { display: false } } },
       plugins: { legend: { display: false } },
     },
   });

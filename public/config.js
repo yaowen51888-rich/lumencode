@@ -21,30 +21,30 @@ export const COLORS = [
 
 // 场景色板
 export const SCENARIO_COLORS = {
-  '编码': '#8ab8a0',
-  '测试/QA': '#c8b880',
-  '调试/排错': '#c49090',
-  '文档': '#90a8c8',
-  '阅读/研究': '#a090c0',
-  '规划/设计': '#c8a080',
-  '代码审查': '#80b8b8',
-  '其他': '#a8a8a8',
+  '编码': '#5ec2a8',
+  '测试/QA': '#c9b060',
+  '调试/排错': '#d47878',
+  '文档': '#78a8d4',
+  '阅读/研究': '#9878d0',
+  '规划/设计': '#d49060',
+  '代码审查': '#60b8b8',
+  '其他': '#989898',
 };
 
 // 提交类型色板
 export const COMMIT_TYPE_COLORS = {
-  feat: '#8ab8a0',
-  fix: '#c49090',
-  refactor: '#a090c0',
-  docs: '#90a8c8',
-  test: '#c8b880',
-  chore: '#a8a8a8',
-  perf: '#c890b0',
-  style: '#80b8b8',
-  ci: '#c8a080',
-  build: '#a8c880',
-  revert: '#c49090',
-  other: '#b8b8b8',
+  feat: '#5ec2a8',
+  fix: '#d47878',
+  refactor: '#9878d0',
+  docs: '#78a8d4',
+  test: '#c9b060',
+  chore: '#989898',
+  perf: '#d078a8',
+  style: '#60b8b8',
+  ci: '#d49060',
+  build: '#88c860',
+  revert: '#d47878',
+  other: '#a8a8a8',
 };
 
 // 中文字符串
