@@ -1,6 +1,6 @@
 {
   "name": "lumencode",
-  "version": "0.4.4",
+  "version": "1.0.0",
   "description": "LumenCode — AI 编码助手使用报告工具，从 JSONL 日志和 Git 仓库提取 AI 贡献度、效率与使用指标，支持 Web 可视化和命令行两种模式",
   "type": "module",
   "bin": {

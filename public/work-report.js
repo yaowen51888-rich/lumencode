@@ -56,7 +56,7 @@ export function setWorkReportState(state) {
   if (state.level !== undefined) currentLevel = state.level;
 }
 
-// ── 加载并渲染工作汇报 ──
+// ── 加载并渲染工作汇报 (legacy, kept for compatibility) ──
 export async function loadWorkReport(fetchFn, tool, period, date, platform, level) {
   if (platform) currentPlatform = platform;
   if (level) currentLevel = level;
@@ -67,33 +67,13 @@ export async function loadWorkReport(fetchFn, tool, period, date, platform, leve
   if (!res.ok) return;
   const markdown = await res.text();
   currentWorkReportMarkdown = markdown;
-
-  let html = renderMarkdown(markdown);
-  const platformLabels = { default: '标准', feishu: '飞书', dingtalk: '钉钉' };
-  const platformClass = currentPlatform === 'feishu' ? 'feishu' : currentPlatform === 'dingtalk' ? 'dingtalk' : 'default';
-  const badgeHtml = `<span class="platform-badge ${platformClass}">${platformLabels[currentPlatform] || '标准'}</span>`;
-  html = html.replace(/(<h1 class="md-h1">.*?<\/h1>)/, `$1\n${badgeHtml}`);
-
-  const content = document.getElementById(ID.WORK_REPORT_CONTENT);
-  if (content) {
-    content.innerHTML = html;
-    content.classList.toggle('is-brief', currentLevel === 'brief');
-  }
-
-  document.getElementById(ID.STATS_GRID).style.display = 'none';
-  document.getElementById(ID.ANALYTICS_SECTION).style.display = 'none';
-  document.getElementById(ID.GIT_SECTION).style.display = 'none';
-  document.getElementById(ID.WORK_REPORT_SECTION).style.display = 'block';
-  document.getElementById(ID.WORK_REPORT_BTN).style.display = 'none';
 }
 
 // ── 复制 ──
 export async function copyWorkReport() {
   const text = currentWorkReportMarkdown;
-  const btn = document.getElementById(ID.COPY_WORK_REPORT);
   try {
     await navigator.clipboard.writeText(text);
-    if (btn) { btn.textContent = TEXT.COPIED; setTimeout(() => { btn.textContent = TEXT.COPY; }, 1500); }
   } catch {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -101,7 +81,6 @@ export async function copyWorkReport() {
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    if (btn) { btn.textContent = TEXT.COPIED; setTimeout(() => { btn.textContent = TEXT.COPY; }, 1500); }
   }
 }
 
