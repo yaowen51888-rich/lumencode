@@ -54,11 +54,12 @@ test('attributeCommitsToSessions - weak window fallback', () => {
   assert.equal(commits[0].sessionAttribution, 'weak');
 });
 
-test('attributeCommitsToSessions - outside time window returns null', () => {
+test('attributeCommitsToSessions - outside time window returns cross-day-weak', () => {
   const commits = [mkCommit({ date: '2026-05-14T20:00:00' })];
   const sessions = [mkSession()];
   attributeCommitsToSessions(commits, sessions);
-  assert.equal(commits[0].sessionId, null);
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'cross-day-weak');
 });
 
 test('attributeCommitsToSessions - nearest midpoint when multiple sessions', () => {
@@ -113,7 +114,9 @@ test('attributeCommitsToSessions - non commit Bash does not trigger strong signa
     ],
   })];
   attributeCommitsToSessions(commits, sessions);
-  assert.equal(commits[0].sessionId, null);
+  // 非 git commit 的 Bash 不会触发强信号，但 commit 仍在 session 结束后 3 天内，走 cross-day-weak
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'cross-day-weak');
 });
 
 test('attributeCommitsToSessions - empty input', () => {
@@ -375,11 +378,13 @@ test('weak signal - delayed commit 20min after session end is caught', () => {
   assert.equal(commits[0].sessionAttribution, 'weak');
 });
 
-test('weak signal - commit 31min after session end is outside buffer', () => {
+test('weak signal - commit 31min after session end falls to cross-day-weak', () => {
   const commits = [mkCommit({ date: '2026-05-14T11:31:00' })];
   const sessions = [mkSession({ endTime: '2026-05-14T11:00:00' })];
   attributeCommitsToSessions(commits, sessions);
-  assert.equal(commits[0].sessionId, null);
+  // 31 分钟超出 weak buffer(30min)，但在 cross-day-weak 的 3 天范围内
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'cross-day-weak');
 });
 
 test('finalizeGitStats - manual commit override controls layered attribution', () => {

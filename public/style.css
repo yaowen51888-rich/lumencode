@@ -123,7 +123,7 @@ input, textarea { font-family: inherit; color: inherit; }
 
 /* ── Layout ── */
 #app { min-height: 100vh; background: var(--background); color: var(--foreground); }
-.app-grid { display: grid; grid-template-columns: 260px 1fr; transition: grid-template-columns 0.3s ease; }
+.app-grid { display: grid; grid-template-columns: 260px 1fr; }
 .app-grid.rail-collapsed { grid-template-columns: 56px 1fr; }
 
 /* ── Rail ── */
@@ -131,6 +131,7 @@ input, textarea { font-family: inherit; color: inherit; }
   background: var(--rail);
   color: var(--rail-foreground);
   min-height: 100vh;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -313,7 +314,7 @@ input, textarea { font-family: inherit; color: inherit; }
 .rail.collapsed .rail-toggle { display: flex; }
 
 /* ── Main ── */
-.main-content { min-height: 100vh; }
+.main-content { min-height: 100vh; min-width: 0; overflow-x: hidden; }
 
 /* ── Primitives ── */
 .font-mono { font-family: var(--font-mono); }

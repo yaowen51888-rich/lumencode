@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
-import { getGitStatsForMultipleReposAsync, getPerRepoGitStats, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
+import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
@@ -97,54 +97,60 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     return null;
   }
 
-  // 其余逻辑保持不变
   const { filtered, start, end } = filterRecordsByPeriod(toolRecords, period, dateArg, { customStart: options.customStart, customEnd: options.customEnd });
-  const usageStats = computeUsageStats(filtered, config.scenarioKeywords, config.costMode);
-  const sessions = groupBySessions(filtered);
+  const reposConfigured = !!(config.repos && config.repos.length > 0);
 
-  let gitStats = null;
-  if (config.repos && config.repos.length > 0) {
-    // 按工具过滤后，只统计该工具覆盖的项目对应的 repos
+  // ── 第一层并发：三个独立的同步计算 ──
+  const [usageStats, sessions, billingBlocks] = [
+    computeUsageStats(filtered, config.scenarioKeywords, config.costMode),
+    groupBySessions(filtered),
+    identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode),
+  ];
+
+  // ── 第二层并发：gitStats(async) + trendData + prevStats ──
+  const gitStatsPromise = (async () => {
+    if (!reposConfigured) return null;
     const coveredBases = new Set(filtered.map(r => {
       const p = r.project || '';
       return p.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop();
     }).filter(Boolean));
-    const toolRepos = config.repos.filter(r => coveredBases.has(r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop()));
-    if (toolRepos.length > 0) {
-      // 扩展 git 查询窗口 +2 天，以匹配 session 跨天的延迟提交
-      const extendedEnd = new Date(end);
-      extendedEnd.setDate(extendedEnd.getDate() + 2);
-      const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
-      gitStats = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
-      gitStats = finalizeGitStats(gitStats, sessions);
-      // 归因已完成，过滤 commitList 到原始窗口，重算基础统计
-      if (gitStats.commitList) {
-        const windowStart = start;
-        const windowEnd = end + 'T23:59:59';
-        const inWindow = gitStats.commitList.filter(c => (c.date || '') >= windowStart && (c.date || '') <= windowEnd);
-        gitStats.commits = inWindow.length;
-        gitStats.linesAdded = inWindow.reduce((s, c) => s + (c.linesAdded || 0), 0);
-        gitStats.linesDeleted = inWindow.reduce((s, c) => s + (c.linesDeleted || 0), 0);
-        gitStats.filesChanged = new Set(inWindow.flatMap(c => (c.files || []).map(f => f.path))).size;
-        // commitList 保留全部（含跨天），前端 drill-down 需要
-        // 但提交类型和热点只基于窗口内
-        gitStats.commitTypes = computeCommitTypes(inWindow);
-        gitStats.fileHotspots = computeFileHotspots(inWindow, 10);
-      }
+    let toolRepos = config.repos.filter(r => coveredBases.has(r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop()));
+    if (toolRepos.length === 0) toolRepos = config.repos;
+    if (toolRepos.length === 0) return null;
+    const extendedEnd = new Date(end);
+    extendedEnd.setDate(extendedEnd.getDate() + 2);
+    const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
+    let gs = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
+    gs = finalizeGitStats(gs, sessions);
+    if (gs.commitList) {
+      const windowStart = start;
+      const windowEnd = end + 'T23:59:59';
+      const inWindow = gs.commitList.filter(c => (c.date || '') >= windowStart && (c.date || '') <= windowEnd);
+      gs.commits = inWindow.length;
+      gs.linesAdded = inWindow.reduce((s, c) => s + (c.linesAdded || 0), 0);
+      gs.linesDeleted = inWindow.reduce((s, c) => s + (c.linesDeleted || 0), 0);
+      gs.filesChanged = new Set(inWindow.flatMap(c => (c.files || []).map(f => f.path))).size;
+      gs.commitTypes = computeCommitTypes(inWindow);
+      gs.fileHotspots = computeFileHotspots(inWindow, 10);
     }
-  }
+    return gs;
+  })();
 
-  const trendData = computeTrendData(toolRecords, period, dateArg);
+  const trendDataPromise = Promise.resolve(computeTrendData(toolRecords, period, dateArg));
 
-  // Previous period stats
-  const prevRange = computePrevPeriodRange(period, dateArg, { customStart: options.customStart, customEnd: options.customEnd });
-  const prevFiltered = toolRecords.filter(r => {
-    if (!r.timestamp) return false;
-    const date = r.timestamp.slice(0, 10);
-    return date >= prevRange.start && date <= prevRange.end;
-  });
-  const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
+  const prevStatsPromise = (async () => {
+    const prevRange = computePrevPeriodRange(period, dateArg, { customStart: options.customStart, customEnd: options.customEnd });
+    const prevFiltered = toolRecords.filter(r => {
+      if (!r.timestamp) return false;
+      const date = r.timestamp.slice(0, 10);
+      return date >= prevRange.start && date <= prevRange.end;
+    });
+    return prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
+  })();
 
+  const [gitStats, trendData, prevStats] = await Promise.all([gitStatsPromise, trendDataPromise, prevStatsPromise]);
+
+  // ── 第三层：依赖 usageStats 的同步派生 ──
   const slimSessions = sessions.map(s => ({
     id: s.id,
     project: s.project,
@@ -154,14 +160,8 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     commits: s.commits || [],
   }));
 
-  const billingBlocks = identifyBillingBlocks(filtered, config.blockQuota ? 5 : 5, config.costMode);
-
-  const reposConfigured = !!(config.repos && config.repos.length > 0);
-
-  // 合并 toolBreakdown：usageStats 内含 token 粒度数据，parsers 提供 sessionCount
   const statsTB = usageStats.toolBreakdown || {};
   const mergedBreakdown = {};
-  // 以 parsers toolBreakdown 为基础（包含所有已启用工具），补充 stats 中的 token 数据
   for (const [name, base] of Object.entries(toolBreakdown)) {
     const s = statsTB[name] || {};
     mergedBreakdown[name] = {
@@ -173,7 +173,6 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
       sessionCount: base.sessionCount || 0,
     };
   }
-  // 补充 stats 中有但 parsers 无的极端情况
   for (const [name, data] of Object.entries(statsTB)) {
     if (!mergedBreakdown[name]) {
       mergedBreakdown[name] = {
@@ -187,31 +186,43 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     }
   }
 
-  // Per-project details
+  // ── 第四层：projectDetails（从 commitList 按 repo 分组派生，无需再次 git 调用）──
   const projectDetails = {};
   const projEntries = Object.entries(usageStats.projects || {}).sort((a, b) => b[1].requests - a[1].requests);
-  if (reposConfigured && gitStats) {
-    const repoMap = await getPerRepoGitStats(
-      config.repos.filter(r => projEntries.some(([name]) => {
-        const base = r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop();
-        return base === name;
-      })),
-      start, end + 'T23:59:59'
-    );
+  if (reposConfigured && gitStats?.commitList?.length) {
+    const windowEnd = end + 'T23:59:59';
+    const inWindow = gitStats.commitList.filter(c => (c.date || '') >= start && (c.date || '') <= windowEnd);
+    const repoGroups = new Map();
+    for (const c of inWindow) {
+      const base = (c.repo || '').replace(/\\/g, '/').replace(/\/$/, '').split('/').pop();
+      if (!base) continue;
+      if (!repoGroups.has(base)) repoGroups.set(base, []);
+      repoGroups.get(base).push(c);
+    }
     for (const [projName, projStats] of projEntries) {
-      const matchedRepo = [...repoMap.keys()].find(r => r.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() === projName);
-      const repoGit = matchedRepo ? repoMap.get(matchedRepo) : null;
-      const topCommits = (repoGit?.commitList || [])
+      const repoCommits = repoGroups.get(projName) || [];
+      if (repoCommits.length === 0) {
+        projectDetails[projName] = { usage: projStats, git: null, topCommits: [] };
+        continue;
+      }
+      const uniqueFiles = new Set();
+      let linesAdded = 0, linesDeleted = 0;
+      for (const c of repoCommits) {
+        linesAdded += c.linesAdded || 0;
+        linesDeleted += c.linesDeleted || 0;
+        for (const f of c.files || []) uniqueFiles.add(f.path);
+      }
+      const topCommits = repoCommits
         .filter(c => c.type === 'feat' || c.type === 'fix')
         .slice(0, 5)
         .map(c => ({ type: c.type, subject: c.subject, scope: c.scope }));
       projectDetails[projName] = {
         usage: projStats,
-        git: repoGit ? {
-          commits: repoGit.commits, linesAdded: repoGit.linesAdded, linesDeleted: repoGit.linesDeleted,
-          filesChanged: repoGit.filesChanged,
-          fileHotspots: (repoGit.fileHotspots || []).slice(0, 5),
-        } : null,
+        git: {
+          commits: repoCommits.length, linesAdded, linesDeleted,
+          filesChanged: uniqueFiles.size,
+          fileHotspots: computeFileHotspots(repoCommits, 5),
+        },
         topCommits,
       };
     }

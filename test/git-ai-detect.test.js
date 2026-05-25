@@ -81,8 +81,10 @@ test('computeAIContribution - counted by confidence', () => {
   ];
   const r = computeAIContribution(commits);
   assert.equal(r.aiCommits, 2);
-  assert.equal(r.humanCommits, 2);
+  assert.equal(r.possibleAICommits, 1);
+  assert.equal(r.humanCommits, 1);
   assert.equal(r.aiCommitRatio, 0.5);
+  assert.equal(r.possibleAICommitRatio, 0.25);
   assert.equal(r.aiRatio, 95 / 127);
   assert.equal(r.aiLinesAdded, 80);
   assert.equal(r.aiLinesDeleted, 15);
@@ -93,6 +95,10 @@ test('computeAIContribution - counted by confidence', () => {
   assert.equal(r.highConfidenceCommits, 1);
   assert.equal(r.mediumConfidenceCommits, 1);
   assert.equal(r.lowConfidenceCommits, 1);
+  // 加权指标
+  assert.ok(r.weightedAILinesAdded > 0);
+  assert.ok(r.weightedAILinesDeleted > 0);
+  assert.ok(r.weightedAILineRatio > 0);
 });
 
 test('computeAIContribution - aiRatio uses changed lines instead of commit count', () => {

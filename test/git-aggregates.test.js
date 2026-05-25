@@ -42,7 +42,8 @@ test('finalizeGitStats - complete flow with weak session attribution', () => {
   assert.equal(sessions[1].commits[0].subject, 'docs: update readme');
 
   assert.equal(stats.aiContribution.aiCommits, 0);
-  assert.equal(stats.aiContribution.humanCommits, 3);
+  assert.equal(stats.aiContribution.possibleAICommits, 3);
+  assert.equal(stats.aiContribution.humanCommits, 0);
   assert.equal(stats.aiContribution.lowConfidenceCommits, 3);
 
   for (const c of stats.commitList) {
@@ -127,10 +128,12 @@ test('finalizeGitStats - weak session attribution is not counted as AI', () => {
   assert.equal(stats.commitList[0].aiConfidence, 'low');
   assert.ok(stats.commitList[0].aiSignals.includes('sessionAttributed'));
   assert.equal(stats.commitList[1].isAI, false);
-  assert.equal(stats.commitList[1].sessionId, null);
+  assert.equal(stats.commitList[1].sessionId, 's-active');
+  assert.equal(stats.commitList[1].sessionAttribution, 'cross-day-weak');
   assert.equal(stats.aiContribution.aiCommits, 0);
-  assert.equal(stats.aiContribution.humanCommits, 2);
-  assert.equal(stats.aiContribution.lowConfidenceCommits, 1);
+  assert.equal(stats.aiContribution.possibleAICommits, 2);
+  assert.equal(stats.aiContribution.humanCommits, 0);
+  assert.equal(stats.aiContribution.lowConfidenceCommits, 2);
 });
 
 test('finalizeGitStats - strong session attribution counts as medium confidence AI', () => {

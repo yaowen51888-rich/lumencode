@@ -18,6 +18,7 @@ Thumbs.db
 docs/
 .playwright-mcp/
 .spec-workflow/
+specs/
 .claude/
 .gstack/
 

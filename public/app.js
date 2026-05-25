@@ -479,7 +479,15 @@ function appState() {
       if (gitStats.attributionSummary) {
         const s = gitStats.attributionSummary;
         const upperPct = Math.round(((s.confirmedAILines + s.probableAILines + s.possibleAILines) / (s.totalLinesChanged || 1)) * 100);
-        this.aiSummaryDesc = `代码变更有 AI 参与（可能上限 <strong>${upperPct}%</strong>）`;
+        const weightedPct = Math.round((ai.weightedAILineRatio || 0) * 100);
+        let desc = '代码变更有 AI 参与';
+        if (ai.possibleAICommits > 0) {
+          desc += `，可能 AI 影响 <strong>${ai.possibleAICommits}</strong> 提交`;
+        }
+        if (weightedPct > targetPct) {
+          desc += `，加权影响力 <strong>${weightedPct}%</strong>`;
+        }
+        this.aiSummaryDesc = desc;
         this.confirmedPct = Math.round((s.confirmedAILines / (s.totalLinesChanged || 1)) * 100);
         this.inferredPct = Math.round((s.probableAILines / (s.totalLinesChanged || 1)) * 100);
         this.unattribPct = Math.max(0, 100 - this.confirmedPct - this.inferredPct);
@@ -581,15 +589,25 @@ function appState() {
       const cost = usageStats.estimatedCost || 0;
       const ai = gitStats?.aiContribution;
       const aiPct = ai ? Math.round((ai.aiLinesChanged / (ai.totalLinesChanged || 1)) * 100) : 0;
+      const weightedPct = ai ? Math.round((ai.weightedAILineRatio || 0) * 100) : 0;
       const days = Object.keys(usageStats.dailyStats || {}).length || 1;
+      let aiSubText = `${fmt(ai?.aiLinesChanged || 0)} 行严格可认定`;
+      if (ai?.possibleAICommits > 0) {
+        aiSubText += `，${ai.possibleAICommits} 提交可能 AI 参与`;
+      }
       this.reportKpis = [
         { l: 'TOKENS', v: (usageStats.totalTokens / 1_000_000).toFixed(2) + 'M', s: `估算成本 $${cost.toFixed(2)}`, accent: false },
         { l: 'COMMITS', v: String(gitStats?.commits || 0), s: `+${fmt(gitStats?.linesAdded || 0)} / −${fmt(gitStats?.linesDeleted || 0)} 行`, accent: false },
-        { l: 'AI CONTRIBUTION', v: aiPct + '%', s: `${fmt(ai?.aiLinesChanged || 0)} 行可独立运行`, accent: true },
+        { l: 'AI CONTRIBUTION', v: aiPct + '%', s: aiSubText, accent: true },
         { l: 'ACTIVE DAYS', v: days + ' / ' + (this.period === 'weekly' ? '7' : '31'), s: '连续 - 天最长', accent: false },
       ];
       this.reportSubTitle = `生成 ${start}${end !== start ? ' ~ ' + end : ''} · 来源 ${this.availableTools.length + 1} 个工具`;
-      this.reportSummary = `本${this.periodMeta.cn}跨 ${this.availableTools.length + 1} 个 AI 编程工具汇总 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">${days}</span> 个活跃工作日，消耗 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">${(usageStats.totalTokens / 1_000_000).toFixed(2)}M</span> tokens，估算成本 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">$${cost.toFixed(2)}</span>。AI 贡献率 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;color:var(--rust)">${aiPct}%</span>。`;
+      let summaryText = `本${this.periodMeta.cn}跨 ${this.availableTools.length + 1} 个 AI 编程工具汇总 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">${days}</span> 个活跃工作日，消耗 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">${(usageStats.totalTokens / 1_000_000).toFixed(2)}M</span> tokens，估算成本 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;">$${cost.toFixed(2)}</span>。AI 贡献率 <span class="font-mono" style="background:var(--ink-12);padding:2px 6px;border-radius:4px;color:var(--rust)">${aiPct}%</span>`;
+      if (weightedPct > aiPct) {
+        summaryText += `，加权 AI 影响力 ${weightedPct}%`;
+      }
+      summaryText += '。';
+      this.reportSummary = summaryText;
       this.reportHighlights = [
         { l: 'AI 主导编辑占比', v: aiPct + '%' },
         { l: '本月新增提交', v: String(gitStats?.commits || 0) },
