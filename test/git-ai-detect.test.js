@@ -1,6 +1,6 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { detectAICommit, computeAIContribution, computeCommitTypes, computeFileHotspots } from '../lib/git.js';
+import { detectAICommit, detectNegativeSignals, computeAIContribution, computeCommitTypes, computeFileHotspots } from '../lib/git.js';
 
 test('detectAICommit - Co-Authored-By: Claude', () => {
   const r = detectAICommit('feat: add x', 'me@x', 'Body line\nCo-Authored-By: Claude <noreply@anthropic.com>');
@@ -42,6 +42,44 @@ test('detectAICommit - normal human commit', () => {
   assert.equal(r.isAI, false);
   assert.equal(r.aiConfidence, 'none');
   assert.deepEqual(r.signals, []);
+});
+
+test('detectAICommit - style heuristic detects AI-like commit (strong → medium)', () => {
+  const body = [
+    '- Add per-project work report generation with project selector panel',
+    '- Add custom date range picker (arbitrary start/end dates)',
+    '- Fix period-aware date navigation (weekly ±7d, monthly ±1mo)',
+    '- Redesign sidebar: version/theme/collapse moved to footer',
+    '- Rewrite README.md and README_EN.md for v1.0.0',
+  ].join('\n');
+  const r = detectAICommit('feat(v1.0.0): per-project reports', 'dev@example.com', body);
+  assert.equal(r.isAI, true);
+  assert.equal(r.aiAssisted, true);
+  assert.equal(r.aiConfidence, 'medium');
+  assert.equal(r.attributionType, 'style_heuristic_strong');
+  assert.ok(r.signals.includes('styleBulletList'));
+  assert.ok(r.signals.includes('styleConventionalScope'));
+  assert.ok(r.signals.includes('styleImperativeMood'));
+});
+
+test('detectAICommit - style heuristic below threshold', () => {
+  const r = detectAICommit('fix: typo', 'dev@example.com', '- fix a typo');
+  assert.equal(r.aiAssisted, false);
+  assert.equal(r.aiConfidence, 'none');
+});
+
+test('detectAICommit - style heuristic skipped when explicit signal present', () => {
+  const body = '- Add feature A\n- Add feature B\n- Add feature C\n- Update lib/core.js';
+  const r = detectAICommit('feat(core): big feature', 'dev@x.com', body + '\nCo-Authored-By: Claude');
+  assert.equal(r.aiConfidence, 'high');
+  assert.equal(r.attributionType, 'explicit');
+  assert.ok(!r.signals.includes('styleBulletList'));
+});
+
+test('detectAICommit - style heuristic requires bullet list', () => {
+  const r = detectAICommit('feat(v2): update', 'dev@x.com', 'A very long body with technical detail in lib/parser.js but no bullets at all, just plain text.');
+  assert.equal(r.aiAssisted, false);
+  assert.equal(r.aiConfidence, 'none');
 });
 
 test('detectAICommit - multiple signals', () => {
@@ -320,4 +358,118 @@ test('detectAICommit - detectedTool for Aider signals', () => {
 test('detectAICommit - detectedTool for author-based Claude detection', () => {
   const r = detectAICommit('docs: update', 'noreply@anthropic.com');
   assert.equal(r.detectedTool, 'claude');
+});
+
+// ── Negative signal tests ──
+
+test('detectNegativeSignals - humanInformal short non-conventional message', () => {
+  const signals = detectNegativeSignals('fix typo', '', 0, 0, 0);
+  assert.ok(signals.includes('humanInformal'));
+});
+
+test('detectNegativeSignals - humanMergeCommit', () => {
+  const signals = detectNegativeSignals("Merge branch 'feature'", '', 10, 2, 3);
+  assert.ok(signals.includes('humanMergeCommit'));
+});
+
+test('detectNegativeSignals - humanSmallScope', () => {
+  const signals = detectNegativeSignals('chore: lint', '', 1, 1, 1);
+  assert.ok(signals.includes('humanSmallScope'));
+});
+
+test('detectNegativeSignals - humanWIP', () => {
+  const signals = detectNegativeSignals('WIP: new feature', '', 50, 0, 5);
+  assert.ok(signals.includes('humanWIP'));
+});
+
+test('detectNegativeSignals - no signals for normal commit', () => {
+  const signals = detectNegativeSignals('feat: add user model', 'Add User model with validation', 120, 5, 8);
+  assert.deepEqual(signals, []);
+});
+
+test('detectAICommit - negative signals block style heuristic for short informal message', () => {
+  const r = detectAICommit('wip stuff', 'dev@x.com', '');
+  assert.equal(r.aiConfidence, 'none');
+  assert.ok((r.negativeSignals || []).includes('humanInformal'));
+});
+
+test('detectAICommit - negative signals do not block explicit signature', () => {
+  const r = detectAICommit('WIP: feature', 'dev@x.com', 'Co-Authored-By: Claude <noreply@anthropic.com>');
+  assert.equal(r.aiConfidence, 'high');
+  assert.equal(r.attributionType, 'explicit');
+});
+
+// ── Timezone handling tests ──
+
+test('date preservation - full ISO with timezone offset parses correctly', () => {
+  // Verify Date.parse handles timezone-offset dates
+  const withOffset = '2026-05-25T10:30:00+08:00';
+  const withZ = '2026-05-25T02:30:00Z';
+  assert.equal(Date.parse(withOffset), Date.parse(withZ));
+});
+
+test('date preservation - slice(0,10) extracts date key from offset format', () => {
+  const date = '2026-05-25T10:30:00+08:00';
+  assert.equal(date.slice(0, 10), '2026-05-25');
+});
+
+// ── Continuous score integration tests (via computeAIContribution) ──
+
+test('computeAIContribution - explicit AI commit has aiScore >= 0.75', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'explicit',
+      detectedTool: 'claude',
+      linesAdded: 50,
+      linesDeleted: 10,
+      files: [{ path: 'a.js', added: 50, deleted: 10 }],
+      aiSignals: ['coAuthor'],
+      negativeSignals: [],
+      aiEvidenceDetails: {},
+    },
+    { isAI: false, aiConfidence: 'none', linesAdded: 10, linesDeleted: 0, files: [], aiSignals: [], negativeSignals: [], aiEvidenceDetails: {} },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiCommits, 1);
+  assert.equal(r.aiRatio, 60 / 70);
+});
+
+test('computeAIContribution - negative signals reduce weighted ratio', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'medium',
+      attributionType: 'session_strong',
+      linesAdded: 100,
+      linesDeleted: 20,
+      files: [{ path: 'a.js', added: 100, deleted: 20 }],
+      aiSignals: ['sessionCommitBash', 'fileOverlap'],
+      negativeSignals: ['humanSmallScope'],
+      aiEvidenceDetails: { fileOverlapRatio: 0.8 },
+    },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiCommits, 1);
+  // Weighted should reflect MEDIUM (0.7) weight
+  assert.ok(r.weightedAILineRatio > 0);
+});
+
+test('computeAIContribution - merge commit excluded from AI', () => {
+  const commits = [
+    {
+      isAI: false,
+      aiConfidence: 'none',
+      attributionType: 'human_merge',
+      linesAdded: 5,
+      linesDeleted: 0,
+      files: [{ path: 'a.js', added: 5, deleted: 0 }],
+      aiSignals: [],
+      negativeSignals: ['humanMergeCommit'],
+    },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiCommits, 0);
+  assert.equal(r.humanCommits, 1);
 });
