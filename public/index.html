@@ -188,6 +188,7 @@
               <span class="label section-head-en">/ AI CONTRIBUTION</span>
               <span class="section-head-line"></span>
               <span class="section-head-meta font-mono" style="font-size:10px;opacity:0.55" x-text="aiContributionMeta"></span>
+              <span x-show="lineBlameEvidence" class="font-mono" style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--forest);color:var(--background);letter-spacing:0.08em;opacity:0.85">LINE-BLAME</span>
             </div>
 
             <div class="ai-hero-grid">
@@ -196,6 +197,7 @@
                   <div style="flex-shrink:0;">
                     <div class="ai-hero-pct"><span class="text-aurora-shimmer" x-text="aiLinePctDisplay"></span><span :style="'color:' + colors.rust">%</span></div>
                     <div class="ai-hero-desc" x-html="aiSummaryDesc"></div>
+                    <div x-show="lineBlamePrecision" class="font-mono" style="font-size:10px;margin-top:6px;opacity:0.55" x-text="lineBlamePrecision"></div>
                   </div>
                   <div style="flex:1;padding-bottom:12px;">
                     <div style="display:flex;justify-content:space-between;margin-bottom:6px;">

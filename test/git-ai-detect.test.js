@@ -139,7 +139,7 @@ test('computeAIContribution - counted by confidence', () => {
   assert.ok(r.weightedAILineRatio > 0);
 });
 
-test('finalizeGitStats - uses custom continuous score thresholds', () => {
+test('finalizeGitStats - uses custom continuous score thresholds', async () => {
   const merged = {
     commits: 1,
     filesChanged: 1,
@@ -164,7 +164,7 @@ test('finalizeGitStats - uses custom continuous score thresholds', () => {
     }],
   };
 
-  finalizeGitStats(merged, [], {
+  await finalizeGitStats(merged, [], {
     attribution: {
       confidenceThresholds: { high: 0.90, medium: 0.60, low: 0.30 },
     },

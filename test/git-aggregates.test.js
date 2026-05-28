@@ -2,7 +2,7 @@ import test from 'node:test';
 import { strict as assert } from 'node:assert';
 import { COMMIT_SENTINEL, parseGitLogOutput, finalizeGitStats } from '../lib/git.js';
 
-test('finalizeGitStats - complete flow with weak session attribution', () => {
+test('finalizeGitStats - complete flow with weak session attribution', async () => {
   const output = [
     `${COMMIT_SENTINEL}h1|2026-05-14T10:30:00|me@x|feat(api): add endpoint`,
     '40\t10\tlib/api.js',
@@ -34,7 +34,7 @@ test('finalizeGitStats - complete flow with weak session attribution', () => {
     },
   ];
 
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(sessions[0].commits.length, 2);
   assert.equal(sessions[1].commits.length, 1);
@@ -62,13 +62,13 @@ test('finalizeGitStats - complete flow with weak session attribution', () => {
   assert.deepEqual(stats.sessionCommitMap['sess-b'], ['h3']);
 });
 
-test('finalizeGitStats - no sessions still aggregates', () => {
+test('finalizeGitStats - no sessions still aggregates', async () => {
   const output = [
     `${COMMIT_SENTINEL}h1|2026-05-14T10:00:00|me@x|feat: x`,
     '10\t0\ta.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.equal(stats.commitTypes.feat, 1);
   assert.equal(stats.fileHotspots[0].path, 'a.js');
@@ -76,12 +76,12 @@ test('finalizeGitStats - no sessions still aggregates', () => {
   assert.equal(stats.commitList[0].sessionId, null);
 });
 
-test('finalizeGitStats - null safety', () => {
-  assert.equal(finalizeGitStats(null, []), null);
-  assert.equal(finalizeGitStats(undefined, []), undefined);
+test('finalizeGitStats - null safety', async () => {
+  assert.equal(await finalizeGitStats(null, []), null);
+  assert.equal(await finalizeGitStats(undefined, []), undefined);
 });
 
-test('finalizeGitStats - explicit AI commit contributes to metrics', () => {
+test('finalizeGitStats - explicit AI commit contributes to metrics', async () => {
   const output = [
     `${COMMIT_SENTINEL}a1|2026-05-14T10:00:00|me@x|feat: human work`,
     '10\t0\ta.js',
@@ -94,7 +94,7 @@ test('finalizeGitStats - explicit AI commit contributes to metrics', () => {
   stats.commitList[1].aiConfidence = 'high';
   stats.commitList[1].aiSignals = ['coAuthor'];
   stats.commitList[1].attributionType = 'explicit';
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.equal(stats.aiContribution.aiCommits, 1);
   assert.equal(stats.aiContribution.humanCommits, 1);
@@ -105,7 +105,7 @@ test('finalizeGitStats - explicit AI commit contributes to metrics', () => {
   assert.equal(stats.aiContribution.aiLinesDeleted, 5);
 });
 
-test('finalizeGitStats - weak session attribution is not counted as AI', () => {
+test('finalizeGitStats - weak session attribution is not counted as AI', async () => {
   const output = [
     `${COMMIT_SENTINEL}w1|2026-05-14T10:30:00|human@x|feat: regular commit`,
     '20\t0\tlib/a.js',
@@ -122,7 +122,7 @@ test('finalizeGitStats - weak session attribution is not counted as AI', () => {
     commits: [],
   }];
 
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(stats.commitList[0].isAI, false);
   assert.equal(stats.commitList[0].aiConfidence, 'low');
@@ -136,7 +136,7 @@ test('finalizeGitStats - weak session attribution is not counted as AI', () => {
   assert.equal(stats.aiContribution.lowConfidenceCommits, 2);
 });
 
-test('finalizeGitStats - strong session attribution counts as medium confidence AI', () => {
+test('finalizeGitStats - strong session attribution counts as medium confidence AI', async () => {
   const output = [
     `${COMMIT_SENTINEL}s1|2026-05-14T10:00:05|human@x|feat: commit via bash`,
     '12\t1\tlib/a.js',
@@ -153,7 +153,7 @@ test('finalizeGitStats - strong session attribution counts as medium confidence 
     commits: [],
   }];
 
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(stats.commitList[0].isAI, true);
   assert.equal(stats.commitList[0].aiConfidence, 'medium');
@@ -163,7 +163,7 @@ test('finalizeGitStats - strong session attribution counts as medium confidence 
   assert.equal(stats.aiContribution.mediumConfidenceCommits, 1);
 });
 
-test('finalizeGitStats - file overlap lifts weak session into counted AI', () => {
+test('finalizeGitStats - file overlap lifts weak session into counted AI', async () => {
   const output = [
     `${COMMIT_SENTINEL}o1|2026-05-14T10:30:00|human@x|feat: overlap change`,
     '12\t1\tsrc/app.js',
@@ -180,7 +180,7 @@ test('finalizeGitStats - file overlap lifts weak session into counted AI', () =>
     commits: [],
   }];
 
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(stats.commitList[0].aiConfidence, 'medium');
   assert.equal(stats.commitList[0].attributionType, 'session_file_overlap');
@@ -191,7 +191,7 @@ test('finalizeGitStats - file overlap lifts weak session into counted AI', () =>
   assert.equal(stats.aiContribution.aiFileLinesDeleted, 1);
 });
 
-test('finalizeGitStats - attributedTool from explicit AI signature', () => {
+test('finalizeGitStats - attributedTool from explicit AI signature', async () => {
   const output = [
     `${COMMIT_SENTINEL}c1|2026-05-14T10:00:00|me@x|feat: ai work`,
     '@@ENDBODY@@',
@@ -199,7 +199,7 @@ test('finalizeGitStats - attributedTool from explicit AI signature', () => {
     '10\t0\ta.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.equal(stats.commitList[0].attributedTool, 'claude');
   assert.ok(stats.aiContributionByTool);
@@ -207,7 +207,7 @@ test('finalizeGitStats - attributedTool from explicit AI signature', () => {
   assert.equal(stats.aiContributionByTool['generic-ai'].aiCommits, 0);
 });
 
-test('finalizeGitStats - attributedTool from session primaryTool', () => {
+test('finalizeGitStats - attributedTool from session primaryTool', async () => {
   const output = [
     `${COMMIT_SENTINEL}s1|2026-05-14T10:30:00|human@x|feat: session work`,
     '15\t2\tsrc/app.js',
@@ -224,14 +224,14 @@ test('finalizeGitStats - attributedTool from session primaryTool', () => {
     ],
     commits: [],
   }];
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(stats.commitList[0].attributedTool, 'codex');
   assert.ok(stats.aiContributionByTool);
   assert.equal(stats.aiContributionByTool.codex.aiCommits, 1);
 });
 
-test('finalizeGitStats - attributedTool generic-ai for unspecific AI signals', () => {
+test('finalizeGitStats - attributedTool generic-ai for unspecific AI signals', async () => {
   const output = [
     `${COMMIT_SENTINEL}g1|2026-05-14T10:00:00|me@x|feat: ai work`,
     '@@ENDBODY@@',
@@ -239,24 +239,24 @@ test('finalizeGitStats - attributedTool generic-ai for unspecific AI signals', (
     '10\t0\ta.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.equal(stats.commitList[0].attributedTool, 'generic-ai');
   assert.equal(stats.aiContributionByTool['generic-ai'].aiCommits, 1);
 });
 
-test('finalizeGitStats - attributedTool null for human commit', () => {
+test('finalizeGitStats - attributedTool null for human commit', async () => {
   const output = [
     `${COMMIT_SENTINEL}h1|2026-05-14T10:00:00|human@x|feat: my work`,
     '10\t0\ta.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.equal(stats.commitList[0].attributedTool, null);
 });
 
-test('finalizeGitStats - aiContributionByTool contains all tool keys', () => {
+test('finalizeGitStats - aiContributionByTool contains all tool keys', async () => {
   const output = [
     `${COMMIT_SENTINEL}c1|2026-05-14T10:00:00|me@x|feat: claude work`,
     '@@ENDBODY@@',
@@ -266,7 +266,7 @@ test('finalizeGitStats - aiContributionByTool contains all tool keys', () => {
     '5\t0\tb.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.ok(stats.aiContributionByTool);
   assert.equal(typeof stats.aiContributionByTool.claude, 'object');
@@ -277,7 +277,7 @@ test('finalizeGitStats - aiContributionByTool contains all tool keys', () => {
   assert.equal(stats.aiContribution.aiCommits, 1);
 });
 
-test('finalizeGitStats - file-level AI lines only count matched files in mixed commit', () => {
+test('finalizeGitStats - file-level AI lines only count matched files in mixed commit', async () => {
   const output = [
     `${COMMIT_SENTINEL}m1|2026-05-14T10:30:00|human@x|feat: mixed overlap`,
     '40\t5\tsrc/app.js',
@@ -295,7 +295,7 @@ test('finalizeGitStats - file-level AI lines only count matched files in mixed c
     commits: [],
   }];
 
-  finalizeGitStats(stats, sessions);
+  await finalizeGitStats(stats, sessions);
 
   assert.equal(stats.commitList[0].aiConfidence, 'medium');
   assert.equal(stats.commitList[0].aiEvidenceDetails.matchedFileCount, 1);
@@ -307,13 +307,13 @@ test('finalizeGitStats - file-level AI lines only count matched files in mixed c
   assert.equal(stats.aiContribution.aiLinesDeleted, 5);
 });
 
-test('finalizeGitStats - exposes layered attribution summary fields', () => {
+test('finalizeGitStats - exposes layered attribution summary fields', async () => {
   const output = [
     `${COMMIT_SENTINEL}l1|2026-05-14T10:00:00|me@x|feat: layered summary`,
     '18\t4\tlib/git.js',
   ].join('\n');
   const stats = parseGitLogOutput(output, 'D:/myrepo');
-  finalizeGitStats(stats, []);
+  await finalizeGitStats(stats, []);
 
   assert.ok(stats.attributionSummary);
   assert.equal(stats.attributionSummary.confirmedAI, 0);

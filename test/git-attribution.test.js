@@ -3,6 +3,9 @@ import { strict as assert } from 'node:assert';
 import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats } from '../lib/git.js';
 import { resolveAttributionOptions } from '../lib/git-attribution-options.js';
 
+// finalizeGitStats is now async
+const finalize = (merged, sessions, opts) => finalizeGitStats(merged, sessions, opts);
+
 function mkCommit(over = {}) {
   return {
     repo: 'D:/myrepo',
@@ -193,7 +196,7 @@ test('attachCommitsToSessions - writes compact commit view', () => {
   assert.equal(sessions[1].commits[0].aiConfidence, 'low');
 });
 
-test('finalizeGitStats - weak session attribution stays low confidence', () => {
+test('finalizeGitStats - weak session attribution stays low confidence', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -202,7 +205,7 @@ test('finalizeGitStats - weak session attribution stays low confidence', () => {
     ],
   };
   const sessions = [mkSession()];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].isAI, false);
   assert.equal(merged.commitList[0].aiAssisted, true);
   assert.equal(merged.commitList[0].aiConfidence, 'low');
@@ -210,7 +213,7 @@ test('finalizeGitStats - weak session attribution stays low confidence', () => {
   assert.ok(merged.commitList[0].aiSignals.includes('sessionAttributed'));
 });
 
-test('finalizeGitStats - weak session with file overlap upgrades to medium', () => {
+test('finalizeGitStats - weak session with file overlap upgrades to medium', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -226,7 +229,7 @@ test('finalizeGitStats - weak session with file overlap upgrades to medium', () 
       { name: 'Edit', input: { file_path: 'D:/myrepo/src/app.js' }, timestamp: '2026-05-14T10:00:00' },
     ],
   })];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].isAI, true);
   assert.equal(merged.commitList[0].aiConfidence, 'medium');
   assert.equal(merged.commitList[0].attributionType, 'session_file_overlap');
@@ -234,7 +237,7 @@ test('finalizeGitStats - weak session with file overlap upgrades to medium', () 
   assert.equal(merged.commitList[0].aiEvidenceDetails.matchedFileCount, 1);
 });
 
-test('finalizeGitStats - ignores slash-like strings in non-path fields', () => {
+test('finalizeGitStats - ignores slash-like strings in non-path fields', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -257,12 +260,12 @@ test('finalizeGitStats - ignores slash-like strings in non-path fields', () => {
       },
     ],
   })];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].aiConfidence, 'low');
   assert.equal(merged.commitList[0].aiEvidenceDetails.matchedFileCount, 0);
 });
 
-test('finalizeGitStats - root filename path field can match overlap', () => {
+test('finalizeGitStats - root filename path field can match overlap', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 8, linesDeleted: 1,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -278,12 +281,12 @@ test('finalizeGitStats - root filename path field can match overlap', () => {
       { name: 'Edit', input: { file_path: 'README.md' }, timestamp: '2026-05-14T10:00:00' },
     ],
   })];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].aiConfidence, 'medium');
   assert.equal(merged.commitList[0].aiEvidenceDetails.matchedFileCount, 1);
 });
 
-test('finalizeGitStats - same repo absolute file path overlaps after session match', () => {
+test('finalizeGitStats - same repo absolute file path overlaps after session match', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 12, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -301,12 +304,12 @@ test('finalizeGitStats - same repo absolute file path overlaps after session mat
       { name: 'Edit', input: { file_path: 'D:/decoded/myrepo/src/app.js' }, timestamp: '2026-05-14T10:00:00' },
     ],
   })];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].aiConfidence, 'medium');
   assert.equal(merged.commitList[0].aiEvidenceDetails.matchedFileCount, 1);
 });
 
-test('finalizeGitStats - strong session with file overlap upgrades to high', () => {
+test('finalizeGitStats - strong session with file overlap upgrades to high', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -324,7 +327,7 @@ test('finalizeGitStats - strong session with file overlap upgrades to high', () 
       { name: 'Edit', input: { file_path: 'D:/myrepo/src/app.js' }, timestamp: '2026-05-14T09:59:30' },
     ],
   })];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].isAI, true);
   assert.equal(merged.commitList[0].aiConfidence, 'high');
   assert.equal(merged.commitList[0].attributionType, 'session_strong_file_overlap');
@@ -332,7 +335,7 @@ test('finalizeGitStats - strong session with file overlap upgrades to high', () 
   assert.ok(merged.commitList[0].aiSignals.includes('fileOverlap'));
 });
 
-test('finalizeGitStats - explicit AI keeps explicit attribution', () => {
+test('finalizeGitStats - explicit AI keeps explicit attribution', async () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 10, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -341,7 +344,7 @@ test('finalizeGitStats - explicit AI keeps explicit attribution', () => {
     ],
   };
   const sessions = [mkSession()];
-  finalizeGitStats(merged, sessions);
+  await finalizeGitStats(merged, sessions);
   assert.equal(merged.commitList[0].attributionType, 'explicit');
   assert.equal(merged.commitList[0].aiConfidence, 'high');
 });
@@ -458,7 +461,7 @@ test('attributeCommitsToSessions - supports configurable weak and cross-day wind
   assert.equal(commits[2].sessionId, null);
 });
 
-test('finalizeGitStats - manual commit override controls layered attribution', () => {
+test('finalizeGitStats - manual commit override controls layered attribution', async () => {
   const merged = {
     commits: 1, filesChanged: 1, linesAdded: 10, linesDeleted: 2,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -472,7 +475,7 @@ test('finalizeGitStats - manual commit override controls layered attribution', (
     ],
   };
 
-  finalizeGitStats(merged, [], {
+  await finalizeGitStats(merged, [], {
     overrides: {
       commits: {
         hManual: { classification: 'confirmed_ai', primaryTool: 'codex', tools: ['codex'] },
@@ -484,7 +487,7 @@ test('finalizeGitStats - manual commit override controls layered attribution', (
   assert.equal(merged.attributionSummary.confirmedAILines, 12);
 });
 
-test('finalizeGitStats - file override beats commit override', () => {
+test('finalizeGitStats - file override beats commit override', async () => {
   const merged = {
     commits: 1, filesChanged: 1, linesAdded: 10, linesDeleted: 2,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -498,7 +501,7 @@ test('finalizeGitStats - file override beats commit override', () => {
     ],
   };
 
-  finalizeGitStats(merged, [], {
+  await finalizeGitStats(merged, [], {
     overrides: {
       commits: {
         hFileManual: { classification: 'confirmed_ai', primaryTool: 'codex', tools: ['codex'] },

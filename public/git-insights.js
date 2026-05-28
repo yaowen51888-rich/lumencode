@@ -42,6 +42,25 @@ function renderCommitTypeChart(typeEntries) {
   setChart('commitTypeChart', instance);
 }
 
+/**
+ * Render line-level attribution evidence summary.
+ * Called when gitStats.commitList has commits with lineBlame data.
+ */
+export function renderLineBlameEvidence(commitList) {
+  const blamed = (commitList || []).filter(c => c.lineBlame && c.lineBlame.source === 'step_blame');
+  if (blamed.length === 0) return null;
+  const totalAiLines = blamed.reduce((s, c) => s + (c.lineBlame.aiLines || 0), 0);
+  const totalLines = blamed.reduce((s, c) => s + (c.lineBlame.totalLines || 0), 0);
+  const totalAiDeleted = blamed.reduce((s, c) => s + (c.lineBlame.aiDeletedLines || 0), 0);
+  return {
+    commitCount: blamed.length,
+    aiLines: totalAiLines,
+    totalLines,
+    aiDeletedLines: totalAiDeleted,
+    precision: totalLines > 0 ? Math.round((totalAiLines / totalLines) * 100) : 0,
+  };
+}
+
 const COMMIT_TYPE_COLORS = {
   feat: '#8ab8a0', fix: '#c49090', refactor: '#a090c0', docs: '#90a8c8',
   test: '#c8b880', chore: '#a8a8a8', perf: '#c890b0', style: '#80b8b8',

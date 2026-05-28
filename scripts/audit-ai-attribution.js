@@ -26,7 +26,7 @@ const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 for (const repo of config.repos || []) {
   try {
     const gitStats = await getGitStatsForMultipleReposAsync([repo], start.slice(0, 10), end);
-    const result = finalizeGitStats(gitStats, sessions);
+    const result = await finalizeGitStats(gitStats, sessions);
     console.log(`\n=== ${repo} ===`);
     console.log(`总提交数: ${result.commits}`);
     console.log(`AI 提交数: ${result.aiContribution?.aiCommits || 0}`);

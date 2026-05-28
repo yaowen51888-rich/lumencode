@@ -2,7 +2,7 @@ import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
-import { renderGitInsights } from './git-insights.js';
+import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
 
@@ -95,6 +95,8 @@ function appState() {
     sourceOpencodePct: 0,
     sourceBreakdown: [],
     aiContributionMeta: '- / - LINES',
+    lineBlameEvidence: null,
+    lineBlamePrecision: '',
     gitOutputCells: [
       { l: '提交', en: 'COMMITS', v: '-', c: '' },
       { l: '变更文件', en: 'FILES', v: '-', c: '' },
@@ -535,6 +537,16 @@ function appState() {
         pctSum += pct;
         return { name: toolDisplayNames[name] || name, pct, tokens: fmtShort(tok), color: toolColors[name] || 'var(--foreground)' };
       });
+
+      /* Line-level blame evidence */
+      const blameEv = renderLineBlameEvidence(gitStats?.commitList);
+      if (blameEv) {
+        this.lineBlameEvidence = blameEv;
+        this.lineBlamePrecision = `行级归因: ${blameEv.aiLines}/${blameEv.totalLines} 行 (${blameEv.precision}%) · ${blameEv.commitCount} 提交`;
+      } else {
+        this.lineBlameEvidence = null;
+        this.lineBlamePrecision = '';
+      }
     },
 
     renderTimeline(trendData, usageStats) {

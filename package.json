@@ -39,6 +39,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "diff-match-patch": "^1.0.5",
     "sql.js": "^1.14.1"
   }
 }
