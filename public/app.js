@@ -249,15 +249,22 @@ function appState() {
       }
     },
 
+    showHooksConfirmModal() {
+      const count = this.hooksStatus?.projectCount ?? 0;
+      const el = document.getElementById('hooksConfirmCount');
+      if (el) el.textContent = count;
+      const modal = document.getElementById('hooksConfirmModal');
+      if (modal) modal.style.display = 'flex';
+    },
+
+    hideHooksConfirmModal() {
+      const modal = document.getElementById('hooksConfirmModal');
+      if (modal) modal.style.display = 'none';
+    },
+
     async enableHooksFromUi() {
+      this.hideHooksConfirmModal();
       if (this.hooksBusy) return;
-      const total = this.hooksStatus?.projectCount ?? 0;
-      if (total === 0) {
-        showToast('请先在设置中添加项目路径');
-        return;
-      }
-      const ok = window.confirm(`将为设置中的 ${total} 个项目开启 hooks，修改各项目下的 .claude/settings.local.json、.codex/config.toml 和 .opencode/plugins/lumencode-step-tracker.js，并自动备份为 .bak。是否继续？`);
-      if (!ok) return;
       this.hooksBusy = true;
       try {
         await updateHooks('enable');
@@ -271,7 +278,18 @@ function appState() {
       }
     },
 
+    showHooksDisableConfirmModal() {
+      const modal = document.getElementById('hooksDisableConfirmModal');
+      if (modal) modal.style.display = 'flex';
+    },
+
+    hideHooksDisableConfirmModal() {
+      const modal = document.getElementById('hooksDisableConfirmModal');
+      if (modal) modal.style.display = 'none';
+    },
+
     async disableHooksFromUi() {
+      this.hideHooksDisableConfirmModal();
       if (this.hooksBusy) return;
       this.hooksBusy = true;
       try {

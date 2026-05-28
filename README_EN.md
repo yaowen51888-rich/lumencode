@@ -232,6 +232,29 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 ## Changelog
 
+### v1.3.0 (2026-05-28) — Line-Level AI Attribution & Interactive Hooks Management
+
+- **Line-Level AI Attribution** — Step tracking via hooks, refining attribution granularity from commit-level to line-level for precise AI participation measurement
+- **Interactive Hooks Management** — Bottom-left status indicator in Web UI with one-click enable/disable and automatic config backup
+- **Codex Unified Hook Capture** — Supports Codex `PostToolUse` hook for real-time file edit step recording
+- **Claude Batch Hook Mode** — Supports `PostToolBatch` batch hook for reduced performance overhead
+- **OpenCode Plugin Support** — Added OpenCode `lumencode-step-tracker.js` plugin, covering all three tools
+- **Report Diagnostics Improved** — Better CLI defaults and friendlier error messages
+- **Parser Stability Enhanced** — Hardened Git metric parsing, tool parser stability, and cross-parser project filtering
+
+### v1.2.0 (2026-05-26) — AI Confidence Accuracy Overhaul
+
+- **Baseline Calibration** — Establishes personal coding baselines from project history to distinguish "your normal style" from "AI-assisted style"
+- **Negative Signal Detection** — Identifies reverse indicators of purely human commits (e.g., weekend commits, short editing sessions), reducing false positives
+- **Continuous Scoring** — Upgrades from binary (yes/no) to 0-100% continuous confidence for finer-grained attribution results
+- **Improved Attribution Ownership** — Better AI contribution assignment logic in multi-collaborator scenarios
+
+### v1.1.0 (2026-05-25) — Concurrent Pipeline & Layered Attribution
+
+- **Concurrent Pipeline Processing** — Data parsing and Git stats run in parallel, significantly speeding up large repo analysis
+- **Eliminated Redundant Git Calls** — Caches repeated queries, reducing I/O overhead
+- **Layered AI Attribution** — Three-layer confidence model (explicit signature / session strong correlation / file overlap) for more accurate attribution
+
 ### v1.0.0 (2026-05-24) — Per-Project Reports & Custom Date Ranges
 
 - **Per-Project Reports** — Added project selector in the work report right panel. Select a project to auto-filter data and generate an independent report (commits + AI interaction volume + hotspot files)

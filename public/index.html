@@ -52,6 +52,22 @@
             </ul>
           </nav>
 
+          <div class="rail-hooks" x-show="hooksStatus" x-cloak>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:500;">行级 AI 归因</span>
+              <span class="font-mono" style="font-size:9px;letter-spacing:0.08em;opacity:0.55">HOOKS</span>
+            </div>
+            <div class="rail-hooks-meta" x-text="hooksStatusText"></div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button class="rail-hooks-btn" x-show="hooksNeedAction" @click="showHooksConfirmModal()" :disabled="hooksBusy">
+                <span x-text="hooksBusy ? '...' : '开启'"></span>
+              </button>
+              <button class="rail-hooks-btn rail-hooks-btn--off" x-show="!hooksNeedAction" @click="showHooksDisableConfirmModal()" :disabled="hooksBusy">
+                关闭
+              </button>
+            </div>
+          </div>
+
           <div class="rail-footer">
             <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -152,21 +168,6 @@
                 <span style="opacity:0.4;font-size:12px;">—</span>
                 <input type="date" x-model="customEnd" @change="onCustomEndChange()" :max="today" class="custom-date-input" placeholder="结束日期">
               </div>
-            </div>
-          </div>
-
-          <div class="hooks-notice" x-show="hooksStatus" x-cloak>
-            <div>
-              <div class="hooks-notice-title">行级 AI 归因 hooks</div>
-              <div class="hooks-notice-meta" x-text="hooksStatusText"></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="btn btn-primary" x-show="hooksNeedAction" @click="enableHooksFromUi()" :disabled="hooksBusy">
-                <span x-text="hooksBusy ? '处理中' : '开启 hooks'"></span>
-              </button>
-              <button class="btn btn-outline" x-show="!hooksNeedAction" @click="disableHooksFromUi()" :disabled="hooksBusy">
-                关闭 hooks
-              </button>
             </div>
           </div>
 
@@ -658,6 +659,56 @@
         </div>
       </div>
     </main>
+
+    <!-- ── Hooks Confirm Modal ── -->
+    <div id="hooksConfirmModal" class="modal-overlay" style="display:none;">
+      <div class="modal-backdrop" @click="hideHooksConfirmModal()"></div>
+      <div class="modal-panel" style="max-width:440px;">
+        <div class="modal-header">
+          <h3 style="font-size:15px;font-weight:500;">确认开启 hooks</h3>
+          <button class="rail-btn-icon" @click="hideHooksConfirmModal()" style="color:var(--foreground);opacity:0.65;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:16px 24px;">
+          <p style="font-size:13px;line-height:1.7;opacity:0.85;">将为设置中的 <strong id="hooksConfirmCount">0</strong> 个项目开启 hooks，修改各项目下的配置文件并自动备份：</p>
+          <div class="hooks-confirm-files">
+            <div><span style="color:var(--claude)">Claude</span> .claude/settings.local.json</div>
+            <div><span style="color:var(--codex)">Codex</span> .codex/config.toml</div>
+            <div><span style="color:var(--opencode)">OpenCode</span> .opencode/plugins/lumencode-step-tracker.js</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="gap:8px;">
+          <button class="btn btn-outline" @click="hideHooksConfirmModal()">取消</button>
+          <button class="btn btn-primary" @click="enableHooksFromUi()" :disabled="hooksBusy">确认开启</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Hooks Disable Confirm Modal ── -->
+    <div id="hooksDisableConfirmModal" class="modal-overlay" style="display:none;">
+      <div class="modal-backdrop" @click="hideHooksDisableConfirmModal()"></div>
+      <div class="modal-panel" style="max-width:440px;">
+        <div class="modal-header">
+          <h3 style="font-size:15px;font-weight:500;">确认关闭 hooks</h3>
+          <button class="rail-btn-icon" @click="hideHooksDisableConfirmModal()" style="color:var(--foreground);opacity:0.65;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:16px 24px;">
+          <p style="font-size:13px;line-height:1.7;opacity:0.85;">关闭后将<strong style="color:var(--warning)">停止记录</strong>行级编辑步骤，影响如下：</p>
+          <div class="hooks-confirm-files">
+            <div style="color:var(--warning)">新提交的代码将无法进行行级 AI 归因</div>
+            <div>已记录的历史数据会保留，不受影响</div>
+            <div>恢复记录需重新开启 hooks</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="gap:8px;">
+          <button class="btn btn-outline" @click="hideHooksDisableConfirmModal()">取消</button>
+          <button class="btn btn-primary" @click="disableHooksFromUi()" :disabled="hooksBusy">确认关闭</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── Settings Modal ── -->
