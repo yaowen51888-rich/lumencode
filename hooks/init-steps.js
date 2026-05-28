@@ -3,20 +3,8 @@
  * Initialize step tracking database for the current project.
  * Usage: node hooks/init-steps.js
  */
-import { resolve } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import { StepTracker } from '../lib/step-tracker.js';
+import { initStepTracking } from '../lib/hooks-manager.js';
 
-const projectRoot = process.cwd();
-const stepsDir = resolve(projectRoot, '.ccusage');
-
-if (!existsSync(stepsDir)) mkdirSync(stepsDir, { recursive: true });
-
-const tracker = new StepTracker(projectRoot);
-await tracker.open();
-
-const stats = tracker.getStats();
+const stats = await initStepTracking(process.cwd());
 console.log(`Step tracking initialized at .ccusage/steps.db`);
 console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
-
-tracker.close();

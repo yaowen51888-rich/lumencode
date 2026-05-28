@@ -12,6 +12,9 @@ import { ClaudeParser } from './lib/parsers/claude.js';
 import { CodexParser } from './lib/parsers/codex.js';
 import { OpencodeParser } from './lib/parsers/opencode.js';
 import { initPricing, preloadUnknownPricing } from './lib/pricing-loader.js';
+import { createInterface } from 'readline';
+import { stdin as input, stdout as output } from 'process';
+import { enableHooks, disableHooks, getHooksStatus, HOOK_TOOLS, initStepTracking } from './lib/hooks-manager.js';
 
 // 注册所有解析器
 registerParser(ClaudeParser);
@@ -20,6 +23,161 @@ registerParser(OpencodeParser);
 
 const args = process.argv.slice(2);
 const command = args[0];
+
+function parseHookTools(values) {
+  const raw = values.length > 0 ? values : ['claude', 'codex'];
+  const tools = new Set();
+  for (const value of raw) {
+    for (const part of value.split(',')) {
+      const tool = part.trim().toLowerCase();
+      if (!tool) continue;
+      if (tool === 'claude' || tool === 'claude-code') tools.add(HOOK_TOOLS.CLAUDE);
+      else if (tool === 'codex') tools.add(HOOK_TOOLS.CODEX);
+      else throw new Error(`不支持的 hooks 工具: ${part}`);
+    }
+  }
+  return [...tools];
+}
+
+function detectedHookTools(status = getHooksStatus(process.cwd())) {
+  const tools = [];
+  if (status.claude.configExists || status.claude.enabled) tools.push(HOOK_TOOLS.CLAUDE);
+  if (status.codex.configExists || status.codex.enabled) tools.push(HOOK_TOOLS.CODEX);
+  return tools.length > 0 ? tools : [HOOK_TOOLS.CLAUDE, HOOK_TOOLS.CODEX];
+}
+
+function formatEnabled(value) {
+  return value ? '已开启' : '未开启';
+}
+
+function printHooksStatus(status) {
+  console.log('Hooks 状态:');
+  console.log(`- Claude Code: ${status.claude.invalid ? '配置文件 JSON 无效' : formatEnabled(status.claude.enabled)}`);
+  console.log(`- Codex: ${formatEnabled(status.codex.enabled)}`);
+  console.log(`- steps 数据库: ${status.stepsInitialized ? '已初始化' : '未初始化'}`);
+  console.log(`- 项目: ${status.projectRoot}`);
+}
+
+function printHookResults(results, action) {
+  for (const result of results) {
+    const name = result.tool === HOOK_TOOLS.CLAUDE ? 'Claude Code' : 'Codex';
+    console.log(`- ${name}: ${result.changed ? action : '无需变更'} (${result.configPath})`);
+    if (result.backupPath) console.log(`  备份: ${result.backupPath}`);
+  }
+}
+
+function hookToolName(tool) {
+  return tool === HOOK_TOOLS.CLAUDE ? 'Claude Code' : 'Codex';
+}
+
+function createPromptSession() {
+  const rl = createInterface({ input, output });
+  const lines = [];
+  const waiters = [];
+  let closed = false;
+
+  rl.on('line', line => {
+    const waiter = waiters.shift();
+    if (waiter) waiter(line);
+    else lines.push(line);
+  });
+  rl.on('close', () => {
+    closed = true;
+    while (waiters.length > 0) waiters.shift()('');
+  });
+
+  return {
+    async ask(prompt) {
+      output.write(prompt);
+      if (lines.length > 0) return lines.shift();
+      if (closed) return '';
+      return new Promise(resolve => waiters.push(resolve));
+    },
+    close() {
+      rl.close();
+    },
+  };
+}
+
+async function promptHookTools(defaultTools, rl) {
+  console.log('检测到:');
+  defaultTools.forEach((tool, index) => {
+    console.log(`[${index + 1}] ${hookToolName(tool)}`);
+  });
+
+  const answer = await rl.ask('请选择要开启 hooks 的工具（例如 1,2，直接回车选择全部）: ');
+  const raw = answer.trim();
+  if (!raw) return defaultTools;
+  const selected = [];
+  for (const part of raw.split(',')) {
+    const idx = Number(part.trim());
+    if (!Number.isInteger(idx) || idx < 1 || idx > defaultTools.length) {
+      throw new Error(`无效选择: ${part}`);
+    }
+    selected.push(defaultTools[idx - 1]);
+  }
+  return [...new Set(selected)];
+}
+
+async function confirmHooksEnable(tools, status, rl) {
+  console.log('即将开启 AI 工具 hooks。');
+  console.log('操作类型: 修改当前项目的本地 AI 工具配置文件。');
+  console.log(`影响范围: ${tools.includes(HOOK_TOOLS.CLAUDE) ? '.claude/settings.local.json ' : ''}${tools.includes(HOOK_TOOLS.CODEX) ? '.codex/config.toml' : ''}`);
+  console.log('用途: 记录 PostToolUse 事件，用于行级 AI 归因。');
+  console.log(`steps 数据库: ${status.stepsInitialized ? '已初始化' : '将初始化 .ccusage/steps.db'}`);
+  console.log('风险: 只启用当前项目 hooks，不修改全局配置或其它项目。');
+
+  const answer = await rl.ask('请输入“确认”继续: ');
+  return answer.trim() === '确认' || answer.trim().toLowerCase() === 'yes' || answer.trim().toLowerCase() === 'y';
+}
+
+async function handleHooksCommand() {
+  const subcommand = args[1] || 'status';
+  if (subcommand === 'init') {
+    const stats = await initStepTracking(process.cwd());
+    console.log(`Step tracking initialized at .ccusage/steps.db`);
+    console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
+    return;
+  }
+  if (subcommand === 'status') {
+    printHooksStatus(getHooksStatus(process.cwd()));
+    return;
+  }
+
+  const yes = args.includes('--yes') || args.includes('-y');
+  const toolArgs = args.slice(2).filter(arg => arg !== '--yes' && arg !== '-y');
+  const status = getHooksStatus(process.cwd());
+  const rl = createPromptSession();
+  let tools;
+  try {
+    tools = toolArgs.length > 0
+      ? parseHookTools(toolArgs)
+      : await promptHookTools(detectedHookTools(status), rl);
+
+    if (subcommand === 'enable') {
+      if (!yes && !(await confirmHooksEnable(tools, status, rl))) {
+        console.log('已取消，未修改配置。');
+        return;
+      }
+      const stats = await initStepTracking(process.cwd());
+      console.log(`Step tracking initialized at .ccusage/steps.db`);
+      console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
+      const results = enableHooks(process.cwd(), tools, { backup: true });
+      printHookResults(results, '已开启');
+      return;
+    }
+
+    if (subcommand === 'disable') {
+      const results = disableHooks(process.cwd(), tools, { backup: true });
+      printHookResults(results, '已关闭');
+      return;
+    }
+  } finally {
+    rl.close();
+  }
+
+  console.log('未知 hooks 命令。用法: node index.js hooks status|enable|disable|init [claude,codex] [--yes]');
+}
 
 function loadCliConfig() {
   let config = loadConfig();
@@ -284,12 +442,15 @@ if (!command || command === 'help' || command === '--help') {
   lumencode report weekly 2026-05-15 --projects D://fzwork,E://play/idea
   lumencode report daily --work
   lumencode report daily --work --brief
-  lumencode serve
-  lumencode init
-  lumencode hooks:init
-  lumencode hooks:install
-  lumencode hooks:install-claude
-  lumencode hooks:install-codex
+  node index.js serve
+  node index.js init
+  node index.js hooks status
+  node index.js hooks enable
+  node index.js hooks disable
+  node index.js hooks:init
+  node index.js hooks:install
+  node index.js hooks:install-claude
+  node index.js hooks:install-codex
 
 零配置:
   首次运行自动检测 Claude 日志目录和项目路径，无需手动配置。
@@ -300,6 +461,11 @@ if (!command || command === 'help' || command === '--help') {
 
 if (command === 'init') {
   initConfig(args[1]);
+  process.exit(0);
+}
+
+if (command === 'hooks') {
+  await handleHooksCommand();
   process.exit(0);
 }
 

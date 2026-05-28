@@ -111,6 +111,23 @@ export async function fetchStepStats() {
   return cachedFetch(API.STEP_STATS, {}, 10_000);
 }
 
+export async function fetchHooksStatus() {
+  const res = await fetch(API.HOOKS);
+  if (!res.ok) throw new Error('获取 hooks 状态失败');
+  return res.json();
+}
+
+export async function updateHooks(action, tools = ['claude', 'codex']) {
+  const res = await fetch(API.HOOKS, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, tools: tools.join(',') }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '更新 hooks 失败');
+  return data;
+}
+
 export async function fetchWorkReport(params) {
   const qs = new URLSearchParams(params).toString();
   const res = await fetch(`${API.REPORT}?${qs}&format=work`);

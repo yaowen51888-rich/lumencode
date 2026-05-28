@@ -155,6 +155,21 @@
             </div>
           </div>
 
+          <div class="hooks-notice" x-show="hooksStatus" x-cloak>
+            <div>
+              <div class="hooks-notice-title">行级 AI 归因 hooks</div>
+              <div class="hooks-notice-meta" x-text="hooksStatusText"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn btn-primary" x-show="hooksNeedAction" @click="enableHooksFromUi()" :disabled="hooksBusy">
+                <span x-text="hooksBusy ? '处理中' : '开启 hooks'"></span>
+              </button>
+              <button class="btn btn-outline" x-show="!hooksNeedAction" @click="disableHooksFromUi()" :disabled="hooksBusy">
+                关闭 hooks
+              </button>
+            </div>
+          </div>
+
           <!-- KPI Strip -->
           <div class="kpi-strip" id="kpiStrip">
             <template x-for="(k, i) in kpiData" :key="k.label">

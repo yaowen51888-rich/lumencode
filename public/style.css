@@ -378,6 +378,7 @@ input, textarea { font-family: inherit; color: inherit; }
   color: var(--foreground);
 }
 .btn-outline:hover { border-color: var(--foreground); background: var(--ink-8); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-ghost {
   padding: 6px 10px;
   color: var(--foreground);
@@ -394,6 +395,31 @@ input, textarea { font-family: inherit; color: inherit; }
     inset 0 1px 0 var(--card-lift-inset),
     0 1px 0 var(--card-lift-drop-1),
     0 8px 24px -12px var(--card-lift-drop-2);
+}
+
+.hooks-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--ink-4);
+}
+
+.hooks-notice-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.hooks-notice-meta {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  opacity: 0.62;
 }
 
 /* ── KPI Strip ── */

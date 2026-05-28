@@ -23,6 +23,7 @@ docs/
 .spec-workflow/
 specs/
 .claude/
+.codex/
 .gstack/
 .codegraph/
 .cursor/

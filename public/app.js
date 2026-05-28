@@ -1,6 +1,6 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
@@ -99,6 +99,8 @@ function appState() {
     lineBlamePrecision: '',
     stepStats: null,
     stepStatusLabel: '',
+    hooksStatus: null,
+    hooksBusy: false,
     gitOutputCells: [
       { l: '提交', en: 'COMMITS', v: '-', c: '' },
       { l: '变更文件', en: 'FILES', v: '-', c: '' },
@@ -150,6 +152,23 @@ function appState() {
     reportSummary: '',
     reportHighlights: [],
 
+    get hooksNeedAction() {
+      if (!this.hooksStatus) return false;
+      return !this.hooksStatus.stepsInitialized ||
+        !this.hooksStatus.claude?.enabled ||
+        !this.hooksStatus.codex?.enabled;
+    },
+
+    get hooksStatusText() {
+      if (!this.hooksStatus) return '正在检查 hooks 状态';
+      const parts = [
+        `Claude ${this.hooksStatus.claude?.enabled ? '已开启' : '未开启'}`,
+        `Codex ${this.hooksStatus.codex?.enabled ? '已开启' : '未开启'}`,
+        `steps ${this.hooksStatus.stepsInitialized ? '已初始化' : '未初始化'}`,
+      ];
+      return parts.join(' / ');
+    },
+
     /* ── init ── */
     async init() {
       this.loadStateFromHash();
@@ -161,6 +180,7 @@ function appState() {
         }
       });
       await this.loadTools();
+      await this.loadHooksStatus();
       await this.loadStepStats();
       // 首次加载时先获取全量数据填充侧边栏，再按当前工具加载
       if (this.activeTool !== 'all') {
@@ -204,6 +224,47 @@ function appState() {
       } catch {
         this.stepStats = null;
         this.stepStatusLabel = '';
+      }
+    },
+
+    async loadHooksStatus() {
+      try {
+        this.hooksStatus = await fetchHooksStatus();
+      } catch (e) {
+        console.warn('loadHooksStatus failed:', e);
+        this.hooksStatus = null;
+      }
+    },
+
+    async enableHooksFromUi() {
+      if (this.hooksBusy) return;
+      const ok = window.confirm('将修改当前项目的 .claude/settings.local.json 和 .codex/config.toml，并自动备份为 .bak。是否继续？');
+      if (!ok) return;
+      this.hooksBusy = true;
+      try {
+        await updateHooks('enable');
+        await this.loadHooksStatus();
+        await this.loadStepStats();
+        showToast('hooks 已开启');
+      } catch (err) {
+        showToast('开启 hooks 失败: ' + err.message);
+      } finally {
+        this.hooksBusy = false;
+      }
+    },
+
+    async disableHooksFromUi() {
+      if (this.hooksBusy) return;
+      this.hooksBusy = true;
+      try {
+        await updateHooks('disable');
+        await this.loadHooksStatus();
+        await this.loadStepStats();
+        showToast('hooks 已关闭');
+      } catch (err) {
+        showToast('关闭 hooks 失败: ' + err.message);
+      } finally {
+        this.hooksBusy = false;
       }
     },
 
