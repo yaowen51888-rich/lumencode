@@ -1,6 +1,10 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { COMMIT_SENTINEL, parseGitLogOutput, finalizeGitStats } from '../lib/git.js';
+import { execFileSync } from 'child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { COMMIT_SENTINEL, parseGitLogOutput, finalizeGitStats, getGitStatsForMultipleReposAsync, invalidateGitCache } from '../lib/git.js';
 
 test('finalizeGitStats - complete flow with weak session attribution', async () => {
   const output = [
@@ -189,6 +193,98 @@ test('finalizeGitStats - file overlap lifts weak session into counted AI', async
   assert.equal(stats.aiContribution.mediumConfidenceCommits, 1);
   assert.equal(stats.aiContribution.aiFileLinesAdded, 12);
   assert.equal(stats.aiContribution.aiFileLinesDeleted, 1);
+});
+
+test('finalizeGitStats - author mismatch with local file overlap is counted for user', async () => {
+  const output = [
+    `${COMMIT_SENTINEL}o1|2026-05-14T10:30:00|work-alias@x|feat: overlap change`,
+    '12\t1\tsrc/app.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  for (const c of stats.commitList) {
+    c.expectedAuthor = 'me@x';
+    c.authorMatchesConfig = false;
+  }
+  const sessions = [{
+    id: 's-overlap',
+    project: 'D:/myrepo',
+    startTime: '2026-05-14T10:00:00',
+    endTime: '2026-05-14T11:00:00',
+    toolSequence: [
+      { name: 'Edit', input: { file_path: 'D:/myrepo/src/app.js' }, timestamp: '2026-05-14T10:05:00' },
+    ],
+    commits: [],
+  }];
+
+  await finalizeGitStats(stats, sessions);
+
+  assert.equal(stats.commits, 1);
+  assert.equal(stats.commitList[0].countedForUser, true);
+  assert.equal(stats.commitList[0].authorMatchesConfig, false);
+  assert.equal(stats.aiContribution.aiCommits, 1);
+});
+
+test('finalizeGitStats - author mismatch without local evidence is not counted for user', async () => {
+  const output = [
+    `${COMMIT_SENTINEL}o1|2026-05-14T10:30:00|other@x|feat: teammate change`,
+    '12\t1\tsrc/app.js',
+  ].join('\n');
+  const stats = parseGitLogOutput(output, 'D:/myrepo');
+  for (const c of stats.commitList) {
+    c.expectedAuthor = 'me@x';
+    c.authorMatchesConfig = false;
+  }
+  const sessions = [{
+    id: 's-active',
+    project: 'D:/myrepo',
+    startTime: '2026-05-14T10:00:00',
+    endTime: '2026-05-14T11:00:00',
+    toolSequence: [],
+    commits: [],
+  }];
+
+  await finalizeGitStats(stats, sessions);
+
+  assert.equal(stats.commits, 0);
+  assert.equal(stats.commitList.length, 0);
+  assert.equal(stats.aiContribution.aiCommits, 0);
+  assert.equal(stats.aiContribution.totalLinesChanged, 0);
+});
+
+test('getGitStatsForMultipleReposAsync - pulls commits even when config author differs', async () => {
+  const repoDir = mkdtempSync(join(tmpdir(), 'git-author-candidates-'));
+  try {
+    execFileSync('git', ['init'], { cwd: repoDir, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.email', 'personal@x'], { cwd: repoDir, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.name', 'Personal User'], { cwd: repoDir, stdio: 'ignore' });
+    writeFileSync(join(repoDir, 'app.js'), 'const value = 1;\n', 'utf8');
+    execFileSync('git', ['add', 'app.js'], { cwd: repoDir, stdio: 'ignore' });
+    execFileSync('git', [
+      '-c', 'user.email=work@x',
+      '-c', 'user.name=Work User',
+      'commit',
+      '--date=2026-05-14T10:00:00+08:00',
+      '-m', 'feat: work alias commit',
+    ], {
+      cwd: repoDir,
+      env: {
+        ...process.env,
+        GIT_AUTHOR_DATE: '2026-05-14T10:00:00+08:00',
+        GIT_COMMITTER_DATE: '2026-05-14T10:00:00+08:00',
+      },
+      stdio: 'ignore',
+    });
+
+    invalidateGitCache();
+    const stats = await getGitStatsForMultipleReposAsync([repoDir], '2026-05-14', '2026-05-14T23:59:59');
+
+    assert.equal(stats.commits, 1);
+    assert.equal(stats.commitList[0].author, 'work@x');
+    assert.equal(stats.commitList[0].expectedAuthor, 'personal@x');
+    assert.equal(stats.commitList[0].authorMatchesConfig, false);
+  } finally {
+    rmSync(repoDir, { recursive: true, force: true });
+  }
 });
 
 test('finalizeGitStats - attributedTool from explicit AI signature', async () => {

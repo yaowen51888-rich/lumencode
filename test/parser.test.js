@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import { strictEqual, deepStrictEqual, throws } from 'node:assert/strict';
 import { writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { parseJsonlFile } from '../lib/parser.js';
+import { execFileSync } from 'child_process';
+import { parseJsonlFile, deriveProjectPaths } from '../lib/parser.js';
+import { ClaudeParser } from '../lib/parsers/claude.js';
 
 const testDir = join(process.cwd(), 'test', '__tmp_parser__');
 
@@ -27,6 +29,10 @@ function createTestFile(filename, content) {
   const filePath = join(testDir, filename);
   writeFileSync(filePath, content, 'utf-8');
   return filePath;
+}
+
+function normalizePath(value) {
+  return value.replace(/\\/g, '/').replace(/\/$/, '');
 }
 
 function expectedRecord(overrides = {}) {
@@ -334,4 +340,59 @@ test('parseJsonlFile - 系统类型消息被忽略', () => {
   ]);
 
   cleanupTestDir();
+});
+
+test('deriveProjectPaths - 同一 Git 仓库下的子目录只识别为一个项目', () => {
+  setupTestDir();
+  try {
+    const claudeDir = join(testDir, 'claude');
+    const projectLogDir = join(claudeDir, 'projects', 'repo-log');
+    const repoDir = join(testDir, 'repo');
+    const appDir = join(repoDir, 'apps', 'web');
+    const libDir = join(repoDir, 'packages', 'core');
+
+    mkdirSync(projectLogDir, { recursive: true });
+    mkdirSync(appDir, { recursive: true });
+    mkdirSync(libDir, { recursive: true });
+    execFileSync('git', ['init'], { cwd: repoDir, stdio: 'ignore' });
+
+    writeFileSync(join(projectLogDir, 'session.jsonl'), [
+      JSON.stringify({ type: 'user', cwd: appDir, message: { content: 'work in app' } }),
+      JSON.stringify({ type: 'assistant', cwd: libDir, message: { content: 'work in lib' } }),
+    ].join('\n'), 'utf8');
+
+    deepStrictEqual(deriveProjectPaths(claudeDir), [normalizePath(repoDir)]);
+  } finally {
+    cleanupTestDir();
+  }
+});
+
+test('ClaudeParser - record.project 归一到 Git 仓库根目录', async () => {
+  setupTestDir();
+  try {
+    const claudeDir = join(testDir, 'claude');
+    const projectLogDir = join(claudeDir, 'projects', 'repo-log');
+    const repoDir = join(testDir, 'repo');
+    const appDir = join(repoDir, 'apps', 'web');
+
+    mkdirSync(projectLogDir, { recursive: true });
+    mkdirSync(appDir, { recursive: true });
+    execFileSync('git', ['init'], { cwd: repoDir, stdio: 'ignore' });
+
+    writeFileSync(join(projectLogDir, 'session.jsonl'), [
+      JSON.stringify({
+        type: 'user',
+        timestamp: '2026-05-14T10:00:00Z',
+        cwd: appDir,
+        sessionId: 'session-repo-root',
+        message: { role: 'user', content: 'work in app' },
+      }),
+    ].join('\n'), 'utf8');
+
+    const records = await new ClaudeParser().parse({ claudeDir });
+    strictEqual(records.length, 1);
+    strictEqual(records[0].project, normalizePath(repoDir));
+  } finally {
+    cleanupTestDir();
+  }
 });
