@@ -37,7 +37,8 @@ test('parseGitLogOutput - 标准多 commit', () => {
   assert.equal(r.commitList[0].hash, 'abc111');
   assert.equal(r.commitList[0].subject, 'feat: add a');
   assert.equal(r.commitList[0].author, 'me@x');
-  assert.equal(r.commitList[0].date, '2026-05-14T10:00:00');
+  assert.equal(r.commitList[0].date, '2026-05-14T02:00:00Z'); // UTC 归一化（用于 session 比较）
+  assert.equal(r.commitList[0].dateLocal, '2026-05-14');       // 本地日期保留（用于 daily stats）
   assert.equal(r.commitList[0].files.length, 2);
   assert.equal(r.commitList[0].files[0].path, 'lib/a.js');
   assert.equal(r.commitList[0].files[0].added, 40);
@@ -118,6 +119,9 @@ test('parseGitLogOutput - 混合情况', () => {
   assert.equal(r.linesAdded, 80);
   assert.equal(r.linesDeleted, 15);
   assert.equal(r.filesChanged, 3); // x, y, z 唯一
+  assert.deepEqual(r.commitsByDate, {
+    '2026-05-14': 1, '2026-05-13': 1, '2026-05-12': 1, '2026-05-11': 1,
+  });
   assert.deepEqual(r.linesByDate, {
     '2026-05-14': { added: 50, deleted: 10, files: 1 },
     '2026-05-13': { added: 0, deleted: 0, files: 0 },
