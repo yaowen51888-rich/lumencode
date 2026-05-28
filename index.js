@@ -7,7 +7,7 @@ import { generateReport, generateWorkReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 import { identifyBillingBlocks } from './lib/blocks.js';
-import { registerParser, parseAllEnabledTools } from './lib/parsers/index.js';
+import { registerParser, parseAllEnabledTools, detectAvailableTools } from './lib/parsers/index.js';
 import { ClaudeParser } from './lib/parsers/claude.js';
 import { CodexParser } from './lib/parsers/codex.js';
 import { OpencodeParser } from './lib/parsers/opencode.js';
@@ -40,8 +40,16 @@ function loadCliConfig() {
   }
 
   // 日期参数
-  let dateArg = new Date().toISOString().slice(0, 10);
+  let dateArg = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+  const skipArgs = new Set();
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--projects' || args[i] === '--start' || args[i] === '--end') {
+      skipArgs.add(i);
+      skipArgs.add(i + 1);
+    }
+  }
   for (let i = 2; i < args.length; i++) {
+    if (skipArgs.has(i)) continue;
     if (!args[i].startsWith('--')) {
       dateArg = args[i];
       break;
@@ -232,7 +240,16 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     }
   }
 
-  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown, projectDetails };
+  // 工具检测诊断：记录每个工具的检测状态和数据目录
+  const diagnostics = {};
+  try {
+    const availableTools = await detectAvailableTools(config);
+    for (const t of availableTools) {
+      diagnostics[t.name] = { detected: t.detected, dataDir: t.dataDir || null };
+    }
+  } catch {}
+
+  return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown, projectDetails, _diagnostics: diagnostics };
 }
 
 if (!command || command === 'help' || command === '--help') {

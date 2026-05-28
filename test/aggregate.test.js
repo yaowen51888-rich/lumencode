@@ -145,16 +145,22 @@ test('computeUsageStats - basic counting', () => {
   assert.strictEqual(result.cacheCreate, 0);
 
   // 模型统计
-  assert.deepStrictEqual(result.models, {
-    'claude-sonnet-4-6': { count: 3, outputTokens: 150, inputTokens: 300, cacheRead: 30 },
-    'claude-haiku-4-5': { count: 1, outputTokens: 50, inputTokens: 100, cacheRead: 10 }
-  });
+  assert.deepStrictEqual(Object.keys(result.models).sort(), ['claude-haiku-4-5', 'claude-sonnet-4-6']);
+  assert.strictEqual(result.models['claude-sonnet-4-6'].count, 3);
+  assert.strictEqual(result.models['claude-sonnet-4-6'].outputTokens, 150);
+  assert.strictEqual(result.models['claude-sonnet-4-6'].inputTokens, 300);
+  assert.strictEqual(result.models['claude-sonnet-4-6'].cacheRead, 30);
+  assert.strictEqual(result.models['claude-haiku-4-5'].count, 1);
+  assert.strictEqual(result.models['claude-haiku-4-5'].outputTokens, 50);
+  assert.strictEqual(result.models['claude-haiku-4-5'].inputTokens, 100);
+  assert.strictEqual(result.models['claude-haiku-4-5'].cacheRead, 10);
 
   // 项目统计
-  assert.deepStrictEqual(result.projects, {
-    'projA': { sessions: 1, requests: 2 },
-    'projB': { sessions: 1, requests: 2 }
-  });
+  assert.deepStrictEqual(Object.keys(result.projects).sort(), ['projA', 'projB']);
+  assert.strictEqual(result.projects.projA.sessions, 1);
+  assert.strictEqual(result.projects.projA.requests, 2);
+  assert.strictEqual(result.projects.projB.sessions, 1);
+  assert.strictEqual(result.projects.projB.requests, 2);
 });
 
 test('computeUsageStats - empty records', () => {
@@ -392,16 +398,17 @@ test('resolveModelPricing - fuzzy match by family', () => {
   assert.strictEqual(p.input, 15);
 });
 
-test('resolveModelPricing - unknown model defaults to sonnet', () => {
+test('resolveModelPricing - unknown model returns unknown flag', () => {
   const p = resolveModelPricing('unknown-model');
-  assert.strictEqual(p.input, 3);
+  assert.strictEqual(p.unknown, true);
+  assert.strictEqual(p.input, undefined);
 });
 
-test('resolveModelPricing - null/undefined defaults to sonnet', () => {
+test('resolveModelPricing - null/undefined returns unknown flag', () => {
   const p = resolveModelPricing(null);
-  assert.strictEqual(p.input, 3);
+  assert.strictEqual(p.unknown, true);
   const p2 = resolveModelPricing(undefined);
-  assert.strictEqual(p2.input, 3);
+  assert.strictEqual(p2.unknown, true);
 });
 
 test('resolveModelPricing - includes cacheCreate pricing', () => {

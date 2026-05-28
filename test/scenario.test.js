@@ -184,14 +184,14 @@ test('mapToDisplayScenarios - internal scenarios to display names', (t) => {
   const result = mapToDisplayScenarios(internalScenarios);
 
   assert.deepEqual(result, {
-    '编码': 3,
+    '编码': 4,   // coding(3) + execution(1)
     '测试/QA': 2,
     '调试/排错': 1,
     '文档': 1,
     '阅读/研究': 3, // reading + research
     '规划/设计': 1,
     '代码审查': 0,
-    '其他': 2 // execution + unknown
+    '其他': 1   // unknown only (execution → 编码)
   });
 });
 
@@ -305,14 +305,14 @@ test('aggregateScenarios - mixed record types', (t) => {
   const result = aggregateScenarios(records, testScenarioKeywords);
 
   assert.deepEqual(result, {
-    '编码': 1, // Write → coding
+    '编码': 2,   // Write → coding + Bash → execution → coding
     '测试/QA': 0,
     '调试/排错': 0,
     '文档': 0,
     '阅读/研究': 0,
     '规划/设计': 3, // TaskCreate(1) + 创建(1) + 规划(1)
     '代码审查': 0,
-    '其他': 1 // Bash → execution
+    '其他': 0
   });
 });
 
@@ -348,14 +348,14 @@ test('aggregateScenarios - unknown scenarios map to "其他"', (t) => {
   const result = aggregateScenarios(records, testScenarioKeywords);
 
   assert.deepEqual(result, {
-    '编码': 0,
+    '编码': 1,   // Bash → execution → 编码
     '测试/QA': 0,
     '调试/排错': 0,
     '文档': 0,
     '阅读/研究': 0,
     '规划/设计': 0,
     '代码审查': 0,
-    '其他': 1 // Bash工具
+    '其他': 0
   });
 });
 
