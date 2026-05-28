@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  Supports <b>Claude Code · Codex · OpenCode</b> · 600+ model pricing · AI contribution attribution · Per-project reports · Custom date ranges · One-click Lark/DingTalk weekly reports
+  <b>AI Coding Assistant Analytics</b> — Line-Level AI Attribution · Three-Tool Unified · Smart Weekly Reports
 </p>
 
 <p align="center">
@@ -30,11 +30,11 @@
 
 | Scenario | Solved by lumencode |
 |----------|--------------------------|
-| **Writing weekly reports** | Pick weekly → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
-| **Proving AI ROI** | "67% of commits had AI involvement, AI-assisted 4,200 lines added, cost $12.50." **Real numbers, real confidence.** |
+| **Precise AI Contribution** | Not vague "AI helped a lot" — "3,180 out of 4,200 lines were AI-assisted." **Every line accounted for.** |
+| **Proving AI ROI** | Auto-generated weekly report: "This week AI assisted 12 commits, saved ~8 hours, cost $18.50." **Management gets it instantly.** |
+| **Writing weekly reports** | Pick period → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
 | **Per-project reporting** | Configure multiple projects, then select one to generate an independent work report for each project lead |
 | **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
-| **Understanding usage habits** | Which project uses it most? Which model burns the most tokens? When's your coding peak? **All at a glance.** |
 | **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
 
 ---
@@ -63,8 +63,8 @@ npx lumencode serve
 
 | Highlight | Description |
 |-----------|-------------|
+| 🎯 **Line-Level AI Attribution** | Hook-based step tracking identifies AI participation for each line of code. Not "AI helped with this commit" — "This line was written by AI" |
 | 🌐 **Three-Tool Unified** | Claude Code / Codex / OpenCode data auto-aggregated, sidebar tab to switch |
-| 🤖 **AI Contribution Attribution** | Detects `Co-Authored-By: Claude` signatures. Multi-layer engine measures AI's actual share in your codebase |
 | 📝 **Natural Language Work Summary** | Detailed / Brief reports with insight commentary. Standard Markdown / Lark / DingTalk formats, one-click toggle |
 | 📂 **Per-Project Reports** | Select a project from the right panel to generate an independent report (commits + AI interaction volume + hotspot files) |
 | 📅 **Custom Date Ranges** | Beyond daily/weekly/monthly — pick any start and end date, perfect for aligning with Sprint cycles |
