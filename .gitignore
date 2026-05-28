@@ -24,6 +24,7 @@ docs/
 specs/
 .claude/
 .codex/
+.opencode/
 .gstack/
 .codegraph/
 .cursor/

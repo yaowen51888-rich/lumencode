@@ -204,7 +204,7 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 
 ### 行级 AI 归因（可选增强）
 
-行级归因通过 Claude Code `PostToolUse` hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
+行级归因通过 AI 编程工具 hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
 
 ```bash
 # 在需要统计的 Git 项目根目录执行
@@ -212,7 +212,7 @@ node index.js hooks status
 node index.js hooks enable       # 交互式选择工具、初始化 steps 并自动备份配置
 ```
 
-开启时只会修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`），不会修改全局配置或其它项目。关闭可执行：
+开启时只会修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不会修改全局配置或其它项目。关闭可执行：
 
 ```bash
 node index.js hooks disable

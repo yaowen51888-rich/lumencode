@@ -156,14 +156,27 @@ function appState() {
       if (!this.hooksStatus) return false;
       return !this.hooksStatus.stepsInitialized ||
         !this.hooksStatus.claude?.enabled ||
-        !this.hooksStatus.codex?.enabled;
+        !this.hooksStatus.codex?.enabled ||
+        !this.hooksStatus.opencode?.enabled;
     },
 
     get hooksStatusText() {
       if (!this.hooksStatus) return '正在检查 hooks 状态';
+      const total = this.hooksStatus.projectCount ?? this.hooksStatus.claude?.total ?? 0;
+      if (this.hooksStatus.targetMode === 'configured-projects') {
+        if (total === 0) return '未配置项目，请先在设置中添加项目路径';
+        const parts = [
+          `Claude ${this.hooksStatus.claude?.enabledCount || 0}/${total}`,
+          `Codex ${this.hooksStatus.codex?.enabledCount || 0}/${total}`,
+          `OpenCode ${this.hooksStatus.opencode?.enabledCount || 0}/${total}`,
+          `steps ${this.hooksStatus.stepsReadyCount || 0}/${total}`,
+        ];
+        return `设置内项目 hooks：${parts.join(' / ')}`;
+      }
       const parts = [
         `Claude ${this.hooksStatus.claude?.enabled ? '已开启' : '未开启'}`,
         `Codex ${this.hooksStatus.codex?.enabled ? '已开启' : '未开启'}`,
+        `OpenCode ${this.hooksStatus.opencode?.enabled ? '已开启' : '未开启'}`,
         `steps ${this.hooksStatus.stepsInitialized ? '已初始化' : '未初始化'}`,
       ];
       return parts.join(' / ');
@@ -238,7 +251,12 @@ function appState() {
 
     async enableHooksFromUi() {
       if (this.hooksBusy) return;
-      const ok = window.confirm('将修改当前项目的 .claude/settings.local.json 和 .codex/config.toml，并自动备份为 .bak。是否继续？');
+      const total = this.hooksStatus?.projectCount ?? 0;
+      if (total === 0) {
+        showToast('请先在设置中添加项目路径');
+        return;
+      }
+      const ok = window.confirm(`将为设置中的 ${total} 个项目开启 hooks，修改各项目下的 .claude/settings.local.json、.codex/config.toml 和 .opencode/plugins/lumencode-step-tracker.js，并自动备份为 .bak。是否继续？`);
       if (!ok) return;
       this.hooksBusy = true;
       try {

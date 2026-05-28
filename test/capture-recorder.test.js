@@ -7,6 +7,7 @@ import { StepTracker } from '../lib/step-tracker.js';
 import {
   ORIGINS,
   normalizeOriginSessionId,
+  recordToolBatch,
   recordToolUse,
 } from '../lib/capture-recorder.js';
 
@@ -18,6 +19,10 @@ test('normalizeOriginSessionId prefixes raw session ids and keeps prefixed ids s
   assert.equal(
     normalizeOriginSessionId(ORIGINS.CODEX_CLI, 'codex_cli:session-b'),
     'codex_cli:session-b'
+  );
+  assert.equal(
+    normalizeOriginSessionId(ORIGINS.OPENCODE, 'session-c'),
+    'opencode:session-c'
   );
 });
 
@@ -76,6 +81,50 @@ test('recordToolUse no-ops when step tracking database is not initialized', asyn
     assert.equal(result.recorded, false);
     assert.equal(result.reason, 'not_initialized');
     assert.equal(existsSync(join(tempDir, '.ccusage', 'steps.db')), false);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('recordToolBatch records one step for multiple target files', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'capture-batch-'));
+  try {
+    const tracker = new StepTracker(tempDir);
+    await tracker.open();
+    tracker.close();
+
+    const srcDir = join(tempDir, 'src');
+    mkdirSync(srcDir, { recursive: true });
+    const firstPath = join(srcDir, 'first.js');
+    const secondPath = join(srcDir, 'second.js');
+    writeFileSync(firstPath, 'export const first = true;\n');
+    writeFileSync(secondPath, 'export const second = true;\n');
+
+    const result = await recordToolBatch({
+      origin: ORIGINS.CLAUDE_CODE,
+      sessionId: 'batch-session',
+      batchId: 'batch-a',
+      cwd: tempDir,
+      timestamp: '2026-05-28T00:00:00.000Z',
+      toolCalls: [
+        { toolUseId: 'a', toolName: 'Write', toolInput: { file_path: firstPath } },
+        { toolUseId: 'b', toolName: 'Edit', toolInput: { file_path: secondPath } },
+      ],
+    });
+
+    assert.equal(result.recorded, true);
+    assert.equal(result.toolCallCount, 2);
+
+    const verifyTracker = new StepTracker(tempDir);
+    await verifyTracker.open();
+    const stats = verifyTracker.getStats();
+    const head = verifyTracker.db.getSessionHead('claude_code:batch-session');
+    const step = verifyTracker.db.getStepById(head);
+    verifyTracker.close();
+
+    assert.equal(stats.stepCount, 1);
+    assert.ok(head);
+    assert.equal(step.tool_name, 'ToolBatch');
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }

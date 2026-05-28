@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 const command = args[0];
 
 function parseHookTools(values) {
-  const raw = values.length > 0 ? values : ['claude', 'codex'];
+  const raw = values.length > 0 ? values : ['claude', 'codex', 'opencode'];
   const tools = new Set();
   for (const value of raw) {
     for (const part of value.split(',')) {
@@ -33,6 +33,7 @@ function parseHookTools(values) {
       if (!tool) continue;
       if (tool === 'claude' || tool === 'claude-code') tools.add(HOOK_TOOLS.CLAUDE);
       else if (tool === 'codex') tools.add(HOOK_TOOLS.CODEX);
+      else if (tool === 'opencode' || tool === 'open-code') tools.add(HOOK_TOOLS.OPENCODE);
       else throw new Error(`不支持的 hooks 工具: ${part}`);
     }
   }
@@ -43,7 +44,8 @@ function detectedHookTools(status = getHooksStatus(process.cwd())) {
   const tools = [];
   if (status.claude.configExists || status.claude.enabled) tools.push(HOOK_TOOLS.CLAUDE);
   if (status.codex.configExists || status.codex.enabled) tools.push(HOOK_TOOLS.CODEX);
-  return tools.length > 0 ? tools : [HOOK_TOOLS.CLAUDE, HOOK_TOOLS.CODEX];
+  if (status.opencode.configExists || status.opencode.enabled) tools.push(HOOK_TOOLS.OPENCODE);
+  return tools.length > 0 ? tools : [HOOK_TOOLS.CLAUDE, HOOK_TOOLS.CODEX, HOOK_TOOLS.OPENCODE];
 }
 
 function formatEnabled(value) {
@@ -52,22 +54,26 @@ function formatEnabled(value) {
 
 function printHooksStatus(status) {
   console.log('Hooks 状态:');
-  console.log(`- Claude Code: ${status.claude.invalid ? '配置文件 JSON 无效' : formatEnabled(status.claude.enabled)}`);
+  const claudeMode = status.claude.batchEnabled ? 'batch' : status.claude.legacyEnabled ? 'legacy' : '';
+  console.log(`- Claude Code: ${status.claude.invalid ? '配置文件 JSON 无效' : formatEnabled(status.claude.enabled)}${claudeMode ? ` (${claudeMode})` : ''}`);
   console.log(`- Codex: ${formatEnabled(status.codex.enabled)}`);
+  console.log(`- OpenCode: ${formatEnabled(status.opencode.enabled)}`);
   console.log(`- steps 数据库: ${status.stepsInitialized ? '已初始化' : '未初始化'}`);
   console.log(`- 项目: ${status.projectRoot}`);
 }
 
 function printHookResults(results, action) {
   for (const result of results) {
-    const name = result.tool === HOOK_TOOLS.CLAUDE ? 'Claude Code' : 'Codex';
+    const name = hookToolName(result.tool);
     console.log(`- ${name}: ${result.changed ? action : '无需变更'} (${result.configPath})`);
     if (result.backupPath) console.log(`  备份: ${result.backupPath}`);
   }
 }
 
 function hookToolName(tool) {
-  return tool === HOOK_TOOLS.CLAUDE ? 'Claude Code' : 'Codex';
+  if (tool === HOOK_TOOLS.CLAUDE) return 'Claude Code';
+  if (tool === HOOK_TOOLS.CODEX) return 'Codex';
+  return 'OpenCode';
 }
 
 function createPromptSession() {
