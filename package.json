@@ -8,7 +8,11 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test",
+    "hooks:init": "node hooks/init-steps.js",
+    "hooks:install": "node hooks/install.js",
+    "hooks:install-claude": "node hooks/install.js",
+    "hooks:install-codex": "node hooks/install-codex.js"
   },
   "keywords": [
     "lumencode",
@@ -29,6 +33,7 @@
   "license": "MIT",
   "author": "zhangyaowen",
   "files": [
+    "hooks/",
     "lib/",
     "public/",
     "data/pricing.json",

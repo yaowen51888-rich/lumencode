@@ -52,6 +52,12 @@
       "genericAIKeywords": "medium"
     }
   },
+  "stepTracking": {
+    "enabled": true,
+    "dbPath": ".ccusage/steps.db",
+    "maxFileSize": 10485760,
+    "ignorePatterns": ["node_modules/", ".git/", "dist/", "build/", ".next/", ".cache/"]
+  },
   "scenarioKeywords": {
     "coding": ["实现", "功能", "开发", "implement", "feature", "add", "refactor", "重构"],
     "testing": ["测试", "test", "spec", "coverage", "单元测试"],

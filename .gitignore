@@ -15,6 +15,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local step tracking database (stores file snapshots)
+.ccusage/
 docs/
 .playwright-mcp/
 .spec-workflow/

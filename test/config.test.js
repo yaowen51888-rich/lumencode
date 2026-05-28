@@ -208,7 +208,13 @@ test('initConfig - Creates file if it doesn\'t exist', () => {
         documentation: ['文档', 'doc', 'readme', 'md', '注释', 'comment', '说明', '指南', 'guide'],
         review: ['review', '审查', '检查', '代码审查', '/review'],
         planning: ['计划', 'plan', '设计', '架构', '方案', 'design', 'architect'],
-      }
+      },
+      stepTracking: {
+        enabled: true,
+        dbPath: '.ccusage/steps.db',
+        maxFileSize: 10 * 1024 * 1024,
+        ignorePatterns: ['node_modules/', '.git/', 'dist/', 'build/', '.next/', '.cache/'],
+      },
     }, 'Created file should contain DEFAULT_CONFIG');
 
     // Clean up created file for next test

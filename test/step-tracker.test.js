@@ -175,3 +175,30 @@ test('StepTracker - getLineAttributionForCommit with no sessionId returns null',
   assert.equal(result, null);
   tracker.close();
 });
+
+test('StepTracker - Bash without file targets does not advance session head', async () => {
+  const trackerDbPath = join(tempDir, 'bash-empty-tracker.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+
+  const testFile = join(tempDir, 'bash-head.js');
+  writeFileSync(testFile, 'const first = 1;\n');
+
+  const firstHash = await tracker.recordStep({
+    sessionId: 'sess-bash-empty',
+    toolName: 'Write',
+    toolInput: { file_path: testFile },
+    toolUseId: 'tu-first',
+  });
+
+  const bashHash = await tracker.recordStep({
+    sessionId: 'sess-bash-empty',
+    toolName: 'Bash',
+    toolInput: { command: 'git status --short' },
+    toolUseId: 'tu-bash-empty',
+  });
+
+  assert.equal(bashHash, null);
+  assert.equal(tracker.db.getSessionHead('sess-bash-empty'), firstHash);
+  tracker.close();
+});

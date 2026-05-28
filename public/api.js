@@ -107,6 +107,10 @@ export async function fetchSessions(params) {
   return cachedFetch(`${API.SESSIONS}?${qs}`);
 }
 
+export async function fetchStepStats() {
+  return cachedFetch(API.STEP_STATS, {}, 10_000);
+}
+
 export async function fetchWorkReport(params) {
   const qs = new URLSearchParams(params).toString();
   const res = await fetch(`${API.REPORT}?${qs}&format=work`);

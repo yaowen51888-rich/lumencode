@@ -4,9 +4,11 @@
  * Usage: node hooks/install.js
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 const projectRoot = process.cwd();
+const hookRoot = dirname(fileURLToPath(import.meta.url));
 const settingsDir = join(projectRoot, '.claude');
 const settingsPath = join(settingsDir, 'settings.local.json');
 
@@ -18,7 +20,7 @@ if (existsSync(settingsPath)) {
 if (!settings.hooks) settings.hooks = {};
 if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
 
-const hookPath = resolve(projectRoot, 'hooks', 'post-tool-use.js');
+const hookPath = resolve(hookRoot, 'post-tool-use.js');
 const existing = settings.hooks.PostToolUse.find(h =>
   typeof h === 'object' && h.hooks?.some(sub => sub.command?.includes('post-tool-use'))
 );

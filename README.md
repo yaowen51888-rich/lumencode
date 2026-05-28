@@ -202,6 +202,19 @@ v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自
 | 排除项目 | 不希望统计的项目名称 |
 | 场景关键词 | 工作类型分类关键词 JSON |
 
+### 行级 AI 归因（Claude Code 可选增强）
+
+行级归因通过 Claude Code `PostToolUse` hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
+
+```bash
+# 在需要统计的 Git 项目根目录执行
+lumencode hooks:init
+lumencode hooks:install          # Claude Code
+lumencode hooks:install-codex    # Codex
+```
+
+数据写入当前项目的 `.ccusage/steps.db`。该数据库包含用于归因的文件快照，已在本项目 `.gitignore` 中默认忽略；如果在其它仓库启用，也建议忽略 `.ccusage/`。
+
 ### 模型定价数据
 
 - **本地表**：内置 590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价

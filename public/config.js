@@ -5,6 +5,7 @@ export const API = {
   CONFIG: '/api/config',
   DETAILS: '/api/details',
   SESSIONS: '/api/sessions',
+  STEP_STATS: '/api/step-stats',
 };
 
 // 灰阶色板（按视觉权重从重到轻）

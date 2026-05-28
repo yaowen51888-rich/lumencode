@@ -129,7 +129,10 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     extendedEnd.setDate(extendedEnd.getDate() + 2);
     const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
     let gs = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
-    gs = finalizeGitStats(gs, sessions, { attribution: config.aiAttribution });
+    gs = await finalizeGitStats(gs, sessions, {
+      attribution: config.aiAttribution,
+      stepTracking: config.stepTracking,
+    });
     if (gs.commitList) {
       const windowStart = start;
       const windowEnd = end + 'T23:59:59';
@@ -283,6 +286,10 @@ if (!command || command === 'help' || command === '--help') {
   lumencode report daily --work --brief
   lumencode serve
   lumencode init
+  lumencode hooks:init
+  lumencode hooks:install
+  lumencode hooks:install-claude
+  lumencode hooks:install-codex
 
 零配置:
   首次运行自动检测 Claude 日志目录和项目路径，无需手动配置。
@@ -293,6 +300,21 @@ if (!command || command === 'help' || command === '--help') {
 
 if (command === 'init') {
   initConfig(args[1]);
+  process.exit(0);
+}
+
+if (command === 'hooks:init') {
+  await import('./hooks/init-steps.js');
+  process.exit(0);
+}
+
+if (command === 'hooks:install' || command === 'hooks:install-claude') {
+  await import('./hooks/install.js');
+  process.exit(0);
+}
+
+if (command === 'hooks:install-codex') {
+  await import('./hooks/install-codex.js');
   process.exit(0);
 }
 
@@ -338,7 +360,10 @@ if (command === 'serve') {
     console.log('正在统计 Git 指标...');
     const sessions = groupBySessions(filtered);
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
-    gitStats = finalizeGitStats(gitStats, sessions, { attribution: config.aiAttribution });
+    gitStats = await finalizeGitStats(gitStats, sessions, {
+      attribution: config.aiAttribution,
+      stepTracking: config.stepTracking,
+    });
   }
 
   // 上一周期数据（用于工作汇报环比）

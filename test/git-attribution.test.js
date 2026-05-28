@@ -1,7 +1,11 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats } from '../lib/git.js';
 import { resolveAttributionOptions } from '../lib/git-attribution-options.js';
+import { StepTracker } from '../lib/step-tracker.js';
 
 // finalizeGitStats is now async
 const finalize = (merged, sessions, opts) => finalizeGitStats(merged, sessions, opts);
@@ -74,6 +78,142 @@ test('attributeCommitsToSessions - weak window fallback', () => {
   attributeCommitsToSessions(commits, sessions);
   assert.equal(commits[0].sessionId, 's1');
   assert.equal(commits[0].sessionAttribution, 'weak');
+});
+
+test('finalizeGitStats - uses matching step tracker per repo', async () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'git-step-repos-'));
+  try {
+    const repoA = join(tempRoot, 'repo-a');
+    const repoB = join(tempRoot, 'repo-b');
+    mkdirSync(repoA, { recursive: true });
+    mkdirSync(repoB, { recursive: true });
+
+    writeFileSync(join(repoA, 'a.js'), 'const a = 1;\n');
+    writeFileSync(join(repoB, 'b.js'), 'const b = 1;\n');
+
+    const trackerA = new StepTracker(repoA);
+    await trackerA.open();
+    await trackerA.recordStep({
+      sessionId: 'sess-a',
+      toolName: 'Write',
+      toolInput: { file_path: join(repoA, 'a.js') },
+      toolUseId: 'tu-a',
+    });
+    trackerA.close();
+
+    const trackerB = new StepTracker(repoB);
+    await trackerB.open();
+    await trackerB.recordStep({
+      sessionId: 'sess-b',
+      toolName: 'Write',
+      toolInput: { file_path: join(repoB, 'b.js') },
+      toolUseId: 'tu-b',
+    });
+    trackerB.close();
+
+    const stats = {
+      commitList: [
+        mkCommit({
+          repo: repoB,
+          hash: 'hb',
+          sessionId: 'sess-b',
+          sessionAttribution: 'strong',
+          files: [{ path: 'b.js', added: 1, deleted: 0 }],
+          linesAdded: 1,
+        }),
+      ],
+    };
+    const sessions = [
+      mkSession({ id: 'sess-a', project: repoA }),
+      mkSession({ id: 'sess-b', project: repoB }),
+    ];
+
+    await finalizeGitStats(stats, sessions);
+
+    assert.equal(stats.commitList[0].lineBlame?.source, 'step_blame');
+    assert.equal(stats.commitList[0].lineBlame?.aiLines, 1);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('finalizeGitStats - resolves origin-prefixed step sessions from raw log session ids', async () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'git-step-origin-session-'));
+  try {
+    writeFileSync(join(tempRoot, 'codex.js'), 'const codex = true;\n');
+
+    const tracker = new StepTracker(tempRoot);
+    await tracker.open();
+    await tracker.recordStep({
+      origin: 'codex_cli',
+      sessionId: 'codex_cli:sess-codex',
+      toolName: 'Write',
+      toolInput: { file_path: join(tempRoot, 'codex.js') },
+      toolUseId: 'tu-codex',
+    });
+    tracker.close();
+
+    const stats = {
+      commitList: [
+        mkCommit({
+          repo: tempRoot,
+          hash: 'hc',
+          sessionId: 'sess-codex',
+          sessionAttribution: 'strong',
+          files: [{ path: 'codex.js', added: 1, deleted: 0 }],
+          linesAdded: 1,
+        }),
+      ],
+    };
+    const sessions = [
+      mkSession({ id: 'sess-codex', project: tempRoot, primaryTool: 'codex' }),
+    ];
+
+    await finalizeGitStats(stats, sessions);
+
+    assert.equal(stats.commitList[0].sessionId, 'sess-codex');
+    assert.equal(stats.commitList[0].lineBlame?.source, 'step_blame');
+    assert.equal(stats.commitList[0].lineBlame?.aiLines, 1);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('finalizeGitStats - honors disabled step tracking option', async () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'git-step-disabled-'));
+  try {
+    writeFileSync(join(tempRoot, 'file.js'), 'const value = 1;\n');
+
+    const tracker = new StepTracker(tempRoot);
+    await tracker.open();
+    await tracker.recordStep({
+      sessionId: 'sess-disabled',
+      toolName: 'Write',
+      toolInput: { file_path: join(tempRoot, 'file.js') },
+      toolUseId: 'tu-disabled',
+    });
+    tracker.close();
+
+    const stats = {
+      commitList: [
+        mkCommit({
+          repo: tempRoot,
+          hash: 'hd',
+          sessionId: 'sess-disabled',
+          sessionAttribution: 'strong',
+          files: [{ path: 'file.js', added: 1, deleted: 0 }],
+          linesAdded: 1,
+        }),
+      ],
+    };
+    const sessions = [mkSession({ id: 'sess-disabled', project: tempRoot })];
+
+    await finalizeGitStats(stats, sessions, { stepTracking: { enabled: false } });
+
+    assert.equal(stats.commitList[0].lineBlame, undefined);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test('attributeCommitsToSessions - outside time window returns cross-day-weak', () => {

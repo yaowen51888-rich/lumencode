@@ -1,6 +1,6 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
@@ -97,6 +97,8 @@ function appState() {
     aiContributionMeta: '- / - LINES',
     lineBlameEvidence: null,
     lineBlamePrecision: '',
+    stepStats: null,
+    stepStatusLabel: '',
     gitOutputCells: [
       { l: '提交', en: 'COMMITS', v: '-', c: '' },
       { l: '变更文件', en: 'FILES', v: '-', c: '' },
@@ -159,6 +161,7 @@ function appState() {
         }
       });
       await this.loadTools();
+      await this.loadStepStats();
       // 首次加载时先获取全量数据填充侧边栏，再按当前工具加载
       if (this.activeTool !== 'all') {
         try {
@@ -189,6 +192,19 @@ function appState() {
         if (data.appName) this.appName = data.appName;
         if (data.appVersion) this.appVersion = data.appVersion;
       } catch (e) { console.warn('loadTools failed:', e); this.availableTools = []; }
+    },
+
+    async loadStepStats() {
+      try {
+        const data = await fetchStepStats();
+        this.stepStats = data;
+        this.stepStatusLabel = data?.available
+          ? `STEP READY · ${data.stepCount || 0}`
+          : 'STEP NOT READY';
+      } catch {
+        this.stepStats = null;
+        this.stepStatusLabel = '';
+      }
     },
 
     setTool(name) {
