@@ -1,6 +1,6 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { detectAICommit, detectNegativeSignals, computeAIContribution, computeCommitTypes, computeFileHotspots } from '../lib/git.js';
+import { detectAICommit, detectNegativeSignals, computeAIContribution, computeCommitTypes, computeFileHotspots, finalizeGitStats } from '../lib/git.js';
 
 test('detectAICommit - Co-Authored-By: Claude', () => {
   const r = detectAICommit('feat: add x', 'me@x', 'Body line\nCo-Authored-By: Claude <noreply@anthropic.com>');
@@ -137,6 +137,59 @@ test('computeAIContribution - counted by confidence', () => {
   assert.ok(r.weightedAILinesAdded > 0);
   assert.ok(r.weightedAILinesDeleted > 0);
   assert.ok(r.weightedAILineRatio > 0);
+});
+
+test('finalizeGitStats - uses custom continuous score thresholds', () => {
+  const merged = {
+    commits: 1,
+    filesChanged: 1,
+    linesAdded: 10,
+    linesDeleted: 0,
+    commitsByDate: {},
+    linesByDate: {},
+    fileHotspots: [],
+    commitList: [{
+      hash: 'hThreshold',
+      repo: 'D:/myrepo',
+      date: '2026-05-14T10:00:00',
+      author: 'me@x',
+      subject: 'feat: x',
+      linesAdded: 10,
+      linesDeleted: 0,
+      files: [{ path: 'a.js', added: 10, deleted: 0 }],
+      aiConfidence: 'none',
+      aiSignals: ['coAuthor'],
+      negativeSignals: [],
+      attributionType: null,
+    }],
+  };
+
+  finalizeGitStats(merged, [], {
+    attribution: {
+      confidenceThresholds: { high: 0.90, medium: 0.60, low: 0.30 },
+    },
+  });
+
+  assert.notEqual(merged.commitList[0].aiConfidence, 'high');
+  assert.equal(merged.commitList[0].aiConfidence, 'medium');
+});
+
+test('computeAIContribution - uses custom confidence weights', () => {
+  const r = computeAIContribution([
+    {
+      isAI: true,
+      aiConfidence: 'medium',
+      attributionType: 'session_file_overlap',
+      linesAdded: 100,
+      linesDeleted: 0,
+      files: [{ path: 'a.js', added: 100, deleted: 0 }],
+      aiEvidenceDetails: { matchedFiles: ['a.js'] },
+    },
+  ], null, {
+    confidenceWeights: { high: 1, medium: 0.5, low: 0.1, none: 0 },
+  });
+
+  assert.equal(r.weightedAILinesChanged, 50);
 });
 
 test('computeAIContribution - aiRatio uses changed lines instead of commit count', () => {

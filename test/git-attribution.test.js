@@ -1,6 +1,7 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
 import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats } from '../lib/git.js';
+import { resolveAttributionOptions } from '../lib/git-attribution-options.js';
 
 function mkCommit(over = {}) {
   return {
@@ -32,6 +33,24 @@ function mkSession(over = {}) {
     ...over,
   };
 }
+
+test('resolveAttributionOptions - sanitizes invalid values', () => {
+  const options = resolveAttributionOptions({
+    windows: { weakWindowMinutes: -5, crossDayWindowDays: 'bad' },
+    confidenceThresholds: { high: 2, medium: 0.5, low: -1 },
+    confidenceWeights: { high: 1, medium: 0.6, low: 0.3, none: 0 },
+    scoreWeights: { explicitSignature: 'bad', negativeMergeCommit: -0.25 },
+  });
+
+  assert.equal(options.windows.weakWindowMinutes, 30);
+  assert.equal(options.windows.crossDayWindowDays, 3);
+  assert.equal(options.confidenceThresholds.high, 0.75);
+  assert.equal(options.confidenceThresholds.medium, 0.5);
+  assert.equal(options.confidenceThresholds.low, 0.20);
+  assert.equal(options.confidenceWeights.medium, 0.6);
+  assert.equal(options.scoreWeights.explicitSignature, 0.85);
+  assert.equal(options.scoreWeights.negativeMergeCommit, -0.25);
+});
 
 test('attributeCommitsToSessions - Bash git commit strong match', () => {
   const commits = [mkCommit({ date: '2026-05-14T10:00:05' })];
@@ -70,6 +89,38 @@ test('attributeCommitsToSessions - nearest midpoint when multiple sessions', () 
   ];
   attributeCommitsToSessions(commits, sessions);
   assert.equal(commits[0].sessionId, 's-near');
+});
+
+test('attributeCommitsToSessions - file overlap wins among competing weak candidates', () => {
+  const commits = [mkCommit({
+    hash: 'hFileWin',
+    date: '2026-05-14T10:20:00',
+    files: [{ path: 'lib/git.js', added: 12, deleted: 2 }],
+  })];
+  const sessions = [
+    mkSession({
+      id: 's-near',
+      startTime: '2026-05-14T10:00:00',
+      endTime: '2026-05-14T10:15:00',
+      toolSequence: [
+        { name: 'Edit', input: { file_path: 'D:/myrepo/docs/readme.md' }, timestamp: '2026-05-14T10:05:00' },
+      ],
+    }),
+    mkSession({
+      id: 's-file',
+      startTime: '2026-05-14T09:45:00',
+      endTime: '2026-05-14T10:00:00',
+      toolSequence: [
+        { name: 'Edit', input: { file_path: 'D:/myrepo/lib/git.js' }, timestamp: '2026-05-14T09:50:00' },
+      ],
+    }),
+  ];
+
+  attributeCommitsToSessions(commits, sessions);
+
+  assert.equal(commits[0].sessionId, 's-file');
+  assert.equal(commits[0].attributionCandidates[0].sessionId, 's-file');
+  assert.ok(commits[0].attributionCandidates[0].score > commits[0].attributionCandidates[1].score);
 });
 
 test('attributeCommitsToSessions - project mismatch prevents attribution', () => {
@@ -232,7 +283,7 @@ test('finalizeGitStats - root filename path field can match overlap', () => {
   assert.equal(merged.commitList[0].aiEvidenceDetails.matchedFileCount, 1);
 });
 
-test('finalizeGitStats - repo tail fallback rescues absolute file path overlap after session match', () => {
+test('finalizeGitStats - same repo absolute file path overlaps after session match', () => {
   const merged = {
     commits: 1, filesChanged: 0, linesAdded: 12, linesDeleted: 0,
     commitsByDate: {}, linesByDate: {}, fileHotspots: [],
@@ -247,7 +298,7 @@ test('finalizeGitStats - repo tail fallback rescues absolute file path overlap a
   const sessions = [mkSession({
     project: 'D:/decoded/myrepo',
     toolSequence: [
-      { name: 'Edit', input: { file_path: 'D:/actual/myrepo/src/app.js' }, timestamp: '2026-05-14T10:00:00' },
+      { name: 'Edit', input: { file_path: 'D:/decoded/myrepo/src/app.js' }, timestamp: '2026-05-14T10:00:00' },
     ],
   })];
   finalizeGitStats(merged, sessions);
@@ -309,23 +360,24 @@ test('projectKey - hyphen vs no-separator are distinct (no collision)', () => {
   assert.equal(commits[0].sessionId, null);
 });
 
-test('projectKey - hyphen matches slash (decodeProjectName compatibility)', () => {
+test('projectKey - hyphen preserved, different projects do not match', () => {
   const commits = [mkCommit({ repo: 'D:/foo-bar' })];
   const sessions = [mkSession({ id: 'sDecoded', project: 'D:/foo/bar' })];
   attributeCommitsToSessions(commits, sessions);
-  assert.equal(commits[0].sessionId, 'sDecoded');
+  // foo-bar 和 foo/bar 是不同项目，阶段 1 修复后 projectKey 保留语义字符
+  assert.equal(commits[0].sessionId, null);
 });
 
-test('projectKey - underscore matches slash', () => {
+test('projectKey - underscore preserved, different projects do not match', () => {
   const commits = [mkCommit({ repo: 'D:/foo_bar' })];
   const sessions = [mkSession({ id: 'sUS', project: 'D:/foo/bar' })];
   attributeCommitsToSessions(commits, sessions);
-  assert.equal(commits[0].sessionId, 'sUS');
+  assert.equal(commits[0].sessionId, null);
 });
 
-test('projectKey - multi-segment hyphen path matches decoded', () => {
+test('projectKey - same project with hyphen matches exactly', () => {
   const commits = [mkCommit({ repo: 'D:/my-app-v2' })];
-  const sessions = [mkSession({ id: 'sMulti', project: 'D:/my/app/v2' })];
+  const sessions = [mkSession({ id: 'sMulti', project: 'D:/my-app-v2' })];
   attributeCommitsToSessions(commits, sessions);
   assert.equal(commits[0].sessionId, 'sMulti');
 });
@@ -385,6 +437,25 @@ test('weak signal - commit 31min after session end falls to cross-day-weak', () 
   // 31 分钟超出 weak buffer(30min)，但在 cross-day-weak 的 3 天范围内
   assert.equal(commits[0].sessionId, 's1');
   assert.equal(commits[0].sessionAttribution, 'cross-day-weak');
+});
+
+test('attributeCommitsToSessions - supports configurable weak and cross-day windows', () => {
+  const commits = [
+    mkCommit({ hash: 'h11m', date: '2026-05-14T11:11:00' }),
+    mkCommit({ hash: 'h5d', date: '2026-05-19T11:00:00' }),
+    mkCommit({ hash: 'h8d', date: '2026-05-22T11:00:00' }),
+  ];
+  const sessions = [mkSession({ endTime: '2026-05-14T11:00:00' })];
+
+  attributeCommitsToSessions(commits, sessions, {
+    attribution: { windows: { weakWindowMinutes: 10, crossDayWindowDays: 7 } },
+  });
+
+  assert.equal(commits[0].sessionId, 's1');
+  assert.equal(commits[0].sessionAttribution, 'cross-day-weak');
+  assert.equal(commits[1].sessionId, 's1');
+  assert.equal(commits[1].sessionAttribution, 'cross-day-weak');
+  assert.equal(commits[2].sessionId, null);
 });
 
 test('finalizeGitStats - manual commit override controls layered attribution', () => {

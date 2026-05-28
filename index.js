@@ -121,7 +121,7 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     extendedEnd.setDate(extendedEnd.getDate() + 2);
     const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
     let gs = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
-    gs = finalizeGitStats(gs, sessions);
+    gs = finalizeGitStats(gs, sessions, { attribution: config.aiAttribution });
     if (gs.commitList) {
       const windowStart = start;
       const windowEnd = end + 'T23:59:59';
@@ -321,7 +321,7 @@ if (command === 'serve') {
     console.log('正在统计 Git 指标...');
     const sessions = groupBySessions(filtered);
     gitStats = await getGitStatsForMultipleReposAsync(config.repos, start, end + 'T23:59:59');
-    gitStats = finalizeGitStats(gitStats, sessions);
+    gitStats = finalizeGitStats(gitStats, sessions, { attribution: config.aiAttribution });
   }
 
   // 上一周期数据（用于工作汇报环比）

@@ -7,6 +7,51 @@
   "excludeProjects": [],
   "blockQuota": null,
   "costMode": "auto",
+  "aiAttribution": {
+    "windows": {
+      "weakWindowMinutes": 30,
+      "crossDayWindowDays": 3
+    },
+    "confidenceThresholds": {
+      "high": 0.75,
+      "medium": 0.45,
+      "low": 0.20
+    },
+    "confidenceWeights": {
+      "high": 1.0,
+      "medium": 0.7,
+      "low": 0.2,
+      "none": 0
+    },
+    "scoreWeights": {
+      "explicitSignature": 0.85,
+      "explicitAuthor": 0.80,
+      "genericAISignature": 0.70,
+      "sessionStrong": 0.40,
+      "sessionCrossDay": 0.25,
+      "sessionWeak": 0.15,
+      "sessionCrossDayWeak": 0.10,
+      "fileOverlap": 0.30,
+      "styleBulletList": 0.15,
+      "styleConventionalScope": 0.05,
+      "styleImperativeMood": 0.10,
+      "styleLongStructuredBody": 0.05,
+      "baselineDeviationHigh": 0.15,
+      "baselineDeviationMedium": 0.08,
+      "negativeMergeCommit": -0.50,
+      "negativeInformal": -0.20,
+      "negativeSmallScope": -0.15,
+      "negativeWIP": -0.15,
+      "humanBaselineMatch": -0.10
+    },
+    "explicitSignalPolicy": {
+      "coAuthor": "strong",
+      "generatedWith": "strong",
+      "assistedBy": "strong",
+      "robotEmoji": "medium",
+      "genericAIKeywords": "medium"
+    }
+  },
   "scenarioKeywords": {
     "coding": ["实现", "功能", "开发", "implement", "feature", "add", "refactor", "重构"],
     "testing": ["测试", "test", "spec", "coverage", "单元测试"],

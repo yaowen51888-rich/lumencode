@@ -47,6 +47,31 @@ test('loadConfig - No config file returns defaults', () => {
   }
 });
 
+test('loadConfig - includes aiAttribution defaults', () => {
+  setupTest();
+  try {
+    const config = loadConfig(testConfigFile);
+
+    assert.deepEqual(config.aiAttribution.windows, {
+      weakWindowMinutes: 30,
+      crossDayWindowDays: 3,
+    });
+    assert.deepEqual(config.aiAttribution.confidenceThresholds, {
+      high: 0.75,
+      medium: 0.45,
+      low: 0.20,
+    });
+    assert.deepEqual(config.aiAttribution.confidenceWeights, {
+      high: 1.0,
+      medium: 0.7,
+      low: 0.2,
+      none: 0,
+    });
+  } finally {
+    cleanupTest();
+  }
+});
+
 test('loadConfig - Custom config file loads and merges with defaults', () => {
   setupTest();
   try {
@@ -131,6 +156,51 @@ test('initConfig - Creates file if it doesn\'t exist', () => {
       excludeProjects: [],
       blockQuota: null,
       costMode: 'auto',
+      aiAttribution: {
+        windows: {
+          weakWindowMinutes: 30,
+          crossDayWindowDays: 3,
+        },
+        confidenceThresholds: {
+          high: 0.75,
+          medium: 0.45,
+          low: 0.20,
+        },
+        confidenceWeights: {
+          high: 1.0,
+          medium: 0.7,
+          low: 0.2,
+          none: 0,
+        },
+        scoreWeights: {
+          explicitSignature: 0.85,
+          explicitAuthor: 0.80,
+          genericAISignature: 0.70,
+          sessionStrong: 0.40,
+          sessionCrossDay: 0.25,
+          sessionWeak: 0.15,
+          sessionCrossDayWeak: 0.10,
+          fileOverlap: 0.30,
+          styleBulletList: 0.15,
+          styleConventionalScope: 0.05,
+          styleImperativeMood: 0.10,
+          styleLongStructuredBody: 0.05,
+          baselineDeviationHigh: 0.15,
+          baselineDeviationMedium: 0.08,
+          negativeMergeCommit: -0.50,
+          negativeInformal: -0.20,
+          negativeSmallScope: -0.15,
+          negativeWIP: -0.15,
+          humanBaselineMatch: -0.10,
+        },
+        explicitSignalPolicy: {
+          coAuthor: 'strong',
+          generatedWith: 'strong',
+          assistedBy: 'strong',
+          robotEmoji: 'medium',
+          genericAIKeywords: 'medium',
+        },
+      },
       scenarioKeywords: {
         coding: ['实现', '功能', '开发', '添加', '修改代码', 'implement', 'feature', 'add', 'refactor', '重构', '组件'],
         testing: ['测试', 'test', 'spec', '覆盖率', 'coverage', '单元测试', 'unit test', 'jest', 'vitest', 'mocha'],
