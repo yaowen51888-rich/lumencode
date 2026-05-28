@@ -21,6 +21,8 @@ docs/
 specs/
 .claude/
 .gstack/
+.codegraph/
+.cursor/
 
 # Pricing cache — auto-generated at runtime
 data/pricing-cache.json
