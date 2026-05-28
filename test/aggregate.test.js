@@ -7,6 +7,7 @@ import {
   deduplicateRecords,
   resolveModelPricing,
   groupBySessions,
+  getProjectDisplayName,
 } from '../lib/aggregate.js';
 
 // 测试记录创建辅助函数
@@ -30,6 +31,11 @@ function makeRecord(date, type = 'assistant', model = 'claude-sonnet-4-6', sessi
 // 测试日期：2026-05-16 (星期六)
 const testDate = '2026-05-16';
 const testRefDate = '2026-05-16T10:00:00Z';
+
+test('getProjectDisplayName - returns display basename from encoded Claude directory names', () => {
+  assert.strictEqual(getProjectDisplayName('D--work-myrepo'), 'myrepo');
+  assert.strictEqual(getProjectDisplayName('...-remote-project'), 'project');
+});
 
 test('filterRecordsByPeriod - daily filtering', () => {
   // 创建测试数据
