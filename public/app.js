@@ -333,7 +333,14 @@ function appState() {
       const usageStats = this._lastUsageStats || {};
       const mode = this.toolRankMode;
       const tab = this.toolRankTab;
-      let totalCalls = 0;
+
+      // 提取数值的辅助函数
+      const getValue = (val) => typeof val === 'number' ? val : (val[mode] || 0);
+      // 预计算三个 Tab 的总 calls（用于标签展示）
+      const sumCalls = (obj) => Object.values(obj || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      this.toolRankAllTotal = sumCalls(usageStats.tools);
+      this.toolRankSkillTotal = sumCalls(usageStats.skills);
+      this.toolRankMcpTotal = sumCalls(usageStats.mcpTools);
 
       if (tab === 'all') {
         const aggregated = aggregateToolsByServer(usageStats.tools || {}, mode);
@@ -345,30 +352,22 @@ function appState() {
           pct: Math.round((value / maxValue) * 100),
           displayName: TOOL_DISPLAY_NAMES[name] || '',
         }));
-        totalCalls = Object.values(usageStats.tools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+        this.toolRankTotalCalls = this.toolRankAllTotal;
       } else if (tab === 'skill') {
         const skills = usageStats.skills || {};
-        const entries = Object.entries(skills).sort((a, b) => {
-          const va = typeof a[1] === 'number' ? a[1] : (a[1][mode] || 0);
-          const vb = typeof b[1] === 'number' ? b[1] : (b[1][mode] || 0);
-          return vb - va;
-        });
-        const maxValue = Math.max(...entries.map(([, v]) => typeof v === 'number' ? v : (v[mode] || 0)), 1);
+        const entries = Object.entries(skills).sort((a, b) => getValue(b[1]) - getValue(a[1]));
+        const maxValue = Math.max(...entries.map(([, v]) => getValue(v)), 1);
         this.toolRankData = entries.map(([name, val]) => {
-          const value = typeof val === 'number' ? val : (val[mode] || 0);
+          const value = getValue(val);
           return { name, value, pct: Math.round((value / maxValue) * 100), displayName: '' };
         });
-        totalCalls = Object.values(skills).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+        this.toolRankTotalCalls = this.toolRankSkillTotal;
       } else if (tab === 'mcp') {
         this.toolRankData = groupMcpByServer(usageStats.mcpTools || {}, mode);
-        totalCalls = Object.values(usageStats.mcpTools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+        this.toolRankTotalCalls = this.toolRankMcpTotal;
       }
 
       this.toolRankTotal = this.toolRankData.length;
-      this.toolRankTotalCalls = totalCalls;
-      this.toolRankAllTotal = Object.values(usageStats.tools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
-      this.toolRankSkillTotal = Object.values(usageStats.skills || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
-      this.toolRankMcpTotal = Object.values(usageStats.mcpTools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
     },
 
     /* ── period / date ── */
