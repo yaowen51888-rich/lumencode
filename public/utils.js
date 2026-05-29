@@ -89,6 +89,16 @@ export const TOOL_DISPLAY_NAMES = {
   'glob': '查找文件(OpenCode)',
   'question': '提问(OpenCode)',
   'todowrite': '待办(OpenCode)',
+  // MCP 聚合条目
+  'Playwright': '浏览器自动化',
+  'Serena': '代码分析',
+  'Context7': '文档检索',
+  'CodeGraph': '代码图谱',
+  'DeepWiki': '知识库',
+  'WebReader': '网页阅读',
+  'Exa': '搜索引擎',
+  // 其他工具
+  'PowerShell': '执行命令(PS)',
 };
 
 // 工具名友好化（非 MCP 工具直接返回原名）
