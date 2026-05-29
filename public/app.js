@@ -1,5 +1,5 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
-import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate } from './utils.js';
+import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, aggregateToolsByServer, TOOL_DISPLAY_NAMES, groupMcpByServer } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
@@ -135,6 +135,13 @@ function appState() {
       { l: 'IDLE DAYS', v: '-', s: 'no activity' },
     ],
     toolRankData: [],
+    toolRankTotal: 0,
+    toolRankMode: 'calls', // 'calls' | 'uses'
+    toolRankTab: 'all',
+    toolRankTotalCalls: 0,
+    toolRankAllTotal: 0,
+    toolRankSkillTotal: 0,
+    toolRankMcpTotal: 0,
     projectData: [],
 
     /* tool summary for rail */
@@ -310,6 +317,60 @@ function appState() {
       if (this.view === 'report') this.loadReportContent();
     },
 
+    setToolRankMode(mode) {
+      this.toolRankMode = mode;
+      this._computeToolRank();
+    },
+
+    setToolRankTab(tab) {
+      this.toolRankTab = tab;
+      this._computeToolRank();
+      const container = document.getElementById('toolCallsContainer');
+      if (container) container.scrollTop = 0;
+    },
+
+    _computeToolRank() {
+      const usageStats = this._lastUsageStats || {};
+      const mode = this.toolRankMode;
+      const tab = this.toolRankTab;
+      let totalCalls = 0;
+
+      if (tab === 'all') {
+        const aggregated = aggregateToolsByServer(usageStats.tools || {}, mode);
+        const entries = Object.entries(aggregated).sort((a, b) => b[1] - a[1]);
+        const maxValue = Math.max(...entries.map(([, v]) => v), 1);
+        this.toolRankData = entries.map(([name, value]) => ({
+          name,
+          value,
+          pct: Math.round((value / maxValue) * 100),
+          displayName: TOOL_DISPLAY_NAMES[name] || '',
+        }));
+        totalCalls = Object.values(usageStats.tools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      } else if (tab === 'skill') {
+        const skills = usageStats.skills || {};
+        const entries = Object.entries(skills).sort((a, b) => {
+          const va = typeof a[1] === 'number' ? a[1] : (a[1][mode] || 0);
+          const vb = typeof b[1] === 'number' ? b[1] : (b[1][mode] || 0);
+          return vb - va;
+        });
+        const maxValue = Math.max(...entries.map(([, v]) => typeof v === 'number' ? v : (v[mode] || 0)), 1);
+        this.toolRankData = entries.map(([name, val]) => {
+          const value = typeof val === 'number' ? val : (val[mode] || 0);
+          return { name, value, pct: Math.round((value / maxValue) * 100), displayName: '' };
+        });
+        totalCalls = Object.values(skills).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      } else if (tab === 'mcp') {
+        this.toolRankData = groupMcpByServer(usageStats.mcpTools || {}, mode);
+        totalCalls = Object.values(usageStats.mcpTools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      }
+
+      this.toolRankTotal = this.toolRankData.length;
+      this.toolRankTotalCalls = totalCalls;
+      this.toolRankAllTotal = Object.values(usageStats.tools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      this.toolRankSkillTotal = Object.values(usageStats.skills || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+      this.toolRankMcpTotal = Object.values(usageStats.mcpTools || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
+    },
+
     /* ── period / date ── */
     setPeriod(p) {
       this.period = p;
@@ -433,6 +494,7 @@ function appState() {
     /* ── render data ── */
     renderData(data) {
       const { usageStats, gitStats, start, end, prevStats, trendData, costBreakdown } = data;
+      this._lastUsageStats = usageStats;
       this.hasData = usageStats.requestCount > 0;
       if (!this.hasData) {
         this.kpiData = [
@@ -526,9 +588,7 @@ function appState() {
       this.projectData = projEntries.map(([name, d]) => ({ name: name.length > 20 ? '...' + name.slice(-17) : name, value: d.requests }));
 
       /* Tool rank */
-      const toolEntries = Object.entries(usageStats.tools || {}).sort((a, b) => b[1] - a[1]).slice(0, 10);
-      const maxTool = Math.max(...toolEntries.map(([, v]) => v), 1);
-      this.toolRankData = toolEntries.map(([name, value]) => ({ name, value, pct: Math.round((value / maxTool) * 100) }));
+      this._computeToolRank();
 
       /* Tool rail tokens — only refresh sidebar when viewing all tools */
       if (this.activeTool === 'all') {
