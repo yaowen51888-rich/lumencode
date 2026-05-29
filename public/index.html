@@ -509,15 +509,33 @@
                 <h2 class="section-head-title">工具调用排行</h2>
                 <span class="label section-head-en">/ TOOL CALLS</span>
                 <span class="section-head-line"></span>
+                <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+                  <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+                    <button class="period-btn" :class="toolRankMode === 'calls' ? 'active' : ''" @click="setToolRankMode('calls')" style="border:none;font-size:10px;padding:2px 8px;">调用</button>
+                    <button class="period-btn" :class="toolRankMode === 'uses' ? 'active' : ''" @click="setToolRankMode('uses')" style="border:none;font-size:10px;padding:2px 8px;">使用</button>
+                  </div>
+                  <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+                    <button class="period-btn" :class="toolRankTab === 'all' ? 'active' : ''" @click="setToolRankTab('all')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'全部 ' + toolRankAllTotal"></button>
+                    <button class="period-btn" :class="toolRankTab === 'skill' ? 'active' : ''" @click="setToolRankTab('skill')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'Skill ' + toolRankSkillTotal"></button>
+                    <button class="period-btn" :class="toolRankTab === 'mcp' ? 'active' : ''" @click="setToolRankTab('mcp')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'MCP ' + toolRankMcpTotal"></button>
+                  </div>
+                </div>
               </div>
               <div class="card" style="padding:24px;">
-                <div id="toolCallsContainer" style="display:flex;flex-direction:column;gap:12px;">
-                  <template x-for="(t, i) in toolRankData" :key="t.name">
-                    <div class="tool-rank">
+                <div id="toolCallsContainer" style="display:flex;flex-direction:column;gap:12px;max-height:420px;overflow-y:auto;padding-right:4px;">
+                  <template x-for="(t, i) in toolRankData" :key="t.name + '-' + i">
+                    <!-- MCP 分组行 -->
+                    <div x-show="t.isGroup" class="tool-rank-group">
+                      <span class="font-mono" x-text="t.name"></span>
+                    </div>
+                    <!-- 普通排行行 -->
+                    <div x-show="!t.isGroup" class="tool-rank" :class="toolRankTab === 'all' ? 'has-note' : ''">
                       <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
-                      <span class="font-mono" style="font-size:12px" x-text="t.name"></span>
+                      <span class="font-mono" style="font-size:12px" x-text="t.name" :title="t.name"></span>
                       <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + (i === 0 ? colors.rust : 'var(--foreground)')"></div></div>
                       <span class="font-mono text-right" style="font-size:11px" x-text="t.value"></span>
+                      <!-- 通俗备注（仅全部工具 Tab）-->
+                      <span x-show="toolRankTab === 'all' && t.displayName" style="font-size:11px;opacity:0.45;white-space:nowrap;" x-text="t.displayName"></span>
                     </div>
                   </template>
                 </div>
