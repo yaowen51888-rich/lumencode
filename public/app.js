@@ -368,6 +368,14 @@ function appState() {
       }
 
       this.toolRankTotal = this.toolRankData.length;
+
+      // 为每个非分组行添加序号（用于模板渲染）
+      let rank = 0;
+      for (const item of this.toolRankData) {
+        if (!item.isGroup) {
+          item.rank = ++rank;
+        }
+      }
     },
 
     /* ── period / date ── */

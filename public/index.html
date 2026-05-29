@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -320,7 +320,7 @@
                     <div class="bar-item">
                       <div class="bar-top">
                         <span style="font-size:13px;display:flex;align-items:baseline;gap:10px;">
-                          <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                          <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                           <span x-text="e.name"></span>
                         </span>
                         <span class="font-mono" style="font-size:11px" x-text="e.value"></span>
@@ -351,7 +351,7 @@
                 </div>
                 <template x-for="(f, i) in topFilesData" :key="f.path">
                   <div class="top-files-row row-lift" :class="i < topFilesData.length - 1 ? 'with-border' : ''">
-                    <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                    <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                     <span class="font-mono truncate" style="font-size:12px" x-text="f.path" :title="f.path"></span>
                     <span class="font-mono text-right" style="font-size:12px" x-text="f.commits"></span>
                     <span class="font-mono text-right" style="font-size:12px;color:var(--forest)" x-text="'+' + f.plus"></span>
@@ -408,7 +408,7 @@
                         <span class="font-mono truncate" style="font-size:11px;max-width:70%" x-text="m.name"></span>
                         <span class="font-mono" style="font-size:11px;opacity:0.55" x-text="m.pct + '%'"></span>
                       </div>
-                      <div class="bar-track"><div class="bar-fill" :style="'width:' + m.barPct + '%;background:' + (i === 0 ? colors.rust : 'var(--foreground)')"></div></div>
+                      <div class="bar-track"><div class="bar-fill" :style="'width:' + m.barPct + '%;background:' + ((t.rank === 1) ? colors.rust : 'var(--foreground)')"></div></div>
                     </div>
                   </template>
                 </div>
@@ -523,16 +523,16 @@
               </div>
               <div class="card" style="padding:24px;">
                 <div id="toolCallsContainer" style="display:flex;flex-direction:column;gap:12px;max-height:420px;overflow-y:auto;padding-right:4px;">
-                  <template x-for="(t, i) in toolRankData" :key="t.name + '-' + i">
+                  <template x-for="(t, i) in toolRankData" :key="toolRankTab + '-' + t.name + '-' + i">
                     <!-- MCP 分组行 -->
                     <div x-show="t.isGroup" class="tool-rank-group">
                       <span class="font-mono" x-text="t.name"></span>
                     </div>
                     <!-- 普通排行行 -->
                     <div x-show="!t.isGroup" class="tool-rank" :class="toolRankTab === 'all' ? 'has-note' : ''">
-                      <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(i+1).padStart(2,'0')"></span>
+                      <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                       <span class="font-mono" style="font-size:12px" x-text="t.name" :title="t.name"></span>
-                      <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + (i === 0 ? colors.rust : 'var(--foreground)')"></div></div>
+                      <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + ((t.rank === 1) ? colors.rust : 'var(--foreground)')"></div></div>
                       <span class="font-mono text-right" style="font-size:11px" x-text="t.value"></span>
                       <!-- 通俗备注（仅全部工具 Tab）-->
                       <span x-show="toolRankTab === 'all' && t.displayName" style="font-size:11px;opacity:0.45;white-space:nowrap;" x-text="t.displayName"></span>
@@ -813,3 +813,4 @@
   <script type="module" src="/app.js"></script>
 </body>
 </html>
+
