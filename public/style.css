@@ -770,6 +770,19 @@ input, textarea { font-family: inherit; color: inherit; }
   white-space: nowrap;
 }
 .tool-rank:last-child { margin-bottom: 0; }
+.tool-rank.has-note {
+  grid-template-columns: 24px minmax(0, 1fr) 80px 48px auto;
+  gap: 8px 12px;
+}
+.tool-rank-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  font-size: 11px;
+  opacity: 0.5;
+  letter-spacing: 0.08em;
+}
 
 /* ── Timeline chart ── */
 .timeline-chart { position: relative; height: 280px; }
