@@ -59,11 +59,12 @@
     "ignorePatterns": ["node_modules/", ".git/", "dist/", "build/", ".next/", ".cache/"]
   },
   "scenarioKeywords": {
-    "coding": ["实现", "功能", "开发", "implement", "feature", "add", "refactor", "重构"],
-    "testing": ["测试", "test", "spec", "coverage", "单元测试"],
-    "debugging": ["修复", "bug", "debug", "fix", "error", "issue"],
-    "documentation": ["文档", "doc", "readme", "注释", "comment"],
-    "review": ["review", "审查", "代码审查"],
-    "planning": ["计划", "plan", "设计", "架构", "design", "architect"]
+    "coding": ["实现", "功能", "开发", "添加", "修改代码", "implement", "feature", "组件", "component", "编写", "write code"],
+    "testing": ["测试", "test", "spec", "覆盖率", "coverage", "单元测试", "unit test", "jest", "vitest", "mocha", "cypress", "playwright"],
+    "debugging": ["修复", "bug", "debug", "fix", "报错", "错误", "异常", "error", "排查", "堆栈", "trace", "stack trace", "crash"],
+    "documentation": ["文档", "readme.md", "注释", "说明", "指南", "guide", "wiki", "手册", "api doc"],
+    "review": ["review", "审查", "代码审查", "/review", "pr", "pull request", "approve", "approval", "reject", "走查", "代码走查"],
+    "planning": ["计划", "plan", "设计", "架构", "方案", "design", "architect", "roadmap", "规划"],
+    "refactoring": ["重构", "refactor", "重写", "rewrite", "清理代码", "clean up", "简化", "simplify", "提取", "extract"]
   }
 }

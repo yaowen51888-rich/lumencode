@@ -946,19 +946,167 @@ function showToast(msg) {
 }
 
 /* ── Settings Modal ── */
+const SCENARIO_LABELS = { coding: '编码', testing: '测试', debugging: '调试', documentation: '文档', review: '审查', planning: '规划', refactoring: '重构' };
+
+function renderKeywordsEditor(keywords) {
+  const container = document.getElementById('cfgKeywordsEditor');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const [key, label] of Object.entries(SCENARIO_LABELS)) {
+    const words = keywords[key] || [];
+    const row = document.createElement('div');
+    row.className = 'kw-row';
+    row.dataset.key = key;
+
+    const lbl = document.createElement('div');
+    lbl.className = 'kw-label';
+    lbl.textContent = label;
+
+    const tags = document.createElement('div');
+    tags.className = 'kw-tags';
+    for (const w of words) tags.appendChild(makeKwTag(w));
+
+    const addWrap = document.createElement('div');
+    addWrap.className = 'kw-add-row';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'kw-add-btn';
+    addBtn.textContent = '+';
+    addBtn.title = '添加关键词';
+    addBtn.onclick = () => {
+      addWrap.innerHTML = '';
+      const inp = document.createElement('input');
+      inp.className = 'kw-add-input';
+      inp.placeholder = '关键词';
+      const ok = document.createElement('button');
+      ok.className = 'kw-add-btn';
+      ok.textContent = '确定';
+      ok.onclick = () => {
+        const v = inp.value.trim();
+        if (v && !tags.querySelector('[data-word="' + CSS.escape(v) + '"]')) tags.insertBefore(makeKwTag(v), addWrap);
+        resetAddBtn();
+      };
+      inp.onkeydown = (e) => { if (e.key === 'Enter') ok.click(); if (e.key === 'Escape') resetAddBtn(); };
+      addWrap.appendChild(inp);
+      addWrap.appendChild(ok);
+      inp.focus();
+    };
+    function resetAddBtn() { addWrap.innerHTML = ''; addWrap.appendChild(addBtn); }
+    resetAddBtn();
+
+    row.appendChild(lbl);
+    row.appendChild(tags);
+    row.appendChild(addWrap);
+    container.appendChild(row);
+  }
+}
+
+function makeKwTag(word) {
+  const tag = document.createElement('span');
+  tag.className = 'kw-tag';
+  tag.dataset.word = word;
+  tag.textContent = word;
+  const x = document.createElement('span');
+  x.className = 'kw-tag-remove';
+  x.textContent = '×';
+  x.onclick = () => tag.remove();
+  tag.appendChild(x);
+  return tag;
+}
+
+function collectKeywordsFromEditor() {
+  const result = {};
+  const container = document.getElementById('cfgKeywordsEditor');
+  if (!container) return result;
+  for (const row of container.querySelectorAll('.kw-row')) {
+    const key = row.dataset.key;
+    const words = Array.from(row.querySelectorAll('.kw-tag')).map(t => t.dataset.word);
+    if (words.length > 0) result[key] = words;
+  }
+  // 清洗校验：先 trim 再去重、过滤空串、截断超长词、过滤控制字符
+  for (const [key, words] of Object.entries(result)) {
+    result[key] = [...new Set(words.map(w => w.trim()))]
+      .filter(w => w.length > 0 && w.length <= 50)
+      .filter(w => !/[\x00-\x1f\x7f]/.test(w));
+  }
+  return result;
+}
+
+window.closeSettings = () => {
+  const modal = document.getElementById('settingsModal');
+  if (modal) modal.style.display = 'none';
+};
+
+/* ── Advanced Section Toggle ── */
+window.toggleKeywordsSection = () => {
+  const section = document.getElementById('cfgKeywordsSection');
+  const btn = document.getElementById('cfgKeywordsToggle');
+  if (!section || !btn) return;
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  btn.classList.toggle('expanded', isHidden);
+};
+
+/* ── Path Tag Editor ── */
+const FOLDER_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+const CLOSE_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+function renderPathTags(containerId, paths) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < paths.length; i++) {
+    const tag = document.createElement('div');
+    tag.className = 'path-tag';
+    tag.innerHTML = `
+      <span class="path-tag-icon">${FOLDER_ICON}</span>
+      <span class="path-tag-text" title="${esc(paths[i])}">${esc(paths[i])}</span>
+      <button class="path-tag-remove" onclick="removePathTag('${containerId}', ${i})" title="删除">${CLOSE_ICON}</button>
+    `;
+    container.appendChild(tag);
+  }
+}
+
+function addPathTag(containerId, inputId) {
+  const input = document.getElementById(inputId);
+  const container = document.getElementById(containerId);
+  if (!input || !container) return;
+  const raw = input.value.trim();
+  if (!raw) return;
+  // 支持粘贴多行或多逗号分隔的内容，一次性解析添加
+  const paths = raw.split(/[,，\n\r]+/).map(s => s.trim()).filter(Boolean);
+  const existing = getPathTags(containerId);
+  for (const p of paths) {
+    if (!existing.includes(p)) existing.push(p);
+  }
+  renderPathTags(containerId, existing);
+  input.value = '';
+  input.focus();
+}
+
+function removePathTag(containerId, index) {
+  const paths = getPathTags(containerId);
+  paths.splice(index, 1);
+  renderPathTags(containerId, paths);
+}
+
+function getPathTags(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.path-tag-text')).map(el => el.textContent);
+}
+
 window.openSettings = async () => {
   const modal = document.getElementById('settingsModal');
+  const hint = document.getElementById('cfgSaveHint');
+  if (hint) { hint.textContent = ''; hint.className = ''; }
   if (modal) modal.style.display = 'flex';
   try {
     const cfg = await fetchConfig();
     const dirEl = document.getElementById('cfgClaudeDir');
-    const reposEl = document.getElementById('cfgRepos');
-    const excludeEl = document.getElementById('cfgExclude');
-    const kwEl = document.getElementById('cfgKeywords');
     if (dirEl) dirEl.value = cfg.claudeDir || '';
-    if (reposEl) reposEl.value = (cfg.repos || []).join('\n');
-    if (excludeEl) excludeEl.value = (cfg.excludeProjects || []).join('\n');
-    if (kwEl) kwEl.value = cfg.scenarioKeywords ? JSON.stringify(cfg.scenarioKeywords, null, 2) : '{}';
+    renderPathTags('cfgReposTags', cfg.repos || []);
+    renderPathTags('cfgExcludeTags', cfg.excludeProjects || []);
+    renderKeywordsEditor(cfg.scenarioKeywords || {});
   } catch (err) {
     showToast('加载配置失败: ' + err.message);
   }
@@ -979,19 +1127,21 @@ document.getElementById('welcomeStartBtn')?.addEventListener('click', async () =
 });
 
 window.saveSettings = async () => {
-  let scenarioKeywords;
-  try { scenarioKeywords = JSON.parse(document.getElementById('cfgKeywords').value); } catch { showToast('场景关键词 JSON 格式错误'); return; }
+  const hint = document.getElementById('cfgSaveHint');
+  const scenarioKeywords = collectKeywordsFromEditor();
   const payload = {
     claudeDir: document.getElementById('cfgClaudeDir').value.trim(),
-    repos: document.getElementById('cfgRepos').value.split('\n').map(s => s.trim()).filter(Boolean),
-    excludeProjects: document.getElementById('cfgExclude').value.split('\n').map(s => s.trim()).filter(Boolean),
+    repos: getPathTags('cfgReposTags'),
+    excludeProjects: getPathTags('cfgExcludeTags'),
     scenarioKeywords,
   };
   try {
     await saveConfig(payload);
-    document.getElementById('settingsModal').style.display = 'none';
-    window.location.reload();
-  } catch (err) { showToast('保存失败: ' + err.message); }
+    if (hint) { hint.textContent = '配置已保存'; hint.className = 'cfg-save-ok'; }
+    setTimeout(() => window.location.reload(), 1200);
+  } catch (err) {
+    if (hint) { hint.textContent = '保存失败: ' + err.message; hint.className = 'cfg-save-err'; }
+  }
 };
 
 /* ── Drill-down global handler ── */

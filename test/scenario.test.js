@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { classifyRecord, aggregateScenarios, mapToDisplayScenarios } from '../lib/scenario.js';
+import { classifyRecord, aggregateScenarios, mapToDisplayScenarios, matchesKeyword, escapeRegExp } from '../lib/scenario.js';
 
 // 测试用的场景关键词配置
 const testScenarioKeywords = {
@@ -191,6 +191,7 @@ test('mapToDisplayScenarios - internal scenarios to display names', (t) => {
     '阅读/研究': 3, // reading + research
     '规划/设计': 1,
     '代码审查': 0,
+    '重构': 0,
     '其他': 1   // unknown only (execution → 编码)
   });
 });
@@ -213,6 +214,7 @@ test('mapToDisplayScenarios - known scenarios only', (t) => {
     '阅读/研究': 0,
     '规划/设计': 1,
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -231,6 +233,7 @@ test('mapToDisplayScenarios - empty input', (t) => {
     '阅读/研究': 0,
     '规划/设计': 0,
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -273,6 +276,7 @@ test('aggregateScenarios - aggregate multiple records', (t) => {
     '文档': 1, // 文档(关键词)
     '规划/设计': 0,
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -312,6 +316,7 @@ test('aggregateScenarios - mixed record types', (t) => {
     '阅读/研究': 0,
     '规划/设计': 3, // TaskCreate(1) + 创建(1) + 规划(1)
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -329,6 +334,7 @@ test('aggregateScenarios - empty records list', (t) => {
     '阅读/研究': 0,
     '规划/设计': 0,
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -355,6 +361,7 @@ test('aggregateScenarios - unknown scenarios map to "其他"', (t) => {
     '阅读/研究': 0,
     '规划/设计': 0,
     '代码审查': 0,
+    '重构': 0,
     '其他': 0
   });
 });
@@ -373,4 +380,125 @@ test('classifyRecord - special characters in keywords', (t) => {
 
   // 1个工具(Write) + 1个关键词(开发) = 2
   assert.deepEqual(result, { coding: 2 });
+});
+
+// ========== matchesKeyword 测试 ==========
+
+// 英文词边界匹配
+test('matchesKeyword - English word boundary', (t) => {
+  assert.equal(matchesKeyword('fix bug', 'fix'), true);
+  assert.equal(matchesKeyword('fixture', 'fix'), false);
+  assert.equal(matchesKeyword('repair issue', 'fix'), false);
+  assert.equal(matchesKeyword('test connection', 'test'), true);
+  assert.equal(matchesKeyword('contest', 'test'), false);
+  assert.equal(matchesKeyword('add user', 'add'), true);
+  assert.equal(matchesKeyword('address field', 'add'), false);
+});
+
+// 中文边界匹配（中文使用 includes 语义，因为中文无词分隔符）
+test('matchesKeyword - Chinese boundary', (t) => {
+  assert.equal(matchesKeyword('修复bug', '修复'), true);
+  assert.equal(matchesKeyword('有个问题', '问题'), true);
+  assert.equal(matchesKeyword('这个问题怎么办', '问题'), true, '中文使用包含匹配');
+  assert.equal(matchesKeyword('检查配置', '检查'), true);
+  assert.equal(matchesKeyword('检查邮件', '检查'), true);
+});
+
+// 大小写不敏感
+test('matchesKeyword - case insensitive', (t) => {
+  assert.equal(matchesKeyword('FIX Bug', 'fix'), true);
+  assert.equal(matchesKeyword('Implement Feature', 'implement'), true);
+});
+
+// 空值处理
+test('matchesKeyword - null/empty handling', (t) => {
+  assert.equal(matchesKeyword('', 'fix'), false);
+  assert.equal(matchesKeyword('fix bug', ''), false);
+  assert.equal(matchesKeyword(null, 'fix'), false);
+  assert.equal(matchesKeyword('fix bug', null), false);
+});
+
+// 特殊字符关键词
+test('matchesKeyword - special characters in keyword', (t) => {
+  assert.equal(matchesKeyword('/review this pr', '/review'), true);
+});
+
+// ========== escapeRegExp 测试 ==========
+
+test('escapeRegExp - escapes special regex characters', (t) => {
+  assert.equal(escapeRegExp('/review'), '/review');  // / 不需要转义（RegExp 构造器）
+  assert.equal(escapeRegExp('a.b'), 'a\\.b');
+  assert.equal(escapeRegExp('a*b'), 'a\\*b');
+  assert.equal(escapeRegExp('a+b'), 'a\\+b');
+  assert.equal(escapeRegExp('a?b'), 'a\\?b');
+  assert.equal(escapeRegExp('a^b'), 'a\\^b');
+  assert.equal(escapeRegExp('a$b'), 'a\\$b');
+  assert.equal(escapeRegExp('a(b)'), 'a\\(b\\)');
+  assert.equal(escapeRegExp('a[b]'), 'a\\[b\\]');
+  assert.equal(escapeRegExp('a{b}'), 'a\\{b\\}');
+  assert.equal(escapeRegExp('a|b'), 'a\\|b');
+  assert.equal(escapeRegExp('a\\b'), 'a\\\\b');
+});
+
+// ========== refactoring 场景测试 ==========
+
+test('mapToDisplayScenarios - includes refactoring', (t) => {
+  const internalScenarios = {
+    coding: 2,
+    refactoring: 3,
+    testing: 1
+  };
+  const result = mapToDisplayScenarios(internalScenarios);
+  assert.equal(result['编码'], 2);
+  assert.equal(result['重构'], 3);
+  assert.equal(result['测试/QA'], 1);
+  assert.equal(result['其他'], 0);
+});
+
+test('classifyRecord - matchesKeyword prevents substring false positives', (t) => {
+  // "add" 不应匹配 "address"（词边界匹配）
+  const record = {
+    type: 'user',
+    text: 'update the address field',
+    toolCalls: []
+  };
+  const keywords = { coding: ['add'] };
+  const result = classifyRecord(record, keywords);
+  assert.deepEqual(result, {}, '"add" should not match "address"');
+});
+
+test('classifyRecord - refactoring keyword matched correctly', (t) => {
+  const record = {
+    type: 'user',
+    text: '重构这个模块',
+    toolCalls: []
+  };
+  const keywords = { refactoring: ['重构'] };
+  const result = classifyRecord(record, keywords);
+  assert.deepEqual(result, { refactoring: 1 });
+});
+
+// ========== 多词英文关键词测试 ==========
+
+test('matchesKeyword - multi-word English keywords', (t) => {
+  assert.equal(matchesKeyword('please write code for login', 'write code'), true);
+  assert.equal(matchesKeyword('please write codebase', 'write code'), false);
+  assert.equal(matchesKeyword('check the stack trace output', 'stack trace'), true);
+  assert.equal(matchesKeyword('check the stack', 'stack trace'), false);
+  assert.equal(matchesKeyword('review this pull request', 'pull request'), true);
+});
+
+// ========== 混合中英文关键词测试 ==========
+
+test('matchesKeyword - mixed/English-only keywords with spaces', (t) => {
+  assert.equal(matchesKeyword('run clean up task', 'clean up'), true);
+  assert.equal(matchesKeyword('cleanup the code', 'clean up'), false);
+  assert.equal(matchesKeyword('read the api doc', 'api doc'), true);
+});
+
+test('matchesKeyword - short English words with word boundary', (t) => {
+  // "pr" 应只匹配独立单词
+  assert.equal(matchesKeyword('check the pr for review', 'pr'), true);
+  assert.equal(matchesKeyword('production server', 'pr'), false);
+  assert.equal(matchesKeyword('check the PR', 'pr'), true);
 });
