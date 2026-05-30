@@ -907,6 +907,240 @@ input, textarea { font-family: inherit; color: inherit; }
 .form-input:focus, .form-textarea:focus { border-color: var(--foreground); }
 .form-hint { font-size: 12px; opacity: 0.55; margin-top: 4px; }
 
+/* ── Config Sections ── */
+.cfg-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted-foreground);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Path Tags ── */
+.path-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 0;
+}
+.path-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--foreground);
+  transition: background 0.15s ease;
+}
+.path-tag:hover {
+  background: var(--muted);
+}
+.path-tag-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.path-tag-icon svg {
+  display: block;
+}
+.path-tag-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.path-tag-remove {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+.path-tag-remove:hover {
+  color: var(--destructive);
+  background: var(--destructive-foreground);
+}
+.path-tag-remove svg {
+  display: block;
+}
+
+/* ── Path Add Box ── */
+.path-add-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.path-add-box:focus-within {
+  border-color: var(--ring);
+  background: var(--input-background);
+  border-style: solid;
+}
+.path-add-icon {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+}
+.path-add-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--foreground);
+  padding: 0;
+}
+.path-add-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.55;
+}
+.path-add-btn {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--input-background);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.path-add-btn:hover {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+
+/* ── Advanced Toggle ── */
+.cfg-advanced-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.cfg-advanced-toggle:hover {
+  color: var(--foreground);
+}
+.cfg-advanced-toggle svg {
+  transition: transform 0.2s ease;
+}
+.cfg-advanced-toggle.expanded svg {
+  transform: rotate(180deg);
+}
+.cfg-advanced-body {
+  padding-top: 16px;
+}
+
+/* ── Keywords Editor ── */
+.kw-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.kw-label {
+  width: 48px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  padding-top: 4px;
+  text-align: right;
+  opacity: 0.7;
+}
+.kw-tags {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.kw-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: default;
+  transition: background 0.15s;
+}
+.kw-tag:hover { background: var(--border); }
+.kw-tag-remove {
+  cursor: pointer;
+  opacity: 0.35;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 1px;
+}
+.kw-tag-remove:hover { opacity: 0.8; }
+.kw-add-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.kw-add-input {
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input-background);
+  color: var(--foreground);
+  outline: none;
+  width: 100px;
+}
+.kw-add-input:focus { border-color: var(--foreground); }
+.kw-add-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.kw-add-btn:hover { border-color: var(--foreground); color: var(--foreground); }
+.cfg-save-ok { color: #22c55e; }
+.cfg-save-err { color: var(--dest); }
+
 /* ── Work Report Content ── */
 .work-report-content {
   background: var(--card);

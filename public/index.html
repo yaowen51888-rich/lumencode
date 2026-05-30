@@ -530,7 +530,7 @@
                         <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                         <span class="font-mono" style="font-size:12px" x-text="t.name" :title="t.name"></span>
                         <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + (t.rank === 1 ? colors.rust : 'var(--foreground)')"></div></div>
-                        <span class="font-mono text-right" style="font-size:11px" x-text="t.calls === t.uses ? t.calls : t.calls + '/' + t.uses"></span>
+                        <span class="font-mono text-right" style="font-size:11px" x-text="t.calls === t.uses ? t.calls : t.calls + '/' + t.uses" :title="t.calls === t.uses ? '使用次数：' + t.calls : '调用次数 / 使用次数：' + t.calls + ' / ' + t.uses"></span>
                         <!-- 通俗备注（仅全部工具 Tab）-->
                         <span x-show="toolRankTab === 'all' && t.displayName" style="font-size:11px;opacity:0.45;white-space:nowrap;" x-text="t.displayName"></span>
                       </div>
@@ -562,6 +562,7 @@
             <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
               <button class="period-btn" :class="reportLevel === 'detailed' ? 'active' : ''" @click="setReportLevel('detailed')" style="border-left:none">详细 Detail</button>
               <button class="period-btn" :class="reportLevel === 'brief' ? 'active' : ''" @click="setReportLevel('brief')">简略 Brief</button>
+              <button class="period-btn" :class="reportLevel === 'boss' ? 'active' : ''" @click="setReportLevel('boss')">汇报 Boss</button>
             </div>
             <button class="btn btn-outline" @click="copyReport()" style="display:inline-flex;align-items:center;gap:6px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -729,21 +730,64 @@
 
   <!-- ── Settings Modal ── -->
   <div id="settingsModal" class="modal-overlay" style="display:none;">
-    <div class="modal-backdrop" onclick="document.getElementById('settingsModal').style.display='none'"></div>
-    <div class="modal-panel">
+    <div class="modal-backdrop" onclick="closeSettings()"></div>
+    <div class="modal-panel" style="max-width:580px;">
       <div class="modal-header">
         <h3 style="font-size:15px;font-weight:500;">配置</h3>
-        <button class="rail-btn-icon" onclick="document.getElementById('settingsModal').style.display='none'" style="color:var(--foreground);opacity:0.65;">
+        <button class="rail-btn-icon" onclick="closeSettings()" style="color:var(--foreground);opacity:0.65;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="modal-body">
-        <div class="form-group"><label class="form-label">Claude 日志目录</label><input type="text" id="cfgClaudeDir" class="form-input"></div>
-        <div class="form-group"><label class="form-label">本地项目路径（每行一个）</label><textarea id="cfgRepos" class="form-textarea" rows="3"></textarea></div>
-        <div class="form-group"><label class="form-label">排除项目（每行一个）</label><textarea id="cfgExclude" class="form-textarea" rows="3"></textarea></div>
-        <div class="form-group"><label class="form-label">场景关键词</label><textarea id="cfgKeywords" class="form-textarea" rows="5"></textarea><p class="form-hint">JSON 格式，如 { "coding": ["实现", "开发"] }</p></div>
+        <!-- 数据源 -->
+        <div class="cfg-section-title">数据源</div>
+        <div class="form-group">
+          <label class="form-label">Claude 日志目录</label>
+          <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
+          <p class="form-hint">Claude Code 会话日志的存放路径，通常是 ~/.claude</p>
+        </div>
+        <!-- 代码仓库 -->
+        <div class="cfg-section-title" style="margin-top:28px;">代码仓库</div>
+        <div class="form-group">
+          <label class="form-label">项目路径</label>
+          <div id="cfgReposTags" class="path-tags"></div>
+          <div class="path-add-box">
+            <span class="path-add-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </span>
+            <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
+            <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
+          </div>
+          <p class="form-hint">按回车或点击添加，路径可单独删除</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
+          <div id="cfgExcludeTags" class="path-tags"></div>
+          <div class="path-add-box">
+            <span class="path-add-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </span>
+            <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
+            <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
+          </div>
+          <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
+        </div>
+        <!-- 场景分类（默认折叠） -->
+        <div style="margin-top:28px;">
+          <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsSection()">
+            <span>场景分类</span>
+            <svg id="cfgKeywordsArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
+            <p class="form-hint" style="margin-bottom:12px;">根据工具调用中的关键词自动判断工作场景，点击可编辑</p>
+            <div id="cfgKeywordsEditor"></div>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer"><button class="btn btn-primary" onclick="saveSettings()">保存</button></div>
+      <div class="modal-footer">
+        <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
+        <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+      </div>
     </div>
   </div>
 

@@ -1,6 +1,10 @@
 import { TEXT } from './config.js';
 import { esc, fmt, fmtShort, getChart } from './utils.js';
 
+// 工具调用值兼容：{name: number} 或 {name: {calls, uses}}
+const toolCalls = (v) => typeof v === 'number' ? v : (v.calls || 0);
+const toolUses = (v) => typeof v === 'number' ? v : (v.uses || 0);
+
 // ── CSV 导出 ──
 export function exportCSV(data, period) {
   if (!data) return;
@@ -73,11 +77,11 @@ export function exportCSV(data, period) {
     lines.push('');
   }
 
-  const toolEntries = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]);
+  const toolEntries = Object.entries(usageStats.tools).sort((a, b) => toolCalls(b[1]) - toolCalls(a[1]));
   if (toolEntries.length > 0) {
     lines.push('# 工具使用');
-    lines.push('工具,调用次数');
-    for (const [name, count] of toolEntries) lines.push(`${name},${count}`);
+    lines.push('工具,调用次数,使用次数');
+    for (const [name, val] of toolEntries) lines.push(`${name},${toolCalls(val)},${toolUses(val)}`);
     lines.push('');
   }
 
@@ -121,7 +125,7 @@ export function printReport(data, period) {
 
   const projRows = Object.entries(usageStats.projects).sort((a, b) => b[1].requests - a[1].requests).map(([n, d]) => [n, d.requests, d.sessions instanceof Set ? d.sessions.size : (d.sessions || 0)]);
   const modelRows = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count).map(([n, d]) => [n, d.count, fmtShort(d.inputTokens), fmtShort(d.outputTokens)]);
-  const toolRows = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n, c]) => [n, c]);
+  const toolRows = Object.entries(usageStats.tools).sort((a, b) => toolCalls(b[1]) - toolCalls(a[1])).slice(0, 10).map(([n, v]) => [n, toolCalls(v), toolUses(v)]);
   const scenarioRows = Object.entries(usageStats.scenarios).sort((a, b) => b[1] - a[1]).map(([n, c]) => [n, c]);
 
   const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>Claude Code 使用${periodName}</title>
@@ -156,7 +160,7 @@ th{font-weight:600;background:#f8f9fa}
 </div>
 ${printTable('项目分布', ['项目', '请求数', '会话数'], projRows)}
 ${printTable('模型分布', ['模型', '请求数', '输入', '输出'], modelRows)}
-${printTable('工具使用排行', ['工具', '调用次数'], toolRows)}
+${printTable('工具使用排行', ['工具', '调用次数', '使用次数'], toolRows)}
 ${printTable('场景分布', ['场景', '请求数'], scenarioRows)}
 ${gitStats && gitStats.commits > 0 ? printTable('Git 代码产出', ['指标', '数值'], (() => {
   const rows = [['提交次数', gitStats.commits], ['新增行数', '+' + fmt(gitStats.linesAdded)], ['删除行数', '-' + fmt(gitStats.linesDeleted)], ['变更文件', gitStats.filesChanged]];
@@ -229,7 +233,7 @@ export function exportHTML(data, period) {
 
   const projRows = Object.entries(usageStats.projects).sort((a, b) => b[1].requests - a[1].requests).map(([n, d]) => [n, d.requests, d.sessions instanceof Set ? d.sessions.size : (d.sessions || 0)]);
   const modelRows = Object.entries(usageStats.models).sort((a, b) => b[1].count - a[1].count).map(([n, d]) => [n, d.count, fmtShort(d.inputTokens), fmtShort(d.outputTokens), d.cost ? '$' + d.cost.toFixed(2) : '-']);
-  const toolRows = Object.entries(usageStats.tools).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n, c]) => [n, c]);
+  const toolRows = Object.entries(usageStats.tools).sort((a, b) => toolCalls(b[1]) - toolCalls(a[1])).slice(0, 10).map(([n, v]) => [n, toolCalls(v), toolUses(v)]);
   const scenarioRows = Object.entries(usageStats.scenarios).sort((a, b) => b[1] - a[1]).map(([n, c]) => [n, c]);
 
   const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>AI 编码助手使用${periodName}</title>
@@ -264,7 +268,7 @@ th{font-weight:600;background:#f8f9fa}
 </div>
 ${printTable('项目分布', ['项目', '请求数', '会话数'], projRows)}
 ${printTable('模型分布', ['模型', '请求数', '输入', '输出', '费用'], modelRows)}
-${printTable('工具使用排行', ['工具', '调用次数'], toolRows)}
+${printTable('工具使用排行', ['工具', '调用次数', '使用次数'], toolRows)}
 ${printTable('场景分布', ['场景', '请求数'], scenarioRows)}
 ${data.costBreakdown?.models?.length ? printTable('模型费用', ['模型', '费用', '计费方式', '请求数'], data.costBreakdown.models.map(m => [m.name, '$' + (m.cost || 0).toFixed(2), m.mode === 'actual' ? '实际' : m.mode === 'estimated' ? '估算' : '未知', m.requests])) : ''}
 ${gitStats && gitStats.commits > 0 ? printTable('Git 代码产出', ['指标', '数值'], [['提交次数', gitStats.commits], ['新增行数', '+' + fmt(gitStats.linesAdded)], ['删除行数', '-' + fmt(gitStats.linesDeleted)], ['变更文件', gitStats.filesChanged]]) : ''}

@@ -3,7 +3,7 @@ import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
 import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
-import { generateReport, generateWorkReport } from './lib/report.js';
+import { generateReport, generateWorkReport, generateBossReport } from './lib/report.js';
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 import { identifyBillingBlocks } from './lib/blocks.js';
@@ -440,6 +440,7 @@ if (!command || command === 'help' || command === '--help') {
 选项:
   --projects   只统计指定项目，多个项目用逗号分隔
   --work       输出工作汇报版本（Markdown 格式）
+  --boss       输出 Boss 报告（给领导看的版本，凸显工作成果）
   --brief      配合 --work 使用，输出简报（3-5 句话）
 
 示例:
@@ -448,6 +449,7 @@ if (!command || command === 'help' || command === '--help') {
   lumencode report weekly 2026-05-15 --projects D://fzwork,E://play/idea
   lumencode report daily --work
   lumencode report daily --work --brief
+  lumencode report weekly --boss
   node index.js serve
   node index.js init
   node index.js hooks status
@@ -497,6 +499,7 @@ if (command === 'serve') {
   // report command (default)
   const period = args[1] || 'daily';
   const isWorkMode = args.includes('--work');
+  const isBossMode = args.includes('--boss');
   const isBrief = args.includes('--brief');
   const { config, dateArg, effectiveIncludeProjects } = loadCliConfig();
 
@@ -547,9 +550,11 @@ if (command === 'serve') {
   });
   const prevStats = prevFiltered.length > 0 ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode) : null;
 
-  const report = isWorkMode
-    ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats, { level: isBrief ? 'brief' : 'detailed' })
-    : generateReport(usageStats, gitStats, period, start, end);
+  const report = isBossMode
+    ? generateBossReport(usageStats, gitStats, period, start, end, prevStats)
+    : isWorkMode
+      ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats, { level: isBrief ? 'brief' : 'detailed' })
+      : generateReport(usageStats, gitStats, period, start, end);
   console.log(report);
 }
 
