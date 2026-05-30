@@ -190,26 +190,25 @@ export function groupMcpByServer(mcpToolsMap) {
       }
     }
     if (!matched) continue;
-    if (!groups[server]) groups[server] = { items: [], totalCalls: 0 };
+    if (!groups[server]) groups[server] = { items: [], totalUses: 0 };
     groups[server].items.push({ name: stripMcpPrefix(fullName), calls, uses });
-    groups[server].totalCalls += calls;
+    groups[server].totalUses += uses;
   }
 
-  const sortedGroups = Object.entries(groups).sort((a, b) => b[1].totalCalls - a[1].totalCalls);
-  const allCalls = sortedGroups.flatMap(([, g]) => g.items.map(i => i.calls));
-  const maxCalls = Math.max(...allCalls, 1);
+  const sortedGroups = Object.entries(groups).sort((a, b) => b[1].totalUses - a[1].totalUses);
+  const allUses = sortedGroups.flatMap(([, g]) => g.items.map(i => i.uses));
+  const maxUses = Math.max(...allUses, 1);
 
   const result = [];
   for (const [server, data] of sortedGroups) {
-    result.push({ name: `--- ${server} ---`, isGroup: true, groupTotal: data.totalCalls });
-    for (const item of data.items.sort((a, b) => b.calls - a.calls)) {
+    result.push({ name: `--- ${server} ---`, isGroup: true, groupTotal: data.totalUses });
+    for (const item of data.items.sort((a, b) => b.uses - a.uses)) {
       result.push({
         name: item.name,
         calls: item.calls,
         uses: item.uses,
         value: item.calls,
-        pct: Math.round((item.calls / maxCalls) * 100),
-        usePct: item.calls > 0 ? Math.round((item.uses / item.calls) * 100) : 0,
+        pct: Math.round((item.uses / maxUses) * 100),
       });
     }
   }

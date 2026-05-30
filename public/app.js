@@ -336,22 +336,21 @@ function appState() {
 
       if (tab === 'all') {
         const dual = aggregateToolsWithDualCounts(usageStats.tools || {});
-        const entries = Object.entries(dual).sort((a, b) => b[1].calls - a[1].calls);
-        const maxCalls = Math.max(...entries.map(([, v]) => v.calls), 1);
+        const entries = Object.entries(dual).sort((a, b) => b[1].uses - a[1].uses);
+        const maxUses = Math.max(...entries.map(([, v]) => v.uses), 1);
         this.toolRankData = entries.map(([name, d]) => ({
           name,
           calls: d.calls,
           uses: d.uses,
           value: d.calls,
-          pct: Math.round((d.calls / maxCalls) * 100),
-          usePct: d.calls > 0 ? Math.round((d.uses / d.calls) * 100) : 0,
+          pct: Math.round((d.uses / maxUses) * 100),
           displayName: TOOL_DISPLAY_NAMES[name] || '',
         }));
         this.toolRankTotalCalls = this.toolRankAllTotal;
       } else if (tab === 'skill') {
         const skills = usageStats.skills || {};
-        const entries = Object.entries(skills).sort((a, b) => getCalls(b[1]) - getCalls(a[1]));
-        const maxCalls = Math.max(...entries.map(([, v]) => getCalls(v)), 1);
+        const entries = Object.entries(skills).sort((a, b) => getUses(b[1]) - getUses(a[1]));
+        const maxUses = Math.max(...entries.map(([, v]) => getUses(v)), 1);
         this.toolRankData = entries.map(([name, val]) => {
           const calls = getCalls(val);
           const uses = getUses(val);
@@ -360,8 +359,7 @@ function appState() {
             calls,
             uses,
             value: calls,
-            pct: Math.round((calls / maxCalls) * 100),
-            usePct: calls > 0 ? Math.round((uses / calls) * 100) : 0,
+            pct: Math.round((uses / maxUses) * 100),
             displayName: '',
           };
         });

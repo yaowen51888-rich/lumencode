@@ -529,8 +529,8 @@
                       <div x-show="!t.isGroup" class="tool-rank" :class="toolRankTab === 'all' ? 'has-note' : ''">
                         <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                         <span class="font-mono" style="font-size:12px" x-text="t.name" :title="t.name"></span>
-                        <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:linear-gradient(90deg,' + (t.rank === 1 ? colors.rust : 'var(--foreground)') + ' ' + t.usePct + '%,var(--ink-18) ' + t.usePct + '%)'"></div></div>
-                        <span class="font-mono text-right" style="font-size:11px" x-text="t.value"></span>
+                        <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + (t.rank === 1 ? colors.rust : 'var(--foreground)')"></div></div>
+                        <span class="font-mono text-right" style="font-size:11px" x-text="t.calls + '/' + t.uses"></span>
                         <!-- 通俗备注（仅全部工具 Tab）-->
                         <span x-show="toolRankTab === 'all' && t.displayName" style="font-size:11px;opacity:0.45;white-space:nowrap;" x-text="t.displayName"></span>
                       </div>

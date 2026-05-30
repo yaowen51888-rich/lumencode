@@ -759,7 +759,7 @@ input, textarea { font-family: inherit; color: inherit; }
 /* ── Tool Calls ── */
 .tool-rank {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 80px 48px;
+  grid-template-columns: 24px minmax(0, 1fr) 80px 64px;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
@@ -771,7 +771,7 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 .tool-rank:last-child { margin-bottom: 0; }
 .tool-rank.has-note {
-  grid-template-columns: 24px minmax(0, 1fr) 80px 48px 90px;
+  grid-template-columns: 24px minmax(0, 1fr) 80px 64px 90px;
   gap: 8px 12px;
 }
 .tool-rank-group {
