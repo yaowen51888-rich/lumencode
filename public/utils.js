@@ -146,14 +146,40 @@ export function stripMcpPrefix(raw) {
   return raw;
 }
 
+// 同时聚合 calls 和 uses，返回 { name: { calls, uses } }
+export function aggregateToolsWithDualCounts(toolsMap) {
+  const result = {};
+  for (const [name, val] of Object.entries(toolsMap)) {
+    const calls = typeof val === 'number' ? val : (val.calls || 0);
+    const uses = typeof val === 'number' ? val : (val.uses || 0);
+    let matched = false;
+    for (const prefix of _sortedPrefixes) {
+      if (name.startsWith(prefix + '__')) {
+        const displayName = MCP_SERVER_NAMES[prefix] || prefix;
+        if (!result[displayName]) result[displayName] = { calls: 0, uses: 0 };
+        result[displayName].calls += calls;
+        result[displayName].uses += uses;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      if (!result[name]) result[name] = { calls: 0, uses: 0 };
+      result[name].calls += calls;
+      result[name].uses += uses;
+    }
+  }
+  return result;
+}
+
 // MCP 工具按 server 分组，返回带 group header 的条目数组
 // mcpToolsMap 格式: { name: { calls, uses } }
-// mode: 'calls' | 'uses'
-// 返回: [{ name, value, pct, isGroup?, groupTotal? }, ...]
-export function groupMcpByServer(mcpToolsMap, mode = 'calls') {
+// 返回: [{ name, calls, uses, value, pct, usePct, isGroup?, groupTotal? }, ...]
+export function groupMcpByServer(mcpToolsMap) {
   const groups = {};
   for (const [fullName, val] of Object.entries(mcpToolsMap)) {
-    const count = typeof val === 'number' ? val : (val[mode] || 0);
+    const calls = typeof val === 'number' ? val : (val.calls || 0);
+    const uses = typeof val === 'number' ? val : (val.uses || 0);
     let server = 'Other';
     let matched = false;
     for (const prefix of _sortedPrefixes) {
@@ -164,20 +190,27 @@ export function groupMcpByServer(mcpToolsMap, mode = 'calls') {
       }
     }
     if (!matched) continue;
-    if (!groups[server]) groups[server] = { items: [], total: 0 };
-    groups[server].items.push({ name: stripMcpPrefix(fullName), value: count, fullName });
-    groups[server].total += count;
+    if (!groups[server]) groups[server] = { items: [], totalCalls: 0 };
+    groups[server].items.push({ name: stripMcpPrefix(fullName), calls, uses });
+    groups[server].totalCalls += calls;
   }
 
-  const sortedGroups = Object.entries(groups).sort((a, b) => b[1].total - a[1].total);
-  const allValues = sortedGroups.flatMap(([, g]) => g.items.map(i => i.value));
-  const maxValue = Math.max(...allValues, 1);
+  const sortedGroups = Object.entries(groups).sort((a, b) => b[1].totalCalls - a[1].totalCalls);
+  const allCalls = sortedGroups.flatMap(([, g]) => g.items.map(i => i.calls));
+  const maxCalls = Math.max(...allCalls, 1);
 
   const result = [];
   for (const [server, data] of sortedGroups) {
-    result.push({ name: `--- ${server} ---`, isGroup: true, groupTotal: data.total });
-    for (const item of data.items.sort((a, b) => b.value - a.value)) {
-      result.push({ name: item.name, value: item.value, pct: Math.round((item.value / maxValue) * 100) });
+    result.push({ name: `--- ${server} ---`, isGroup: true, groupTotal: data.totalCalls });
+    for (const item of data.items.sort((a, b) => b.calls - a.calls)) {
+      result.push({
+        name: item.name,
+        calls: item.calls,
+        uses: item.uses,
+        value: item.calls,
+        pct: Math.round((item.calls / maxCalls) * 100),
+        usePct: item.calls > 0 ? Math.round((item.uses / item.calls) * 100) : 0,
+      });
     }
   }
   return result;

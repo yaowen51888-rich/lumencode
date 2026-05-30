@@ -1,5 +1,5 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
-import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, aggregateToolsByServer, TOOL_DISPLAY_NAMES, groupMcpByServer } from './utils.js';
+import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
@@ -136,7 +136,6 @@ function appState() {
     ],
     toolRankData: [],
     toolRankTotal: 0,
-    toolRankMode: 'calls', // 'calls' | 'uses'
     toolRankTab: 'all',
     toolRankTotalCalls: 0,
     toolRankAllTotal: 0,
@@ -317,11 +316,6 @@ function appState() {
       if (this.view === 'report') this.loadReportContent();
     },
 
-    setToolRankMode(mode) {
-      this.toolRankMode = mode;
-      this._computeToolRank();
-    },
-
     setToolRankTab(tab) {
       this.toolRankTab = tab;
       this._computeToolRank();
@@ -331,50 +325,56 @@ function appState() {
 
     _computeToolRank() {
       const usageStats = this._lastUsageStats || {};
-      const mode = this.toolRankMode;
       const tab = this.toolRankTab;
+      const getCalls = (val) => typeof val === 'number' ? val : (val.calls || 0);
+      const getUses = (val) => typeof val === 'number' ? val : (val.uses || 0);
+      const sumCalls = (obj) => Object.values(obj || {}).reduce((s, v) => s + getCalls(v), 0);
 
-      // 提取数值的辅助函数
-      const getValue = (val) => typeof val === 'number' ? val : (val[mode] || 0);
-      // 预计算三个 Tab 的总 calls（用于标签展示）
-      const sumCalls = (obj) => Object.values(obj || {}).reduce((s, v) => s + (typeof v === 'number' ? v : (v.calls || 0)), 0);
       this.toolRankAllTotal = sumCalls(usageStats.tools);
       this.toolRankSkillTotal = sumCalls(usageStats.skills);
       this.toolRankMcpTotal = sumCalls(usageStats.mcpTools);
 
       if (tab === 'all') {
-        const aggregated = aggregateToolsByServer(usageStats.tools || {}, mode);
-        const entries = Object.entries(aggregated).sort((a, b) => b[1] - a[1]);
-        const maxValue = Math.max(...entries.map(([, v]) => v), 1);
-        this.toolRankData = entries.map(([name, value]) => ({
+        const dual = aggregateToolsWithDualCounts(usageStats.tools || {});
+        const entries = Object.entries(dual).sort((a, b) => b[1].calls - a[1].calls);
+        const maxCalls = Math.max(...entries.map(([, v]) => v.calls), 1);
+        this.toolRankData = entries.map(([name, d]) => ({
           name,
-          value,
-          pct: Math.round((value / maxValue) * 100),
+          calls: d.calls,
+          uses: d.uses,
+          value: d.calls,
+          pct: Math.round((d.calls / maxCalls) * 100),
+          usePct: d.calls > 0 ? Math.round((d.uses / d.calls) * 100) : 0,
           displayName: TOOL_DISPLAY_NAMES[name] || '',
         }));
         this.toolRankTotalCalls = this.toolRankAllTotal;
       } else if (tab === 'skill') {
         const skills = usageStats.skills || {};
-        const entries = Object.entries(skills).sort((a, b) => getValue(b[1]) - getValue(a[1]));
-        const maxValue = Math.max(...entries.map(([, v]) => getValue(v)), 1);
+        const entries = Object.entries(skills).sort((a, b) => getCalls(b[1]) - getCalls(a[1]));
+        const maxCalls = Math.max(...entries.map(([, v]) => getCalls(v)), 1);
         this.toolRankData = entries.map(([name, val]) => {
-          const value = getValue(val);
-          return { name, value, pct: Math.round((value / maxValue) * 100), displayName: '' };
+          const calls = getCalls(val);
+          const uses = getUses(val);
+          return {
+            name,
+            calls,
+            uses,
+            value: calls,
+            pct: Math.round((calls / maxCalls) * 100),
+            usePct: calls > 0 ? Math.round((uses / calls) * 100) : 0,
+            displayName: '',
+          };
         });
         this.toolRankTotalCalls = this.toolRankSkillTotal;
       } else if (tab === 'mcp') {
-        this.toolRankData = groupMcpByServer(usageStats.mcpTools || {}, mode);
+        this.toolRankData = groupMcpByServer(usageStats.mcpTools || {});
         this.toolRankTotalCalls = this.toolRankMcpTotal;
       }
 
       this.toolRankTotal = this.toolRankData.length;
-
-      // 为每个非分组行添加序号（用于模板渲染）
       let rank = 0;
       for (const item of this.toolRankData) {
-        if (!item.isGroup) {
-          item.rank = ++rank;
-        }
+        if (!item.isGroup) item.rank = ++rank;
       }
     },
 

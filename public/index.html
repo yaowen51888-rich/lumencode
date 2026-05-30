@@ -511,10 +511,6 @@
                 <span class="section-head-line"></span>
                 <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                   <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
-                    <button class="period-btn" :class="toolRankMode === 'calls' ? 'active' : ''" @click="setToolRankMode('calls')" style="border:none;font-size:10px;padding:2px 8px;">调用</button>
-                    <button class="period-btn" :class="toolRankMode === 'uses' ? 'active' : ''" @click="setToolRankMode('uses')" style="border:none;font-size:10px;padding:2px 8px;">使用</button>
-                  </div>
-                  <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
                     <button class="period-btn" :class="toolRankTab === 'all' ? 'active' : ''" @click="setToolRankTab('all')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'全部 ' + toolRankAllTotal"></button>
                     <button class="period-btn" :class="toolRankTab === 'skill' ? 'active' : ''" @click="setToolRankTab('skill')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'Skill ' + toolRankSkillTotal"></button>
                     <button class="period-btn" :class="toolRankTab === 'mcp' ? 'active' : ''" @click="setToolRankTab('mcp')" style="border:none;font-size:10px;padding:2px 8px;" x-text="'MCP ' + toolRankMcpTotal"></button>
@@ -533,7 +529,7 @@
                       <div x-show="!t.isGroup" class="tool-rank" :class="toolRankTab === 'all' ? 'has-note' : ''">
                         <span class="font-mono" style="font-size:10px;opacity:0.4" x-text="String(t.rank || (i+1)).padStart(2,'0')"></span>
                         <span class="font-mono" style="font-size:12px" x-text="t.name" :title="t.name"></span>
-                        <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:' + ((t.rank === 1) ? colors.rust : 'var(--foreground)')"></div></div>
+                        <div class="bar-track"><div class="bar-fill" :style="'width:' + t.pct + '%;background:linear-gradient(90deg,' + (t.rank === 1 ? colors.rust : 'var(--foreground)') + ' ' + t.usePct + '%,var(--ink-18) ' + t.usePct + '%)'"></div></div>
                         <span class="font-mono text-right" style="font-size:11px" x-text="t.value"></span>
                         <!-- 通俗备注（仅全部工具 Tab）-->
                         <span x-show="toolRankTab === 'all' && t.displayName" style="font-size:11px;opacity:0.45;white-space:nowrap;" x-text="t.displayName"></span>
