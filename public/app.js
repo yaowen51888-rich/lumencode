@@ -667,6 +667,9 @@ function appState() {
         if (weightedPct > targetPct) {
           desc += `，加权影响力 <strong>${weightedPct}%</strong>`;
         }
+        if (s.mergeCommits > 0) {
+          desc += `，已排除 <strong>${s.mergeCommits}</strong> 个合并提交`;
+        }
         this.aiSummaryDesc = desc;
         this.confirmedPct = Math.round((s.confirmedAILines / (s.totalLinesChanged || 1)) * 100);
         this.inferredPct = Math.round((s.probableAILines / (s.totalLinesChanged || 1)) * 100);
