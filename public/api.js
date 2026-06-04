@@ -128,6 +128,31 @@ export async function updateHooks(action, tools = ['claude', 'codex', 'opencode'
   return data;
 }
 
+export async function fetchSmartReportTools() {
+  const res = await fetch(API.SMART_REPORT_TOOLS);
+  if (!res.ok) throw new Error('获取智能体工具失败');
+  return res.json();
+}
+
+export async function fetchSmartReportRecord(params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${API.SMART_REPORT}?${qs}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '获取智能报告记录失败');
+  return data;
+}
+
+export async function generateSmartReport(payload) {
+  const res = await fetch(API.SMART_REPORT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '智能报告生成失败');
+  return data;
+}
+
 export async function fetchWorkReport(params) {
   const qs = new URLSearchParams(params).toString();
   const res = await fetch(`${API.REPORT}?${qs}&format=work`);

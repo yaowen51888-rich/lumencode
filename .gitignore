@@ -28,6 +28,8 @@ specs/
 .gstack/
 .codegraph/
 .cursor/
+.serena/
+smart-reports/
 
 # Pricing cache — auto-generated at runtime
 data/pricing-cache.json

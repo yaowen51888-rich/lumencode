@@ -1,6 +1,6 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
@@ -36,6 +36,15 @@ function appState() {
     reportProjects: [],
     copied: false,
     reportHtml: '',
+    smartReportTools: [],
+    smartReportAgent: '',
+    smartReportLoading: false,
+    smartReportError: '',
+    smartReportMarkdown: '',
+    smartReportHtml: '',
+    smartReportCopied: false,
+    smartReportRecord: null,
+    smartReportRecordMeta: '',
 
     /* constants */
     customStart: '',
@@ -199,6 +208,7 @@ function appState() {
         }
       });
       await this.loadTools();
+      await this.loadSmartReportTools();
       await this.loadHooksStatus();
       await this.loadStepStats();
       // 首次加载时先获取全量数据填充侧边栏，再按当前工具加载
@@ -231,6 +241,20 @@ function appState() {
         if (data.appName) this.appName = data.appName;
         if (data.appVersion) this.appVersion = data.appVersion;
       } catch (e) { console.warn('loadTools failed:', e); this.availableTools = []; }
+    },
+
+    async loadSmartReportTools() {
+      try {
+        const data = await fetchSmartReportTools();
+        this.smartReportTools = data.tools || [];
+        const firstDetected = this.smartReportTools.find(t => t.detected);
+        this.smartReportAgent = firstDetected?.name || '';
+        await this.loadSmartReportRecord();
+      } catch (e) {
+        console.warn('loadSmartReportTools failed:', e);
+        this.smartReportTools = [];
+        this.smartReportAgent = '';
+      }
     },
 
     async loadStepStats() {
@@ -312,6 +336,7 @@ function appState() {
 
     setTool(name) {
       this.activeTool = name;
+      this.resetSmartReportDisplay();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
     },
@@ -383,6 +408,7 @@ function appState() {
         this.customStart = '';
         this.customEnd = '';
         this.saveStateToHash();
+        this.resetSmartReportDisplay();
         this.loadCurrentView();
         if (this.view === 'report') this.loadReportContent();
       }
@@ -390,6 +416,7 @@ function appState() {
 
     onCustomStartChange() {
       if (this.customStart && this.customEnd) {
+        this.resetSmartReportDisplay();
         this.loadCurrentView();
         if (this.view === 'report') this.loadReportContent();
       }
@@ -397,6 +424,7 @@ function appState() {
 
     onCustomEndChange() {
       if (this.customStart && this.customEnd) {
+        this.resetSmartReportDisplay();
         this.loadCurrentView();
         if (this.view === 'report') this.loadReportContent();
       }
@@ -412,6 +440,7 @@ function appState() {
       }
       this.currentDate = d.toISOString().slice(0, 10);
       this.saveStateToHash();
+      this.resetSmartReportDisplay();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
     },
@@ -419,6 +448,7 @@ function appState() {
     onDateChange() {
       if (this.currentDate > this.today) this.currentDate = this.today;
       this.saveStateToHash();
+      this.resetSmartReportDisplay();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
     },
@@ -862,22 +892,119 @@ function appState() {
         const markdown = await res.text();
         setWorkReportState({ markdown, platform: this.reportPlatform, level: this.reportLevel });
         this.reportHtml = this.renderMarkdownToReportHtml(markdown);
+        await this.loadSmartReportRecord();
       } catch (e) { console.warn('loadReportContent failed:', e); }
     },
 
     setReportLevel(level) {
       this.reportLevel = level;
+      this.resetSmartReportDisplay();
       this.loadReportContent();
     },
 
     setReportPlatform(platform) {
       this.reportPlatform = platform;
+      this.resetSmartReportDisplay();
       this.loadReportContent();
     },
 
     setReportProject(project) {
       this.reportProject = project;
+      this.resetSmartReportDisplay();
       this.loadReportContent();
+    },
+
+    setSmartReportAgent(agent) {
+      this.smartReportAgent = agent;
+      this.resetSmartReportDisplay();
+      this.loadSmartReportRecord();
+    },
+
+    resetSmartReportDisplay() {
+      this.smartReportError = '';
+      this.smartReportMarkdown = '';
+      this.smartReportHtml = '';
+      this.smartReportRecord = null;
+      this.smartReportRecordMeta = '';
+    },
+
+    smartReportParams() {
+      const params = {
+        agent: this.smartReportAgent,
+        tool: this.activeTool,
+        period: this.period,
+        date: this.currentDate,
+        level: this.reportLevel,
+        platform: this.reportPlatform,
+        project: this.reportProject,
+      };
+      if (this.period === 'custom' && this.customStart && this.customEnd) {
+        params.start = this.customStart;
+        params.end = this.customEnd;
+      }
+      return params;
+    },
+
+    applySmartReportRecord(record) {
+      this.smartReportRecord = record || null;
+      this.smartReportMarkdown = record?.markdown || '';
+      this.smartReportHtml = this.renderMarkdownToReportHtml(this.smartReportMarkdown);
+      this.smartReportRecordMeta = record ? this.formatSmartReportRecordMeta(record) : '';
+    },
+
+    formatSmartReportRecordMeta(record) {
+      const updatedAt = record?.updatedAt ? new Date(record.updatedAt) : null;
+      const time = updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt.toLocaleString('zh-CN', { hour12: false }) : '';
+      const count = record?.generatedCount ? `第 ${record.generatedCount} 次生成` : '已生成';
+      return time ? `${count} · ${time}` : count;
+    },
+
+    async loadSmartReportRecord() {
+      if (!this.smartReportAgent) {
+        this.resetSmartReportDisplay();
+        return;
+      }
+      try {
+        const data = await fetchSmartReportRecord(this.smartReportParams());
+        this.smartReportError = '';
+        this.applySmartReportRecord(data.record || null);
+      } catch (err) {
+        console.warn('loadSmartReportRecord failed:', err);
+        this.applySmartReportRecord(null);
+      }
+    },
+
+    async generateSmartReportContent() {
+      if (!this.smartReportAgent || this.smartReportLoading) return;
+      this.smartReportLoading = true;
+      this.smartReportError = '';
+      try {
+        const payload = this.smartReportParams();
+        const data = await generateSmartReport(payload);
+        this.applySmartReportRecord(data.record || { ...payload, markdown: data.markdown || '', generatedCount: 1, updatedAt: new Date().toISOString() });
+      } catch (err) {
+        this.smartReportError = err.message || '智能报告生成失败';
+        showToast(this.smartReportError);
+      } finally {
+        this.smartReportLoading = false;
+      }
+    },
+
+    async copySmartReport() {
+      if (!this.smartReportMarkdown) return;
+      await navigator.clipboard.writeText(this.smartReportMarkdown);
+      this.smartReportCopied = true;
+      setTimeout(() => this.smartReportCopied = false, 1400);
+    },
+
+    downloadSmartReport() {
+      if (!this.smartReportMarkdown) return;
+      const blob = new Blob([this.smartReportMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `smart-report-${this.period}-${this.currentDate}.md`;
+      a.click();
+      URL.revokeObjectURL(a.href);
     },
 
     async copyReport() {

@@ -639,6 +639,44 @@
                   <span class="label">SUMMARY · 摘要</span>
                   <p style="font-size:13px;line-height:1.7;opacity:0.85;margin-top:12px;" x-html="reportSummary"></p>
                 </div>
+                <!-- Smart Report -->
+                <div class="card" style="padding:16px 20px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+                    <span class="label">SMART REPORT · 智能报告</span>
+                    <span class="label" x-show="smartReportRecordMeta" x-text="smartReportRecordMeta"></span>
+                  </div>
+                  <p style="font-size:12px;line-height:1.6;opacity:0.7;margin-bottom:12px;">
+                    基于当前统计维度和工作汇报生成。智能体只接收受限统计上下文。
+                  </p>
+                  <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;">
+                    <template x-for="agent in smartReportTools" :key="agent.name">
+                      <button class="period-btn" :class="smartReportAgent === agent.name ? 'active' : ''" @click="setSmartReportAgent(agent.name)" :disabled="!agent.detected" :title="agent.detected ? agent.version : agent.error">
+                        <span x-text="agent.displayName"></span>
+                      </button>
+                    </template>
+                  </div>
+                  <button class="btn btn-primary" style="width:100%;justify-content:center;" @click="generateSmartReportContent()" :disabled="smartReportLoading || !smartReportAgent">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M16 12h6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
+                    <span x-text="smartReportLoading ? '生成中...' : (smartReportMarkdown ? '重新生成' : '生成智能报告')"></span>
+                  </button>
+                  <div x-show="smartReportTools.length > 0 && !smartReportTools.some(agent => agent.detected)" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;line-height:1.6;opacity:0.75;">
+                    未检测到可用的本地智能体命令。请确认 Claude Code、Codex 或 OpenCode 已安装，并且对应命令在启动 LumenCode 的终端 PATH 中可用。
+                  </div>
+                  <div x-show="smartReportError" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--dest);border-radius:6px;color:var(--dest);font-size:12px;" x-text="smartReportError"></div>
+                  <div x-show="smartReportLoading" x-cloak style="margin-top:12px;font-size:13px;opacity:0.65;">正在调用本地智能体分析当前报告数据...</div>
+                  <div x-show="smartReportMarkdown" x-cloak style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+                      <span class="label">AI ANALYSIS · 分析结果</span>
+                      <div style="display:flex;gap:8px;">
+                        <button class="btn btn-outline" @click="copySmartReport()">
+                          <span x-text="smartReportCopied ? '已复制' : '复制'"></span>
+                        </button>
+                        <button class="btn btn-outline" @click="downloadSmartReport()">.md</button>
+                      </div>
+                    </div>
+                    <div class="smart-report-panel-content" x-html="smartReportHtml"></div>
+                  </div>
+                </div>
                 <!-- Project Selector -->
                 <div class="card" style="padding:16px 20px;" x-show="reportProjects.length > 1" x-cloak>
                   <span class="label">PROJECTS · 项目</span>
@@ -855,4 +893,3 @@
   <script type="module" src="/app.js"></script>
 </body>
 </html>
-

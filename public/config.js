@@ -7,6 +7,8 @@ export const API = {
   SESSIONS: '/api/sessions',
   STEP_STATS: '/api/step-stats',
   HOOKS: '/api/hooks',
+  SMART_REPORT_TOOLS: '/api/smart-report/tools',
+  SMART_REPORT: '/api/smart-report',
 };
 
 // 灰阶色板（按视觉权重从重到轻）
