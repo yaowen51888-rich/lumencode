@@ -143,4 +143,6 @@ export const STORAGE = {
   CONFIG: 'ccusage-config',
   THEME: 'lc-theme',
   SIDEBAR_COLLAPSED: 'ccusage-sidebar-collapsed',
+  SMART_REPORT_AGENT: 'lc-smart-report-agent',
+  SMART_REPORT_STYLE: 'lc-smart-report-style',
 };

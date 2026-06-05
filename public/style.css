@@ -1181,41 +1181,206 @@ input, textarea { font-family: inherit; color: inherit; }
   opacity: 0.8;
 }
 
-.smart-report-panel-content {
-  background: var(--card);
+.report-content-frame {
+  position: relative;
+  padding-top: 76px;
+}
+.report-content-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: inline-flex;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--card);
+  z-index: 1;
+}
+.report-toggle-btn {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-left: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+  transition: background 0.15s, color 0.15s;
+}
+.report-toggle-btn:first-child { border-left: none; }
+.report-toggle-btn:hover:not(:disabled) { background: var(--ink-8); color: var(--foreground); }
+.report-toggle-btn.active {
+  background: var(--foreground);
+  color: var(--background);
+}
+.report-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.report-toggle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dest);
+}
+.smart-report-update-notice {
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--dest);
+  border-radius: 6px;
+  color: var(--dest);
   font-size: 13px;
-  line-height: 1.65;
-  max-height: 420px;
-  overflow-y: auto;
+  line-height: 1.6;
+  background: color-mix(in srgb, var(--dest) 7%, transparent);
+}
+
+.smart-agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.smart-agent-btn {
+  width: 100%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.smart-agent-btn:hover:not(:disabled) {
+  background: var(--ink-8);
+}
+.smart-agent-btn.active {
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+}
+.smart-agent-btn.unavailable {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.smart-agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 10%, transparent);
+}
+.smart-agent-dot.available {
+  background: #22c55e;
+}
+.smart-agent-dot.missing {
+  background: var(--dest);
+}
+.smart-agent-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smart-agent-status {
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.smart-agent-btn.active .smart-agent-status {
+  opacity: 0.82;
+}
+.smart-report-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: smart-report-spin 0.75s linear infinite;
+}
+@keyframes smart-report-spin {
+  to { transform: rotate(360deg); }
+}
+.smart-report-progress {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--ink-4);
+}
+.smart-report-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.smart-report-progress-head .font-mono {
+  flex: 0 0 auto;
+  font-size: 11px;
+  opacity: 0.62;
+}
+.smart-report-progress-track {
+  position: relative;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.smart-report-progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+  transition: width 0.7s ease;
+}
+.smart-report-progress-foot {
+  margin-top: 9px;
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.58;
+}
+.smart-report-style-options {
+  display: grid;
+  gap: 10px;
+}
+.smart-report-style-option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
   color: var(--foreground);
-  opacity: 0.88;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
-.smart-report-panel-content .md-h1 {
-  font-size: 16px; font-weight: 600; margin-bottom: 14px; line-height: 1.35; color: var(--foreground); opacity: 1;
+.smart-report-style-option:hover,
+.smart-report-style-option.active {
+  border-color: var(--foreground);
+  background: var(--ink-8);
 }
-.smart-report-panel-content .md-h2 {
-  font-size: 13px; font-weight: 600; margin-top: 18px; margin-bottom: 10px;
-  padding-bottom: 6px; border-bottom: 1px solid var(--border);
-  color: var(--foreground); opacity: 1; text-transform: uppercase; letter-spacing: 0.04em;
+.smart-report-style-title {
+  font-size: 13px;
+  font-weight: 500;
 }
-.smart-report-panel-content .md-h3 {
-  font-size: 13px; font-weight: 500; margin-top: 14px; margin-bottom: 8px;
-  padding-left: 8px; border-left: 3px solid var(--rust);
+.smart-report-style-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.68;
 }
-.smart-report-panel-content .md-p { margin-bottom: 8px; }
-.smart-report-panel-content .md-ul { margin-bottom: 10px; padding-left: 18px; }
-.smart-report-panel-content .md-li { margin-bottom: 4px; }
-.smart-report-panel-content .md-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
-.smart-report-panel-content .md-table th, .smart-report-panel-content .md-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); text-align: left; }
-.smart-report-panel-content .md-table th { font-weight: 600; background: var(--secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; }
-.smart-report-panel-content code {
-  font-family: var(--font-mono); font-size: 12px;
-  background: var(--secondary);
-  padding: 2px 5px; border-radius: 4px;
-  opacity: 0.8;
+@media (prefers-reduced-motion: reduce) {
+  .smart-report-progress-bar {
+    transition: none;
+  }
 }
 
 /* ── Toast ── */

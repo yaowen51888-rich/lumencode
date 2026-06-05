@@ -36,6 +36,14 @@ test('buildSmartReportKey separates report level and dimensions', () => {
     buildSmartReportKey(base),
     buildSmartReportKey({ ...base, level: 'detailed' }),
   );
+  assert.equal(
+    buildSmartReportKey(base),
+    buildSmartReportKey({ ...base, style: 'default' }),
+  );
+  assert.notEqual(
+    buildSmartReportKey(base),
+    buildSmartReportKey({ ...base, style: 'workhorse' }),
+  );
 });
 
 test('saveSmartReportRecord creates a new record and updates same key later', async () => withTempDir(async (configDir) => {
@@ -94,4 +102,28 @@ test('saveSmartReportRecord creates separate records for different levels', asyn
   assert.notEqual(detailed.id, brief.id);
   assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base, level: 'detailed' })).id, detailed.id);
   assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base, level: 'brief' })).id, brief.id);
+}));
+
+test('saveSmartReportRecord creates separate records for different smart report styles', async () => withTempDir(async (configDir) => {
+  const storeDir = getSmartReportStoreDir(join(configDir, 'config.json'));
+  const base = {
+    agent: 'opencode',
+    period: 'weekly',
+    date: '2026-06-04',
+    tool: 'all',
+    project: '',
+    level: 'detailed',
+    platform: 'default',
+    markdown: '# Report',
+    sourceHash: 'hash',
+  };
+
+  const normal = saveSmartReportRecord(storeDir, { ...base, style: 'default' });
+  const workhorse = saveSmartReportRecord(storeDir, { ...base, style: 'workhorse' });
+
+  assert.notEqual(normal.id, workhorse.id);
+  assert.equal(normal.style, 'default');
+  assert.equal(workhorse.style, 'workhorse');
+  assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base })).id, normal.id);
+  assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base, style: 'workhorse' })).id, workhorse.id);
 }));

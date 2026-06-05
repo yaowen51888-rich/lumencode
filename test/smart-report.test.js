@@ -7,6 +7,7 @@ import {
   buildAgentLookupInvocation,
   createSmartReport,
   getAgentDefinition,
+  SMART_REPORT_PROMPT_MARKER,
 } from '../lib/smart-report.js';
 
 const reportData = {
@@ -92,11 +93,13 @@ test('buildSmartReportPrompt restricts AI to provided data analysis', () => {
   const context = buildSmartReportContext(reportData, '# Work report', { period: 'weekly' });
   const prompt = buildSmartReportPrompt(context);
 
+  assert.ok(prompt.startsWith(SMART_REPORT_PROMPT_MARKER));
   assert.ok(prompt.includes('只能基于下面提供的数据'));
   assert.ok(prompt.includes('不得读取源码'));
   assert.ok(prompt.includes('不得联网'));
   assert.ok(prompt.includes('数据不足'));
   assert.ok(prompt.includes('关键洞察'));
+  assert.ok(prompt.includes('工作亮点分析'));
   assert.ok(prompt.includes('"requestCount": 42'));
 });
 
@@ -118,6 +121,29 @@ test('brief smart report prompt includes detailed and brief source reports', () 
   assert.ok(prompt.includes('briefMarkdown'));
   assert.ok(prompt.includes('Detailed Source Marker'));
   assert.ok(prompt.includes('Brief Source Marker'));
+  assert.ok(prompt.includes('工作亮点分析'));
+});
+
+test('workhorse smart report prompt uses boss source as leadership report style', () => {
+  const context = buildSmartReportContext(reportData, '# Detailed selected', {
+    period: 'weekly',
+    level: 'detailed',
+    style: 'workhorse',
+    sourceReports: {
+      detailedMarkdown: '# Detailed Source Marker',
+      briefMarkdown: '# Brief Source Marker',
+      bossMarkdown: '# Boss Source Marker',
+    },
+  });
+  const prompt = buildSmartReportPrompt(context);
+
+  assert.equal(context.meta.style, 'workhorse');
+  assert.equal(context.sourceReports.bossMarkdown, '# Boss Source Marker');
+  assert.ok(prompt.includes('牛马'));
+  assert.ok(prompt.includes('面向领导汇报'));
+  assert.ok(prompt.includes('工作亮点分析'));
+  assert.ok(prompt.includes('bossMarkdown'));
+  assert.ok(prompt.includes('Boss Source Marker'));
 });
 
 test('getAgentDefinition only accepts known local agents', () => {

@@ -562,7 +562,6 @@
             <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
               <button class="period-btn" :class="reportLevel === 'detailed' ? 'active' : ''" @click="setReportLevel('detailed')" style="border-left:none">详细 Detail</button>
               <button class="period-btn" :class="reportLevel === 'brief' ? 'active' : ''" @click="setReportLevel('brief')">简略 Brief</button>
-              <button class="period-btn" :class="reportLevel === 'boss' ? 'active' : ''" @click="setReportLevel('boss')">汇报 Boss</button>
             </div>
             <button class="btn btn-outline" @click="copyReport()" style="display:inline-flex;align-items:center;gap:6px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -630,7 +629,22 @@
 
           <!-- Report Content -->
           <div style="margin-top:48px;display:grid;grid-template-columns:5fr 2fr;gap:24px;">
-            <div class="work-report-content" id="reportContent" x-html="reportHtml"></div>
+            <div class="work-report-content report-content-frame" id="reportContent">
+              <div class="report-content-toggle">
+                <button class="report-toggle-btn" :class="reportContentMode === 'source' ? 'active' : ''" @click="setReportContentMode('source')">原报告</button>
+                <button class="report-toggle-btn" :class="reportContentMode === 'smart' ? 'active' : ''" @click="setReportContentMode('smart')" :disabled="!smartReportMarkdown">
+                  <span>智能报告</span>
+                  <span class="report-toggle-dot" x-show="smartReportNeedsUpdate" x-cloak></span>
+                </button>
+              </div>
+              <div x-show="reportContentMode === 'source'" x-html="reportHtml"></div>
+              <div x-show="reportContentMode === 'smart'" x-cloak>
+                <div class="smart-report-update-notice" x-show="smartReportNeedsUpdate" x-cloak>
+                  当前统计数据或原始报告已变化，这份 AI 报告可能不是最新内容。建议点击右侧“重新生成”更新。
+                </div>
+                <div x-html="smartReportHtml"></div>
+              </div>
+            </div>
 
             <!-- Sticky Meta Panel -->
             <aside>
@@ -648,33 +662,40 @@
                   <p style="font-size:12px;line-height:1.6;opacity:0.7;margin-bottom:12px;">
                     基于当前统计维度和工作汇报生成。智能体只接收受限统计上下文。
                   </p>
-                  <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;">
+                  <div class="smart-agent-list">
                     <template x-for="agent in smartReportTools" :key="agent.name">
-                      <button class="period-btn" :class="smartReportAgent === agent.name ? 'active' : ''" @click="setSmartReportAgent(agent.name)" :disabled="!agent.detected" :title="agent.detected ? agent.version : agent.error">
-                        <span x-text="agent.displayName"></span>
+                      <button class="smart-agent-btn" :class="{ active: smartReportAgent === agent.name, unavailable: !agent.detected }" @click="setSmartReportAgent(agent.name)" :disabled="!agent.detected" :title="agent.detected ? agent.version : agent.error">
+                        <span class="smart-agent-dot" :class="agent.detected ? 'available' : 'missing'"></span>
+                        <span class="smart-agent-name" x-text="agent.displayName"></span>
+                        <span class="smart-agent-status" x-text="agent.detected ? '可连接' : '未检测'"></span>
                       </button>
                     </template>
                   </div>
-                  <button class="btn btn-primary" style="width:100%;justify-content:center;" @click="generateSmartReportContent()" :disabled="smartReportLoading || !smartReportAgent">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M4.93 4.93l4.24 4.24"/><path d="M14.83 14.83l4.24 4.24"/><path d="M2 12h6"/><path d="M16 12h6"/><path d="M4.93 19.07l4.24-4.24"/><path d="M14.83 9.17l4.24-4.24"/></svg>
-                    <span x-text="smartReportLoading ? '生成中...' : (smartReportMarkdown ? '重新生成' : '生成智能报告')"></span>
+                  <button class="btn btn-primary" style="width:100%;justify-content:center;" @click="openSmartReportStyleModal()" :disabled="smartReportLoading || !smartReportAgent">
+                    <span class="smart-report-spinner" x-show="smartReportLoading" x-cloak></span>
+                    <span x-text="smartReportLoading ? '生成中...' : (smartReportMarkdown ? (smartReportNeedsUpdate ? '更新智能报告' : '重新生成') : '生成智能报告')"></span>
                   </button>
                   <div x-show="smartReportTools.length > 0 && !smartReportTools.some(agent => agent.detected)" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;line-height:1.6;opacity:0.75;">
                     未检测到可用的本地智能体命令。请确认 Claude Code、Codex 或 OpenCode 已安装，并且对应命令在启动 LumenCode 的终端 PATH 中可用。
                   </div>
                   <div x-show="smartReportError" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--dest);border-radius:6px;color:var(--dest);font-size:12px;" x-text="smartReportError"></div>
-                  <div x-show="smartReportLoading" x-cloak style="margin-top:12px;font-size:13px;opacity:0.65;">正在调用本地智能体分析当前报告数据...</div>
-                  <div x-show="smartReportMarkdown" x-cloak style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-                      <span class="label">AI ANALYSIS · 分析结果</span>
-                      <div style="display:flex;gap:8px;">
-                        <button class="btn btn-outline" @click="copySmartReport()">
-                          <span x-text="smartReportCopied ? '已复制' : '复制'"></span>
-                        </button>
-                        <button class="btn btn-outline" @click="downloadSmartReport()">.md</button>
-                      </div>
+                  <div x-show="smartReportNeedsUpdate" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--dest);border-radius:6px;color:var(--dest);font-size:12px;line-height:1.6;" x-text="smartReportUpdateMessage"></div>
+                  <div class="smart-report-progress" x-show="smartReportLoading" x-cloak>
+                    <div class="smart-report-progress-head">
+                      <span x-text="smartReportStatusMessage || '正在调用本地智能体分析当前报告数据...'"></span>
+                      <span class="font-mono" x-text="smartReportElapsedLabel"></span>
                     </div>
-                    <div class="smart-report-panel-content" x-html="smartReportHtml"></div>
+                    <div class="smart-report-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="smartReportProgress" :aria-valuetext="smartReportProgress + '%'">
+                      <span class="smart-report-progress-bar" :style="'width:' + smartReportProgress + '%'"></span>
+                    </div>
+                    <div class="smart-report-progress-foot">本地智能体生成时间受报告大小和模型响应影响，可刷新页面后继续查看。</div>
+                  </div>
+                  <div x-show="smartReportMarkdown" x-cloak style="margin-top:14px;display:flex;gap:8px;">
+                    <button class="btn btn-outline" style="flex:1;justify-content:center;" @click="setReportContentMode('smart')">查看</button>
+                    <button class="btn btn-outline" style="flex:1;justify-content:center;" @click="copySmartReport()">
+                      <span x-text="smartReportCopied ? '已复制' : '复制'"></span>
+                    </button>
+                    <button class="btn btn-outline" @click="downloadSmartReport()">.md</button>
                   </div>
                 </div>
                 <!-- Project Selector -->
@@ -714,6 +735,31 @@
         </div>
       </div>
     </main>
+
+    <!-- ── Smart Report Style Modal ── -->
+    <div id="smart-report-style-modal" class="modal-overlay" x-show="smartReportStyleModalOpen" x-cloak>
+      <div class="modal-backdrop" @click="closeSmartReportStyleModal()"></div>
+      <div class="modal-panel" style="max-width:460px;">
+        <div class="modal-header">
+          <h3 style="font-size:15px;font-weight:500;">选择智能报告风格</h3>
+          <button class="rail-btn-icon" @click="closeSmartReportStyleModal()" style="color:var(--foreground);opacity:0.65;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:16px 24px;">
+          <div class="smart-report-style-options">
+            <button class="smart-report-style-option" :class="smartReportStyle === 'default' ? 'active' : ''" @click="confirmSmartReportStyle('default')">
+              <span class="smart-report-style-title">默认风格</span>
+              <span class="smart-report-style-desc">专业分析口径，强调数据摘要、工作亮点、关键洞察和风险建议。</span>
+            </button>
+            <button class="smart-report-style-option" :class="smartReportStyle === 'workhorse' ? 'active' : ''" @click="confirmSmartReportStyle('workhorse')">
+              <span class="smart-report-style-title">牛马</span>
+              <span class="smart-report-style-desc">面向领导汇报的表达倾向，突出工作投入、产出价值、风险兜底和下一步计划。</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Hooks Confirm Modal ── -->
     <div id="hooksConfirmModal" class="modal-overlay" style="display:none;">

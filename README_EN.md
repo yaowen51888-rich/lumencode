@@ -66,6 +66,7 @@ npx lumencode serve
 | 🎯 **Line-Level AI Attribution** | Hook-based step tracking identifies AI participation for each line of code. Not "AI helped with this commit" — "This line was written by AI" |
 | 🌐 **Three-Tool Unified** | Claude Code / Codex / OpenCode data auto-aggregated, sidebar tab to switch |
 | 📝 **Natural Language Work Summary** | Detailed / Brief reports with insight commentary. Standard Markdown / Lark / DingTalk formats, one-click toggle |
+| 🤖 **Smart Report Generation** | Connects to the local OpenCode CLI to analyze bounded statistics and source work reports, with Default and leadership-oriented "Workhorse" styles |
 | 📂 **Per-Project Reports** | Select a project from the right panel to generate an independent report (commits + AI interaction volume + hotspot files) |
 | 📅 **Custom Date Ranges** | Beyond daily/weekly/monthly — pick any start and end date, perfect for aligning with Sprint cycles |
 | 💰 **Precise Cost Estimation** | 600+ model local pricing (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback. Unknown models counted at $0, never guessed |
@@ -119,6 +120,9 @@ npx lumencode serve
 
 - **Detailed** — Full data + insights + numbered sections, ideal for weekly/monthly reports
 - **Brief** — 3-5 sentence core summary, ideal for daily reports or group chat
+- **Smart Report** — Calls the local OpenCode CLI from the page to generate AI analysis with data summary, work highlights, key insights, risks, and recommendations
+- **Style Selection** — Choose Default style, or "Workhorse" for a leadership-reporting tone before generation
+- **Persistence & Freshness Hints** — Smart reports are saved by period, project, report level, and style; stale source data prompts regeneration
 - **Multi-Platform Format** — Standard Markdown / Lark / DingTalk, one-click toggle
 - **Per-Project** — Select a project from the right panel to generate a project-specific report
 
@@ -231,6 +235,14 @@ For customization, click the settings button (top-right corner) in the Web UI.
 ---
 
 ## Changelog
+
+### v1.3.4 (2026-06-05) — Smart Report Styles & Work Highlights
+
+- **Smart Report Style Selection** — Pick "Default" or "Workhorse" before generation. Workhorse uses a leadership-reporting tone focused on effort, output value, risk handling, and next steps
+- **Work Highlights Analysis** — AI smart reports now require a dedicated work highlights section, turning raw stats into reportable highlights with evidence
+- **Boss Report Migration** — Removed the separate "Boss Report" level from the standard work report and moved that capability into smart report styles
+- **Persistent Smart Reports** — Smart reports are stored separately by style, with default style remaining compatible with existing records
+- **Background Generation UX** — Smart report generation runs as a background job, restores progress after refresh, and shows a gradually advancing progress bar while waiting
 
 ### v1.3.0 (2026-05-28) — Line-Level AI Attribution & Interactive Hooks Management
 

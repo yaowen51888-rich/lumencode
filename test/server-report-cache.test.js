@@ -4,6 +4,8 @@ import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { startServer } from '../lib/server.js';
+import { buildSourceHash, saveSmartReportRecord } from '../lib/smart-report-store.js';
+import { generateWorkReport } from '../lib/report.js';
 
 function waitForListening(server) {
   if (server.listening) return Promise.resolve();
@@ -114,6 +116,239 @@ test('api/report reuses base report cache across json and work formats', async (
 
     assert.equal(calls, 1);
     assert.match(markdown, /speed up report endpoint/);
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
+
+test('api/smart-report matches weekly records by range and marks stale sources', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-'));
+  const configPath = join(tempDir, 'config.json');
+  saveSmartReportRecord(join(tempDir, 'smart-reports'), {
+    agent: 'codex',
+    period: 'weekly',
+    date: '',
+    start: '2026-06-01',
+    end: '2026-06-07',
+    tool: 'all',
+    project: '',
+    level: 'detailed',
+    platform: 'default',
+    markdown: '# old smart report',
+    sourceHash: 'old-source-hash',
+  });
+
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => ({
+      ...makeReportData(),
+      start: '2026-06-01',
+      end: '2026-06-07',
+      usageStats: {
+        ...makeReportData().usageStats,
+        requestCount: 5,
+        totalTokens: 500,
+      },
+    }),
+    configPath,
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const res = await fetch(`http://127.0.0.1:${port}/api/smart-report?agent=codex&period=weekly&date=2026-06-05&tool=all&level=detailed&platform=default`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+
+    assert.equal(body.record.markdown, '# old smart report');
+    assert.equal(body.record.start, '2026-06-01');
+    assert.equal(body.record.end, '2026-06-07');
+    assert.equal(body.needsUpdate, true);
+    assert.equal(body.range.start, '2026-06-01');
+    assert.equal(body.range.end, '2026-06-07');
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
+
+test('api/smart-report starts generation as a background job', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-job-'));
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => makeReportData(),
+    join(tempDir, 'config.json'),
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const res = await fetch(`http://127.0.0.1:${port}/api/smart-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent: 'unknown',
+        period: 'daily',
+        date: '2026-05-28',
+        tool: 'all',
+        level: 'detailed',
+        platform: 'default',
+      }),
+    });
+    assert.equal(res.status, 202);
+    const body = await res.json();
+
+    assert.equal(body.record, null);
+    assert.equal(body.job.status, 'running');
+    assert.equal(typeof body.job.id, 'string');
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
+
+test('api/smart-report freshness ignores non-report source metadata changes', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-freshness-'));
+  const configPath = join(tempDir, 'config.json');
+  let extraDiagnostics = { parsedAt: 'first' };
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => ({
+      ...makeReportData(),
+      _diagnostics: extraDiagnostics,
+    }),
+    configPath,
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const url = `http://127.0.0.1:${port}/api/smart-report?agent=codex&period=daily&date=2026-05-28&tool=all&level=detailed&platform=default`;
+
+    const firstRes = await fetch(url);
+    assert.equal(firstRes.status, 200);
+    const firstBody = await firstRes.json();
+    assert.equal(firstBody.record, null);
+    assert.equal(typeof firstBody.currentSourceHash, 'string');
+
+    saveSmartReportRecord(join(tempDir, 'smart-reports'), {
+      agent: 'codex',
+      period: 'daily',
+      date: '2026-05-28',
+      start: '2026-05-28',
+      end: '2026-05-28',
+      tool: 'all',
+      project: '',
+      level: 'detailed',
+      platform: 'default',
+      markdown: '# smart report',
+      sourceHash: firstBody.currentSourceHash,
+    });
+
+    extraDiagnostics = { parsedAt: 'second' };
+    const secondRes = await fetch(url);
+    assert.equal(secondRes.status, 200);
+    const secondBody = await secondRes.json();
+
+    assert.equal(secondBody.record.markdown, '# smart report');
+    assert.equal(secondBody.needsUpdate, false);
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
+
+test('api/smart-report treats legacy records with matching report hashes as fresh', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-legacy-fresh-'));
+  const configPath = join(tempDir, 'config.json');
+  const data = makeReportData();
+  const detailedMarkdown = generateWorkReport(data.usageStats, data.gitStats, 'daily', data.start, data.end, data.prevStats, {
+    level: 'detailed',
+    platform: 'default',
+    tool: 'all',
+    projectName: '',
+  });
+  const briefMarkdown = generateWorkReport(data.usageStats, data.gitStats, 'daily', data.start, data.end, data.prevStats, {
+    level: 'brief',
+    platform: 'default',
+    tool: 'all',
+    projectName: '',
+  });
+  saveSmartReportRecord(join(tempDir, 'smart-reports'), {
+    agent: 'codex',
+    period: 'daily',
+    date: '2026-05-28',
+    start: '2026-05-28',
+    end: '2026-05-28',
+    tool: 'all',
+    project: '',
+    level: 'detailed',
+    platform: 'default',
+    markdown: '# legacy smart report',
+    sourceHash: 'legacy-full-report-data-hash',
+    sourceReports: {
+      detailedHash: buildSourceHash(detailedMarkdown),
+      briefHash: buildSourceHash(briefMarkdown),
+      bossHash: '',
+    },
+  });
+
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => data,
+    configPath,
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const res = await fetch(`http://127.0.0.1:${port}/api/smart-report?agent=codex&period=daily&date=2026-05-28&tool=all&level=detailed&platform=default`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+
+    assert.equal(body.record.markdown, '# legacy smart report');
+    assert.equal(body.needsUpdate, false);
   } finally {
     await closeServer(server);
     rmSync(tempDir, { recursive: true, force: true });

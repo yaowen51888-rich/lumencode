@@ -36,8 +36,11 @@ function appState() {
     reportProjects: [],
     copied: false,
     reportHtml: '',
+    reportContentMode: 'source',
     smartReportTools: [],
     smartReportAgent: '',
+    smartReportStyle: ['default', 'workhorse'].includes(localStorage.getItem(STORAGE.SMART_REPORT_STYLE)) ? localStorage.getItem(STORAGE.SMART_REPORT_STYLE) : 'default',
+    smartReportStyleModalOpen: false,
     smartReportLoading: false,
     smartReportError: '',
     smartReportMarkdown: '',
@@ -45,6 +48,16 @@ function appState() {
     smartReportCopied: false,
     smartReportRecord: null,
     smartReportRecordMeta: '',
+    smartReportNeedsUpdate: false,
+    smartReportUpdateMessage: '',
+    smartReportJob: null,
+    smartReportStatusMessage: '',
+    smartReportPollTimer: null,
+    smartReportElapsedTimer: null,
+    smartReportCompletionTimer: null,
+    smartReportStartedAt: '',
+    smartReportNow: Date.now(),
+    smartReportProgress: 0,
 
     /* constants */
     customStart: '',
@@ -247,8 +260,10 @@ function appState() {
       try {
         const data = await fetchSmartReportTools();
         this.smartReportTools = data.tools || [];
+        const savedAgent = localStorage.getItem(STORAGE.SMART_REPORT_AGENT);
         const firstDetected = this.smartReportTools.find(t => t.detected);
-        this.smartReportAgent = firstDetected?.name || '';
+        const savedDetected = this.smartReportTools.find(t => t.detected && t.name === savedAgent);
+        this.smartReportAgent = savedDetected?.name || firstDetected?.name || '';
         await this.loadSmartReportRecord();
       } catch (e) {
         console.warn('loadSmartReportTools failed:', e);
@@ -878,6 +893,7 @@ function appState() {
 
     async loadReportContent() {
       try {
+        if (!['detailed', 'brief'].includes(this.reportLevel)) this.reportLevel = 'detailed';
         const params = { tool: this.activeTool, period: this.period, date: this.currentDate, format: 'work', platform: this.reportPlatform, level: this.reportLevel };
         if (this.period === 'custom' && this.customStart && this.customEnd) {
           params.start = this.customStart;
@@ -897,7 +913,7 @@ function appState() {
     },
 
     setReportLevel(level) {
-      this.reportLevel = level;
+      this.reportLevel = ['detailed', 'brief'].includes(level) ? level : 'detailed';
       this.resetSmartReportDisplay();
       this.loadReportContent();
     },
@@ -916,16 +932,29 @@ function appState() {
 
     setSmartReportAgent(agent) {
       this.smartReportAgent = agent;
+      localStorage.setItem(STORAGE.SMART_REPORT_AGENT, agent);
       this.resetSmartReportDisplay();
       this.loadSmartReportRecord();
     },
 
     resetSmartReportDisplay() {
+      this.stopSmartReportPolling();
+      this.stopSmartReportElapsedTimer();
+      this.stopSmartReportCompletionTimer();
       this.smartReportError = '';
       this.smartReportMarkdown = '';
       this.smartReportHtml = '';
       this.smartReportRecord = null;
       this.smartReportRecordMeta = '';
+      this.smartReportNeedsUpdate = false;
+      this.smartReportUpdateMessage = '';
+      this.smartReportJob = null;
+      this.smartReportLoading = false;
+      this.smartReportStatusMessage = '';
+      this.smartReportStartedAt = '';
+      this.smartReportNow = Date.now();
+      this.smartReportProgress = 0;
+      this.reportContentMode = 'source';
     },
 
     smartReportParams() {
@@ -935,6 +964,7 @@ function appState() {
         period: this.period,
         date: this.currentDate,
         level: this.reportLevel,
+        style: this.smartReportStyle,
         platform: this.reportPlatform,
         project: this.reportProject,
       };
@@ -945,18 +975,164 @@ function appState() {
       return params;
     },
 
-    applySmartReportRecord(record) {
+    setReportContentMode(mode) {
+      this.reportContentMode = mode === 'smart' ? 'smart' : 'source';
+    },
+
+    openSmartReportStyleModal() {
+      if (!this.smartReportAgent || this.smartReportLoading) return;
+      this.smartReportStyleModalOpen = true;
+    },
+
+    closeSmartReportStyleModal() {
+      this.smartReportStyleModalOpen = false;
+    },
+
+    async confirmSmartReportStyle(style) {
+      this.smartReportStyle = style === 'workhorse' ? 'workhorse' : 'default';
+      localStorage.setItem(STORAGE.SMART_REPORT_STYLE, this.smartReportStyle);
+      this.closeSmartReportStyleModal();
+      this.resetSmartReportDisplay();
+      await this.generateSmartReportContent();
+    },
+
+    applySmartReportRecord(record, meta = {}) {
+      if (record?.style) this.smartReportStyle = record.style;
       this.smartReportRecord = record || null;
       this.smartReportMarkdown = record?.markdown || '';
       this.smartReportHtml = this.renderMarkdownToReportHtml(this.smartReportMarkdown);
       this.smartReportRecordMeta = record ? this.formatSmartReportRecordMeta(record) : '';
+      this.smartReportNeedsUpdate = !!record && !!meta.needsUpdate;
+      this.smartReportUpdateMessage = this.smartReportNeedsUpdate ? '当前统计数据或原始报告已变化，建议重新生成智能报告。' : '';
+      if (!record && this.reportContentMode === 'smart') this.reportContentMode = 'source';
+    },
+
+    applySmartReportJob(job) {
+      this.smartReportJob = job || null;
+      if (!job) {
+        this.smartReportLoading = false;
+        this.smartReportStatusMessage = '';
+        this.smartReportStartedAt = '';
+        this.smartReportProgress = 0;
+        this.stopSmartReportPolling();
+        this.stopSmartReportElapsedTimer();
+        this.stopSmartReportCompletionTimer();
+        return;
+      }
+      if (job.status === 'running') {
+        this.stopSmartReportCompletionTimer();
+        this.smartReportLoading = true;
+        this.smartReportError = '';
+        this.smartReportStartedAt = job.startedAt || this.smartReportStartedAt || new Date().toISOString();
+        if (this.smartReportProgress <= 0) this.smartReportProgress = 4;
+        this.updateSmartReportProgress();
+        this.startSmartReportElapsedTimer();
+        this.smartReportStatusMessage = '后台生成中，页面可刷新，回来后会继续显示进度。';
+        this.scheduleSmartReportPolling();
+        return;
+      }
+      if (job.status === 'completed') {
+        this.finishSmartReportProgress();
+        return;
+      }
+      this.smartReportLoading = false;
+      this.smartReportStatusMessage = '';
+      this.smartReportStartedAt = '';
+      this.smartReportProgress = 0;
+      this.stopSmartReportPolling();
+      this.stopSmartReportElapsedTimer();
+      this.stopSmartReportCompletionTimer();
+      if (job.status === 'failed') {
+        this.smartReportError = job.error || '智能报告生成失败';
+        showToast(this.smartReportError);
+      }
+    },
+
+    startSmartReportElapsedTimer() {
+      this.smartReportNow = Date.now();
+      if (this.smartReportElapsedTimer) return;
+      this.smartReportElapsedTimer = setInterval(() => {
+        this.smartReportNow = Date.now();
+        this.updateSmartReportProgress();
+      }, 1000);
+    },
+
+    stopSmartReportElapsedTimer() {
+      if (this.smartReportElapsedTimer) {
+        clearInterval(this.smartReportElapsedTimer);
+        this.smartReportElapsedTimer = null;
+      }
+    },
+
+    stopSmartReportCompletionTimer() {
+      if (this.smartReportCompletionTimer) {
+        clearTimeout(this.smartReportCompletionTimer);
+        this.smartReportCompletionTimer = null;
+      }
+    },
+
+    updateSmartReportProgress() {
+      if (!this.smartReportLoading || this.smartReportProgress >= 100) return;
+      const startedAt = Date.parse(this.smartReportStartedAt || this.smartReportJob?.startedAt || '');
+      if (!Number.isFinite(startedAt)) {
+        this.smartReportProgress = Math.max(this.smartReportProgress, 4);
+        return;
+      }
+      const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+      const eased = 1 - Math.exp(-seconds / 180);
+      const target = Math.min(95, Math.round(6 + eased * 89));
+      this.smartReportProgress = Math.max(this.smartReportProgress, target);
+    },
+
+    finishSmartReportProgress() {
+      this.stopSmartReportPolling();
+      this.stopSmartReportElapsedTimer();
+      this.stopSmartReportCompletionTimer();
+      this.smartReportLoading = true;
+      this.smartReportError = '';
+      this.smartReportProgress = 100;
+      this.smartReportStatusMessage = '生成完成，正在展示结果...';
+      this.smartReportCompletionTimer = setTimeout(() => {
+        this.smartReportCompletionTimer = null;
+        this.smartReportLoading = false;
+        this.smartReportStatusMessage = '';
+        this.smartReportStartedAt = '';
+      }, 1200);
+    },
+
+    get smartReportElapsedLabel() {
+      if (!this.smartReportLoading) return '';
+      if (this.smartReportProgress >= 100) return '100%';
+      const startedAt = Date.parse(this.smartReportStartedAt || this.smartReportJob?.startedAt || '');
+      if (!Number.isFinite(startedAt)) return '正在启动后台任务';
+      const seconds = Math.max(0, Math.floor((this.smartReportNow - startedAt) / 1000));
+      if (seconds < 60) return `已等待 ${seconds} 秒`;
+      const minutes = Math.floor(seconds / 60);
+      const rest = seconds % 60;
+      return `已等待 ${minutes} 分 ${String(rest).padStart(2, '0')} 秒`;
+    },
+
+    scheduleSmartReportPolling() {
+      this.stopSmartReportPolling();
+      this.smartReportPollTimer = setTimeout(() => {
+        this.smartReportPollTimer = null;
+        this.loadSmartReportRecord();
+      }, 2500);
+    },
+
+    stopSmartReportPolling() {
+      if (this.smartReportPollTimer) {
+        clearTimeout(this.smartReportPollTimer);
+        this.smartReportPollTimer = null;
+      }
     },
 
     formatSmartReportRecordMeta(record) {
       const updatedAt = record?.updatedAt ? new Date(record.updatedAt) : null;
       const time = updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt.toLocaleString('zh-CN', { hour12: false }) : '';
       const count = record?.generatedCount ? `第 ${record.generatedCount} 次生成` : '已生成';
-      return time ? `${count} · ${time}` : count;
+      const styleLabel = record?.style === 'workhorse' ? '牛马风格' : '默认风格';
+      return time ? `${styleLabel} · ${count} · ${time}` : `${styleLabel} · ${count}`;
     },
 
     async loadSmartReportRecord() {
@@ -967,10 +1143,13 @@ function appState() {
       try {
         const data = await fetchSmartReportRecord(this.smartReportParams());
         this.smartReportError = '';
-        this.applySmartReportRecord(data.record || null);
+        this.applySmartReportRecord(data.record || null, { needsUpdate: data.needsUpdate });
+        this.applySmartReportJob(data.job || null);
+        if (data.job?.status === 'completed' && data.record) this.reportContentMode = 'smart';
       } catch (err) {
         console.warn('loadSmartReportRecord failed:', err);
         this.applySmartReportRecord(null);
+        this.applySmartReportJob(null);
       }
     },
 
@@ -978,15 +1157,22 @@ function appState() {
       if (!this.smartReportAgent || this.smartReportLoading) return;
       this.smartReportLoading = true;
       this.smartReportError = '';
+      this.smartReportStartedAt = new Date().toISOString();
+      this.smartReportProgress = 4;
+      this.smartReportStatusMessage = '正在提交后台生成任务...';
+      this.startSmartReportElapsedTimer();
       try {
         const payload = this.smartReportParams();
         const data = await generateSmartReport(payload);
-        this.applySmartReportRecord(data.record || { ...payload, markdown: data.markdown || '', generatedCount: 1, updatedAt: new Date().toISOString() });
+        this.applySmartReportRecord(data.record || (data.markdown ? { ...payload, markdown: data.markdown, generatedCount: 1, updatedAt: new Date().toISOString() } : null), { needsUpdate: false });
+        this.applySmartReportJob(data.job || null);
+        if (data.record && !data.job) this.reportContentMode = 'smart';
       } catch (err) {
         this.smartReportError = err.message || '智能报告生成失败';
+        this.stopSmartReportElapsedTimer();
         showToast(this.smartReportError);
       } finally {
-        this.smartReportLoading = false;
+        if (this.smartReportJob?.status !== 'running') this.smartReportLoading = false;
       }
     },
 
