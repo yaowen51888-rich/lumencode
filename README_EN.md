@@ -42,13 +42,21 @@
 ## Get Started in 3 Seconds
 
 ```bash
-# Global install
-npm install -g lumencode
+# Global install (pin to latest)
+npm install -g lumencode@latest
 lumencode serve            # Start Web server, auto-opens browser
 
+# If you have an older version installed, update first:
+npm update -g lumencode
+
+# Verify version (ensure ≥ 1.3.5)
+lumencode --version
+
 # Or run without installing
-npx lumencode serve
+npx lumencode@latest serve
 ```
+
+> ⚠️ **Stuck on an old version?** Run `npm cache clean --force && npm install -g lumencode@latest` to flush the cache and reinstall.
 
 **Zero-config startup** — Auto-detects `~/.claude`, `~/.codex`, OpenCode log directories. Derives project paths from session metadata.
 
@@ -234,76 +242,13 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 ---
 
-## Changelog
+## What's New
 
-### v1.3.4 (2026-06-05) — Smart Report Styles & Work Highlights
+### v1.3.5 (2026-06-11)
 
-- **Smart Report Style Selection** — Pick "Default" or "Workhorse" before generation. Workhorse uses a leadership-reporting tone focused on effort, output value, risk handling, and next steps
-- **Work Highlights Analysis** — AI smart reports now require a dedicated work highlights section, turning raw stats into reportable highlights with evidence
-- **Boss Report Migration** — Removed the separate "Boss Report" level from the standard work report and moved that capability into smart report styles
-- **Persistent Smart Reports** — Smart reports are stored separately by style, with default style remaining compatible with existing records
-- **Background Generation UX** — Smart report generation runs as a background job, restores progress after refresh, and shows a gradually advancing progress bar while waiting
+Data snapshot scope constraints · Extrapolation uncertainty labels · Codex line attribution fix · Cross-agent style sharing · SMART REPORT visual enhancements
 
-### v1.3.0 (2026-05-28) — Line-Level AI Attribution & Interactive Hooks Management
-
-- **Line-Level AI Attribution** — Step tracking via hooks, refining attribution granularity from commit-level to line-level for precise AI participation measurement
-- **Interactive Hooks Management** — Bottom-left status indicator in Web UI with one-click enable/disable and automatic config backup
-- **Codex Unified Hook Capture** — Supports Codex `PostToolUse` hook for real-time file edit step recording
-- **Claude Batch Hook Mode** — Supports `PostToolBatch` batch hook for reduced performance overhead
-- **OpenCode Plugin Support** — Added OpenCode `lumencode-step-tracker.js` plugin, covering all three tools
-- **Report Diagnostics Improved** — Better CLI defaults and friendlier error messages
-- **Parser Stability Enhanced** — Hardened Git metric parsing, tool parser stability, and cross-parser project filtering
-
-### v1.2.0 (2026-05-26) — AI Confidence Accuracy Overhaul
-
-- **Baseline Calibration** — Establishes personal coding baselines from project history to distinguish "your normal style" from "AI-assisted style"
-- **Negative Signal Detection** — Identifies reverse indicators of purely human commits (e.g., weekend commits, short editing sessions), reducing false positives
-- **Continuous Scoring** — Upgrades from binary (yes/no) to 0-100% continuous confidence for finer-grained attribution results
-- **Improved Attribution Ownership** — Better AI contribution assignment logic in multi-collaborator scenarios
-
-### v1.1.0 (2026-05-25) — Concurrent Pipeline & Layered Attribution
-
-- **Concurrent Pipeline Processing** — Data parsing and Git stats run in parallel, significantly speeding up large repo analysis
-- **Eliminated Redundant Git Calls** — Caches repeated queries, reducing I/O overhead
-- **Layered AI Attribution** — Three-layer confidence model (explicit signature / session strong correlation / file overlap) for more accurate attribution
-
-### v1.0.0 (2026-05-24) — Per-Project Reports & Custom Date Ranges
-
-- **Per-Project Reports** — Added project selector in the work report right panel. Select a project to auto-filter data and generate an independent report (commits + AI interaction volume + hotspot files)
-- **Custom Date Ranges** — New "Custom" period option supporting arbitrary start/end dates, ideal for Sprint cycle alignment
-- **Smart Date Navigation** — Arrow buttons auto-adjust step size based on period: daily ±1 day, weekly ±7 days, monthly ±1 month
-- **Sidebar Redesign** — Version info, theme toggle, and collapse button moved to footer. Header keeps only title and link, for a more compact layout
-- **UI Redesign** — New visual design with a more compact layout and intuitive data presentation
-
-### v0.4.0 (2026-05-22) — Multi-Tool Unified Platform
-
-Upgraded from Claude Code single-tool report to AI Coding Full-Stack Analysis Platform.
-
-- **Multi-Tool Support** — Added OpenAI Codex CLI and OpenCode parsers, three-tool data auto-aggregated
-- **Tool Version Detection** — Auto-reads each tool's version number and displays in sidebar
-- **AI Attribution Engine** — Multi-layer confidence (explicit signature / session strong / file overlap), cross-day commit matching, per-tool filtering
-- **600+ Model Pricing** — Integrated [Portkey-AI/models](https://github.com/Portkey-AI/models) database covering OpenAI/Anthropic/Google + Chinese vendors. API fallback for unknown models; graceful $0 on API failure (no guessing)
-- **Work Report Insights** — Each section now includes diagnostic commentary, not just data
-- **Tool Usage Patterns** — Tool calls reclassified into 5 categories (editing/reading/execution/planning/research)
-- **Time Trends** — Weekly/monthly reports add daily activity trend analysis (peak day, consecutive active days, trend direction)
-- **Dynamic Numbering** — Report sections numbered dynamically based on available data, no more gaps
-- **Scenario Classification Expansion** — Added Codex/OpenCode/Serena MCP tool scenario mappings
-- **UI Polish** — Redesigned AI attribution section, tool theme colors (Claude orange, Codex green, OpenCode purple), dark mode refinements
-- **Work Report Fix** — Dark mode toggle no longer accidentally switches back to main report
-
-### v0.3.0 (2026-05-19)
-
-- Added Lark and DingTalk format support for work summaries, with Detailed/Brief toggle
-- Fixed layout jumping on refresh, improved Markdown rendering and dark mode
-- Enhanced AI attribution confidence scoring and file-level metrics
-
-### v0.2.0 (2026-05-17) — Git Deep Analysis
-
-Added AI-assisted commit detection, contribution metrics, Conventional Commit parsing, File Hotspots Top 10, Session ↔ Commit correlation, and zero-config startup.
-
-### v0.1.0 (2026-05-17)
-
-Initial release.
+📖 [Full changelog → Releases](https://github.com/yaowen51888-rich/lumencode/releases)
 
 ---
 

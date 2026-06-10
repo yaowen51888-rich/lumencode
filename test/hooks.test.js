@@ -27,8 +27,9 @@ test('hooks installer writes Claude settings with packaged hook path', () => {
     assert.ok(existsSync(settingsPath));
 
     const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
-    const command = settings.hooks.PostToolBatch[0].hooks[0].command;
-    assert.match(command, /hooks[\\/]claude-post-tool-batch\.js/);
+    const command = settings.hooks.PostToolUse[0].hooks[0].command;
+    assert.match(command, /hooks[\\/]post-tool-use\.js/);
+    assert.equal(settings.hooks.PostToolBatch, undefined);
     assert.ok(!command.includes(tempDir), 'hook command should point to installed package files');
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
@@ -262,9 +263,9 @@ test('hooks manager enables status and backups for Claude Codex and OpenCode con
 
     const settings = JSON.parse(readFileSync(join(tempDir, '.claude', 'settings.local.json'), 'utf8'));
     assert.equal(settings.theme, 'dark');
-    assert.equal(settings.hooks.PostToolUse.length, 1);
-    assert.equal(settings.hooks.PostToolBatch.length, 1);
-    assert.match(settings.hooks.PostToolBatch[0].hooks[0].command, /claude-post-tool-batch\.js/);
+    assert.equal(settings.hooks.PostToolUse.length, 2);
+    assert.match(settings.hooks.PostToolUse[1].hooks[0].command, /post-tool-use\.js/);
+    assert.equal(settings.hooks.PostToolBatch, undefined);
 
     const config = readFileSync(join(tempDir, '.codex', 'config.toml'), 'utf8');
     assert.match(config, /\[features\]\nhooks = true\nmodel = "gpt-5"/);
@@ -272,10 +273,39 @@ test('hooks manager enables status and backups for Claude Codex and OpenCode con
 
     const status = getHooksStatus(tempDir);
     assert.equal(status.claude.enabled, true);
-    assert.equal(status.claude.batchEnabled, true);
+    assert.equal(status.claude.batchEnabled, false);
+    assert.equal(status.claude.legacyEnabled, true);
     assert.equal(status.codex.enabled, true);
     assert.equal(status.opencode.enabled, true);
     assert.ok(existsSync(join(tempDir, '.opencode', 'plugins', 'lumencode-step-tracker.js')));
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('hooks manager migrates Claude PostToolBatch hook to PostToolUse on enable', () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-manager-migrate-'));
+  try {
+    mkdirSync(join(tempDir, '.claude'), { recursive: true });
+    writeFileSync(join(tempDir, '.claude', 'settings.local.json'), JSON.stringify({
+      hooks: {
+        PostToolBatch: [
+          { matcher: '', hooks: [{ type: 'command', command: 'node "D:\\ccusage-report\\hooks\\claude-post-tool-batch.js"' }] },
+        ],
+      },
+    }, null, 2));
+
+    const results = enableHooks(tempDir, [HOOK_TOOLS.CLAUDE], { backup: false });
+    assert.deepEqual(results.map(result => result.changed), [true]);
+
+    const settings = JSON.parse(readFileSync(join(tempDir, '.claude', 'settings.local.json'), 'utf8'));
+    assert.equal(settings.hooks.PostToolBatch.length, 0);
+    assert.equal(settings.hooks.PostToolUse.length, 1);
+    assert.match(settings.hooks.PostToolUse[0].hooks[0].command, /post-tool-use\.js/);
+
+    const status = getHooksStatus(tempDir);
+    assert.equal(status.claude.batchEnabled, false);
+    assert.equal(status.claude.legacyEnabled, true);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
