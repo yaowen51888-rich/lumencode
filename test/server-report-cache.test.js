@@ -171,7 +171,8 @@ test('api/smart-report matches weekly records by range and marks stale sources',
     assert.equal(res.status, 200);
     const body = await res.json();
 
-    assert.equal(body.record.markdown, '# old smart report');
+    assert.ok(body.record.markdown.startsWith('# old smart report'));
+    assert.ok(body.record.markdown.includes('📌 **数据快照**'), '应注入快照口径块');
     assert.equal(body.record.start, '2026-06-01');
     assert.equal(body.record.end, '2026-06-07');
     assert.equal(body.needsUpdate, true);
@@ -268,7 +269,8 @@ test('api/smart-report returns legacy cached markdown with display title', async
     assert.equal(res.status, 200);
     const body = await res.json();
 
-    assert.match(body.record.markdown, /^# AI 编码助手 工作日报 - 2026-05-28\n\n## 数据摘要/);
+    assert.match(body.record.markdown, /^# AI 编码助手 工作日报 - 2026-05-28\n\n> 📌 \*\*数据快照\*\*/);
+    assert.match(body.record.markdown, /## 数据摘要/);
   } finally {
     await closeServer(server);
     rmSync(tempDir, { recursive: true, force: true });
@@ -328,7 +330,8 @@ test('api/smart-report freshness ignores non-report source metadata changes', as
     assert.equal(secondRes.status, 200);
     const secondBody = await secondRes.json();
 
-    assert.equal(secondBody.record.markdown, '# smart report');
+    assert.ok(secondBody.record.markdown.startsWith('# smart report'));
+    assert.ok(secondBody.record.markdown.includes('📌 **数据快照**'), '应注入快照口径块');
     assert.equal(secondBody.needsUpdate, false);
   } finally {
     await closeServer(server);
@@ -394,7 +397,8 @@ test('api/smart-report treats legacy records with matching report hashes as fres
     assert.equal(res.status, 200);
     const body = await res.json();
 
-    assert.equal(body.record.markdown, '# legacy smart report');
+    assert.ok(body.record.markdown.startsWith('# legacy smart report'));
+    assert.ok(body.record.markdown.includes('📌 **数据快照**'), '应注入快照口径块');
     assert.equal(body.needsUpdate, false);
   } finally {
     await closeServer(server);

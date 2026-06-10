@@ -281,7 +281,8 @@ test('createSmartReport passes bounded prompt to selected runner', async () => {
     },
   });
 
-  assert.ok(markdown.startsWith('# 智能报告\n\n## 数据摘要\nOK'));
+  assert.ok(markdown.startsWith('# 智能报告\n\n> 📌 **数据快照**'));
+  assert.ok(markdown.includes('## 数据摘要\nOK'));
   assert.equal(captured.definition.name, 'codex');
   assert.ok(captured.prompt.includes('"requestCount": 42'));
   assert.ok(!captured.prompt.includes('remove-me'));
@@ -308,7 +309,8 @@ test('createSmartReport prepends source report title when agent omits h1', async
     ].join('\n'),
   });
 
-  assert.ok(markdown.startsWith('# AI 编码助手 工作周报 - 2026-06-01 ~ 2026-06-04\n\n## 数据摘要'));
+  assert.ok(markdown.startsWith('# AI 编码助手 工作周报 - 2026-06-01 ~ 2026-06-04\n\n> 📌 **数据快照**'));
+  assert.ok(markdown.includes('## 数据摘要'));
 });
 
 test('createSmartReport warns but returns markdown that fails quality validation', async () => {
@@ -348,6 +350,85 @@ test('normalizeSmartReportMarkdown keeps existing h1 unchanged', () => {
   const markdown = '# 自定义智能简报\n\n## 数据摘要\nOK';
 
   assert.equal(normalizeSmartReportMarkdown(markdown, { workReportMarkdown: '# Source title' }), markdown);
+});
+
+test('normalizeSmartReportMarkdown injects data snapshot block after h1', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', {
+    period: 'weekly',
+    level: 'detailed',
+    style: 'workhorse',
+    tool: 'all',
+    generatedAt: '2026-06-10T09:30:00.000Z',
+  });
+  const out = normalizeSmartReportMarkdown('# 智能报告\n\n## 数据摘要\nOK', context);
+
+  assert.ok(out.includes('📌 **数据快照**'), '应注入快照块');
+  assert.ok(out.includes('周期 周报'), '应含周期口径');
+  assert.ok(out.includes('范围 2026-06-01 ~ 2026-06-04'), '应含数据范围');
+  assert.ok(out.includes('详细/管理汇报'), '应含 level/style 口径');
+  assert.ok(/生成于 2026-06-10 \d{2}:\d{2}/.test(out), '应含生成时点');
+  // H1 仍在最前，快照块紧随其后
+  assert.ok(out.startsWith('# 智能报告\n\n> 📌 **数据快照**'));
+});
+
+test('normalizeSmartReportMarkdown snapshot injection is idempotent', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', {
+    period: 'weekly',
+    generatedAt: '2026-06-10T09:30:00.000Z',
+  });
+  const once = normalizeSmartReportMarkdown('# 智能报告\n\n## 数据摘要\nOK', context);
+  const twice = normalizeSmartReportMarkdown(once, context);
+
+  assert.equal(twice, once, '重复归一化不应再次注入快照块');
+  assert.equal((twice.match(/📌 \*\*数据快照\*\*/g) || []).length, 1);
+});
+
+test('normalizeSmartReportMarkdown skips snapshot without period or generatedAt', () => {
+  const markdown = '## 数据摘要\nOK';
+  const out = normalizeSmartReportMarkdown(markdown, { workReportMarkdown: '# Source title' });
+
+  assert.ok(out.startsWith('# Source title\n\n## 数据摘要'));
+  assert.ok(!out.includes('📌 **数据快照**'), '无周期/时点时不应注入快照块');
+});
+
+test('buildSmartReportPrompt enforces extrapolation uncertainty', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', { period: 'weekly', style: 'workhorse' });
+  const prompt = buildSmartReportPrompt(context);
+
+  assert.ok(prompt.includes('月化'), '应提及外推类指标');
+  assert.ok(prompt.includes('不确定性说明'), '应要求标注不确定性');
+  assert.ok(prompt.includes('面向领导汇报'), 'workhorse 应有领导汇报硬约束');
+});
+
+test('validateSmartReportMarkdown flags extrapolation without uncertainty hint', () => {
+  const fullSections = '\n\n## 工作亮点分析\nOK\n\n## 关键洞察\nOK\n\n## 风险与建议\nOK';
+  const warnings = validateSmartReportMarkdown(
+    '# 报告\n\n## 数据摘要\n月度预估约 $2,139，费用高度集中。' + fullSections,
+    { meta: { style: 'default', level: 'brief' } }
+  );
+
+  assert.ok(warnings.some(w => w.includes('外推')), '裸奔外推值应告警: ' + JSON.stringify(warnings));
+});
+
+test('validateSmartReportMarkdown accepts extrapolation with uncertainty hint', () => {
+  const fullSections = '\n\n## 工作亮点分析\nOK\n\n## 关键洞察\nOK\n\n## 风险与建议\nOK';
+  const warnings = validateSmartReportMarkdown(
+    '# 报告\n\n## 数据摘要\n月度预估约 $2,139（基于 2 个活跃日外推，实际值可能有较大偏差）。' + fullSections,
+    { meta: { style: 'default', level: 'brief' } }
+  );
+
+  assert.ok(!warnings.some(w => w.includes('外推')), '带依据的外推不应告警: ' + JSON.stringify(warnings));
+});
+
+test('validateSmartReportMarkdown flags bare 外推 value (no self-exemption from the word 外推)', () => {
+  const fullSections = '\n\n## 工作亮点分析\nOK\n\n## 关键洞察\nOK\n\n## 风险与建议\nOK';
+  // 裸奔值含"外推"二字，但无活跃日依据/偏差说明——不得因指标词本身被豁免
+  const warnings = validateSmartReportMarkdown(
+    '# 报告\n\n## 数据摘要\n月度外推 $2,760，成本压力显著。' + fullSections,
+    { meta: { style: 'workhorse', level: 'detailed' } }
+  );
+
+  assert.ok(warnings.some(w => w.includes('外推')), '含"外推"的裸奔值仍应告警: ' + JSON.stringify(warnings));
 });
 
 test('createSmartReport rejects unsupported agents before running CLI', async () => {
