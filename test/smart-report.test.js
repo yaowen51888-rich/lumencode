@@ -166,7 +166,7 @@ test('workhorse smart report prompt uses boss source as leadership report style'
   assert.ok(prompt.includes('## 核心产出'));
   assert.ok(prompt.includes('## 进展价值'));
   assert.ok(prompt.includes('## 风险处理'));
-  assert.ok(prompt.includes('## 下一步计划'));
+  assert.ok(!prompt.includes('## 下一步计划'));
   assert.ok(prompt.includes('bossMarkdown'));
   assert.ok(prompt.includes('Boss Source Marker'));
 });
@@ -215,22 +215,23 @@ test('buildAgentSpawnInvocation uses cmd.exe on Windows for npm command shims', 
 
   assert.equal(invocation.command, 'cmd.exe');
   assert.deepEqual(invocation.args.slice(0, 3), ['/d', '/s', '/c']);
-  assert.equal(invocation.args[3], 'claude "--version"');
+  // 简单参数不加引号，含空格的参数才加
+  assert.equal(invocation.args[3], 'claude --version');
+});
+
+test('buildAgentSpawnInvocation quotes args with spaces on Windows', () => {
+  const invocation = buildAgentSpawnInvocation(getAgentDefinition('claude'), ['--print', 'hello world'], 'win32');
+
+  assert.equal(invocation.command, 'cmd.exe');
+  assert.deepEqual(invocation.args.slice(0, 3), ['/d', '/s', '/c']);
+  assert.equal(invocation.args[3], 'claude --print "hello world"');
 });
 
 test('buildAgentSpawnInvocation keeps direct spawn on non-Windows platforms', () => {
-  const invocation = buildAgentSpawnInvocation(getAgentDefinition('codex'), ['--version'], 'linux');
+  const invocation = buildAgentSpawnInvocation(getAgentDefinition('codex'), ['exec', '-'], 'linux');
 
   assert.equal(invocation.command, 'codex');
-  assert.deepEqual(invocation.args, ['--version']);
-});
-
-test('Codex passes prompt as argument instead of stdin', () => {
-  const def = getAgentDefinition('codex');
-  assert.equal(def.promptAsArg, true);
-  const invocation = buildAgentSpawnInvocation(def, [...def.args, 'test prompt'], 'linux');
-  assert.equal(invocation.command, 'codex');
-  assert.deepEqual(invocation.args, ['test prompt']);
+  assert.deepEqual(invocation.args, ['exec', '-']);
 });
 
 test('buildAgentLookupInvocation checks command resolution without running the agent on Windows', () => {
@@ -310,17 +311,37 @@ test('createSmartReport prepends source report title when agent omits h1', async
   assert.ok(markdown.startsWith('# AI 编码助手 工作周报 - 2026-06-01 ~ 2026-06-04\n\n## 数据摘要'));
 });
 
-test('createSmartReport rejects markdown that fails quality validation', async () => {
-  await assert.rejects(
-    createSmartReport({
-      agent: 'codex',
-      reportData,
-      workMarkdown: '# Work report',
-      options: { period: 'weekly', level: 'brief' },
-      runner: async () => '# 智能简报\n\n## 数据摘要\n本期 ROI 提升。',
-    }),
-    /智能报告质量校验未通过/,
+test('createSmartReport warns but returns markdown that fails quality validation', async () => {
+  const markdown = await createSmartReport({
+    agent: 'codex',
+    reportData,
+    workMarkdown: '# Work report',
+    options: { period: 'weekly', level: 'brief' },
+    runner: async () => '# 智能简报\n\n## 数据摘要\n本期 ROI 提升。',
+  });
+
+  assert.ok(markdown.includes('本期 ROI 提升'));
+  assert.ok(markdown.includes('⚠️ 报告质量提示'));
+  assert.ok(markdown.includes('ROI'));
+});
+
+test('validateSmartReportMarkdown excludes negated context', () => {
+  const fullSections = '\n\n## 工作亮点分析\nOK\n\n## 关键洞察\nOK\n\n## 异常与风险\nOK\n\n## 管理建议\nOK\n\n## 下一步关注点\nOK';
+
+  // 否定语境应视为合规
+  const negated = validateSmartReportMarkdown(
+    '# 报告\n\n## 数据摘要\n不应计算 ROI，缺乏数据支撑。' + fullSections,
+    { meta: { style: 'default', level: 'detailed' } }
   );
+  assert.equal(negated.length, 0, '否定语境不应触发警告: ' + JSON.stringify(negated));
+
+  // 肯定语境应触发警告
+  const affirmative = validateSmartReportMarkdown(
+    '# 报告\n\n## 数据摘要\n本期 ROI 提升 20%，节省 5 小时。' + fullSections,
+    { meta: { style: 'default', level: 'detailed' } }
+  );
+  assert.ok(affirmative.some(w => w.includes('ROI')), '应检测到 ROI');
+  assert.ok(affirmative.some(w => w.includes('节省时长')), '应检测到节省时长');
 });
 
 test('normalizeSmartReportMarkdown keeps existing h1 unchanged', () => {
