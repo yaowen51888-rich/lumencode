@@ -7,6 +7,8 @@ import {
   buildAgentLookupInvocation,
   createSmartReport,
   getAgentDefinition,
+  normalizeSmartReportMarkdown,
+  validateSmartReportMarkdown,
   SMART_REPORT_PROMPT_MARKER,
 } from '../lib/smart-report.js';
 
@@ -103,6 +105,23 @@ test('buildSmartReportPrompt restricts AI to provided data analysis', () => {
   assert.ok(prompt.includes('"requestCount": 42'));
 });
 
+test('workhorse style excludes cost fields from context', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', { period: 'weekly', style: 'workhorse' });
+  const serialized = JSON.stringify(context);
+
+  assert.equal(context.usage.estimatedCost, undefined);
+  assert.equal(context.costBreakdown, null);
+  assert.ok(!serialized.includes('"cost":'));
+  assert.ok(!serialized.includes('"costMode":'));
+});
+
+test('default style keeps cost fields in context', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', { period: 'weekly', style: 'default' });
+
+  assert.equal(context.usage.estimatedCost, 3.21);
+  assert.ok(JSON.stringify(context).includes('"cost":'));
+});
+
 test('brief smart report prompt includes detailed and brief source reports', () => {
   const context = buildSmartReportContext(reportData, '# Brief selected', {
     period: 'weekly',
@@ -122,6 +141,7 @@ test('brief smart report prompt includes detailed and brief source reports', () 
   assert.ok(prompt.includes('Detailed Source Marker'));
   assert.ok(prompt.includes('Brief Source Marker'));
   assert.ok(prompt.includes('工作亮点分析'));
+  assert.ok(prompt.includes('必须以一级标题'));
 });
 
 test('workhorse smart report prompt uses boss source as leadership report style', () => {
@@ -139,11 +159,48 @@ test('workhorse smart report prompt uses boss source as leadership report style'
 
   assert.equal(context.meta.style, 'workhorse');
   assert.equal(context.sourceReports.bossMarkdown, '# Boss Source Marker');
-  assert.ok(prompt.includes('牛马'));
+  assert.ok(prompt.includes('管理汇报'));
   assert.ok(prompt.includes('面向领导汇报'));
-  assert.ok(prompt.includes('工作亮点分析'));
+  assert.ok(prompt.includes('必须使用以下章节'));
+  assert.ok(prompt.includes('## 本期投入'));
+  assert.ok(prompt.includes('## 核心产出'));
+  assert.ok(prompt.includes('## 进展价值'));
+  assert.ok(prompt.includes('## 风险处理'));
+  assert.ok(prompt.includes('## 下一步计划'));
   assert.ok(prompt.includes('bossMarkdown'));
   assert.ok(prompt.includes('Boss Source Marker'));
+});
+
+test('validateSmartReportMarkdown flags missing required sections', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', { level: 'brief', style: 'default' });
+  const warnings = validateSmartReportMarkdown('# 智能简报\n\n## 数据摘要\nOK', context);
+
+  assert.deepEqual(warnings, [
+    '缺少必需章节：工作亮点分析、关键洞察、风险与建议',
+  ]);
+});
+
+test('validateSmartReportMarkdown flags unsupported inflated claims', () => {
+  const context = buildSmartReportContext(reportData, '# Work report', { level: 'brief', style: 'default' });
+  const warnings = validateSmartReportMarkdown([
+    '# 智能简报',
+    '',
+    '## 数据摘要',
+    '本期 ROI 显著提升。',
+    '',
+    '## 工作亮点分析',
+    'OK',
+    '',
+    '## 关键洞察',
+    'OK',
+    '',
+    '## 风险与建议',
+    'OK',
+  ].join('\n'), context);
+
+  assert.deepEqual(warnings, [
+    '包含无数据支撑的夸大表达：ROI',
+  ]);
 });
 
 test('getAgentDefinition only accepts known local agents', () => {
@@ -162,10 +219,18 @@ test('buildAgentSpawnInvocation uses cmd.exe on Windows for npm command shims', 
 });
 
 test('buildAgentSpawnInvocation keeps direct spawn on non-Windows platforms', () => {
-  const invocation = buildAgentSpawnInvocation(getAgentDefinition('codex'), ['exec', '-'], 'linux');
+  const invocation = buildAgentSpawnInvocation(getAgentDefinition('codex'), ['--version'], 'linux');
 
   assert.equal(invocation.command, 'codex');
-  assert.deepEqual(invocation.args, ['exec', '-']);
+  assert.deepEqual(invocation.args, ['--version']);
+});
+
+test('Codex passes prompt as argument instead of stdin', () => {
+  const def = getAgentDefinition('codex');
+  assert.equal(def.promptAsArg, true);
+  const invocation = buildAgentSpawnInvocation(def, [...def.args, 'test prompt'], 'linux');
+  assert.equal(invocation.command, 'codex');
+  assert.deepEqual(invocation.args, ['test prompt']);
 });
 
 test('buildAgentLookupInvocation checks command resolution without running the agent on Windows', () => {
@@ -191,14 +256,77 @@ test('createSmartReport passes bounded prompt to selected runner', async () => {
     options: { period: 'weekly' },
     runner: async (definition, prompt) => {
       captured = { definition, prompt };
-      return '# 智能报告\n\n## 数据摘要\nOK';
+      return [
+        '# 智能报告',
+        '',
+        '## 数据摘要',
+        'OK',
+        '',
+        '## 工作亮点分析',
+        'OK',
+        '',
+        '## 关键洞察',
+        'OK',
+        '',
+        '## 异常与风险',
+        'OK',
+        '',
+        '## 管理建议',
+        'OK',
+        '',
+        '## 下一步关注点',
+        'OK',
+      ].join('\n');
     },
   });
 
-  assert.equal(markdown, '# 智能报告\n\n## 数据摘要\nOK');
+  assert.ok(markdown.startsWith('# 智能报告\n\n## 数据摘要\nOK'));
   assert.equal(captured.definition.name, 'codex');
   assert.ok(captured.prompt.includes('"requestCount": 42'));
   assert.ok(!captured.prompt.includes('remove-me'));
+});
+
+test('createSmartReport prepends source report title when agent omits h1', async () => {
+  const markdown = await createSmartReport({
+    agent: 'codex',
+    reportData,
+    workMarkdown: '# AI 编码助手 工作周报 - 2026-06-01 ~ 2026-06-04\n\n## 核心指标\nOK',
+    options: { period: 'weekly', level: 'brief' },
+    runner: async () => [
+      '## 数据摘要',
+      'OK',
+      '',
+      '## 工作亮点分析',
+      'OK',
+      '',
+      '## 关键洞察',
+      'OK',
+      '',
+      '## 风险与建议',
+      'OK',
+    ].join('\n'),
+  });
+
+  assert.ok(markdown.startsWith('# AI 编码助手 工作周报 - 2026-06-01 ~ 2026-06-04\n\n## 数据摘要'));
+});
+
+test('createSmartReport rejects markdown that fails quality validation', async () => {
+  await assert.rejects(
+    createSmartReport({
+      agent: 'codex',
+      reportData,
+      workMarkdown: '# Work report',
+      options: { period: 'weekly', level: 'brief' },
+      runner: async () => '# 智能简报\n\n## 数据摘要\n本期 ROI 提升。',
+    }),
+    /智能报告质量校验未通过/,
+  );
+});
+
+test('normalizeSmartReportMarkdown keeps existing h1 unchanged', () => {
+  const markdown = '# 自定义智能简报\n\n## 数据摘要\nOK';
+
+  assert.equal(normalizeSmartReportMarkdown(markdown, { workReportMarkdown: '# Source title' }), markdown);
 });
 
 test('createSmartReport rejects unsupported agents before running CLI', async () => {

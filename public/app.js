@@ -5,6 +5,7 @@ import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineAr
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
+import { formatViewStateHash, parseViewStateHash } from './view-state.js';
 
 /* ── Alpine App Component ── */
 function appState() {
@@ -234,6 +235,7 @@ function appState() {
         } catch {}
       }
       await this.loadCurrentView();
+      if (this.view === 'report') await this.loadReportContent();
     },
 
     /* ── theme ── */
@@ -469,15 +471,14 @@ function appState() {
     },
 
     loadStateFromHash() {
-      const hash = location.hash.slice(1);
-      if (!hash) return;
-      const [p, d] = hash.split('/');
-      if (p && ['daily', 'weekly', 'monthly', 'custom'].includes(p)) this.period = p;
-      if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) this.currentDate = d;
+      const state = parseViewStateHash(location.hash);
+      this.view = state.view;
+      this.period = state.period;
+      if (state.currentDate) this.currentDate = state.currentDate;
     },
 
     saveStateToHash() {
-      location.hash = `${this.period}/${this.currentDate}`;
+      location.hash = formatViewStateHash({ view: this.view, period: this.period, currentDate: this.currentDate });
     },
 
     /* ── data loading ── */
@@ -888,7 +889,13 @@ function appState() {
     /* ── view switching ── */
     openReport() {
       this.view = 'report';
+      this.saveStateToHash();
       this.loadReportContent();
+    },
+
+    showLedger() {
+      this.view = 'ledger';
+      this.saveStateToHash();
     },
 
     async loadReportContent() {
@@ -1131,7 +1138,7 @@ function appState() {
       const updatedAt = record?.updatedAt ? new Date(record.updatedAt) : null;
       const time = updatedAt && !Number.isNaN(updatedAt.getTime()) ? updatedAt.toLocaleString('zh-CN', { hour12: false }) : '';
       const count = record?.generatedCount ? `第 ${record.generatedCount} 次生成` : '已生成';
-      const styleLabel = record?.style === 'workhorse' ? '牛马风格' : '默认风格';
+      const styleLabel = record?.style === 'workhorse' ? '管理汇报' : '默认风格';
       return time ? `${styleLabel} · ${count} · ${time}` : `${styleLabel} · ${count}`;
     },
 
@@ -1188,7 +1195,7 @@ function appState() {
       const blob = new Blob([this.smartReportMarkdown], { type: 'text/markdown;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `smart-report-${this.period}-${this.currentDate}.md`;
+      a.download = `smart-report-${this.smartReportStyle}-${this.period}-${this.currentDate}.md`;
       a.click();
       URL.revokeObjectURL(a.href);
     },

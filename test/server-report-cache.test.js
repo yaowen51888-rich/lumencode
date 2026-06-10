@@ -232,6 +232,53 @@ test('api/smart-report starts generation as a background job', async () => {
   }
 });
 
+test('api/smart-report returns legacy cached markdown with display title', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-title-'));
+  const configPath = join(tempDir, 'config.json');
+  saveSmartReportRecord(join(tempDir, 'smart-reports'), {
+    agent: 'codex',
+    period: 'daily',
+    date: '2026-05-28',
+    start: '2026-05-28',
+    end: '2026-05-28',
+    tool: 'all',
+    project: '',
+    level: 'brief',
+    platform: 'default',
+    markdown: '## 数据摘要\nOK',
+    sourceHash: 'old-source-hash',
+  });
+
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => makeReportData(),
+    configPath,
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const res = await fetch(`http://127.0.0.1:${port}/api/smart-report?agent=codex&period=daily&date=2026-05-28&tool=all&level=brief&platform=default`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+
+    assert.match(body.record.markdown, /^# AI 编码助手 工作日报 - 2026-05-28\n\n## 数据摘要/);
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
+
 test('api/smart-report freshness ignores non-report source metadata changes', async () => {
   const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
   const oldPort = process.env.LUMENCODE_PORT;

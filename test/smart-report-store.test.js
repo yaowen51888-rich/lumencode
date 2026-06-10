@@ -44,6 +44,15 @@ test('buildSmartReportKey separates report level and dimensions', () => {
     buildSmartReportKey(base),
     buildSmartReportKey({ ...base, style: 'workhorse' }),
   );
+  // agent 不参与 key 生成——不同智能体共享同一份报告
+  assert.equal(
+    buildSmartReportKey(base),
+    buildSmartReportKey({ ...base, agent: 'codex' }),
+  );
+  assert.equal(
+    buildSmartReportKey(base),
+    buildSmartReportKey({ ...base, agent: 'opencode' }),
+  );
 });
 
 test('saveSmartReportRecord creates a new record and updates same key later', async () => withTempDir(async (configDir) => {
@@ -126,4 +135,32 @@ test('saveSmartReportRecord creates separate records for different smart report 
   assert.equal(workhorse.style, 'workhorse');
   assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base })).id, normal.id);
   assert.equal(readSmartReportRecord(storeDir, buildSmartReportKey({ ...base, style: 'workhorse' })).id, workhorse.id);
+}));
+
+test('saveSmartReportRecord overwrites same record across different agents', async () => withTempDir(async (configDir) => {
+  const storeDir = getSmartReportStoreDir(join(configDir, 'config.json'));
+  const base = {
+    agent: 'claude',
+    period: 'daily',
+    date: '2026-06-04',
+    tool: 'all',
+    project: '',
+    level: 'detailed',
+    platform: 'default',
+    markdown: '# Claude Report',
+    sourceHash: 'hash-1',
+  };
+
+  const claudeRecord = saveSmartReportRecord(storeDir, { ...base });
+  const codexRecord = saveSmartReportRecord(storeDir, { ...base, agent: 'codex', markdown: '# Codex Report', sourceHash: 'hash-2' });
+
+  // 同一个 key，所以是覆盖而不是新建
+  assert.equal(claudeRecord.id, codexRecord.id);
+  assert.equal(codexRecord.generatedCount, 2);
+  assert.equal(codexRecord.markdown, '# Codex Report');
+  assert.equal(codexRecord.agent, 'codex'); // agent 元数据保留最后一次的
+
+  const loaded = readSmartReportRecord(storeDir, buildSmartReportKey(base));
+  assert.equal(loaded.markdown, '# Codex Report');
+  assert.equal(loaded.generatedCount, 2);
 }));
