@@ -554,7 +554,7 @@
         <div style="padding: 32px 48px;">
           <!-- Toolbar -->
           <div class="report-toolbar">
-            <button class="btn btn-outline" @click="view = 'ledger'" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;">
+            <button class="btn btn-outline" @click="showLedger()" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
               返回数据分析
             </button>
@@ -654,9 +654,12 @@
                   <p style="font-size:13px;line-height:1.7;opacity:0.85;margin-top:12px;" x-html="reportSummary"></p>
                 </div>
                 <!-- Smart Report -->
-                <div class="card" style="padding:16px 20px;">
+                <div class="card smart-report-card" style="padding:16px 20px;">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
-                    <span class="label">SMART REPORT · 智能报告</span>
+                    <span class="label smart-report-label">
+                      <svg class="smart-report-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                      SMART REPORT · 智能报告
+                    </span>
                     <span class="label" x-show="smartReportRecordMeta" x-text="smartReportRecordMeta"></span>
                   </div>
                   <p style="font-size:12px;line-height:1.6;opacity:0.7;margin-bottom:12px;">
@@ -753,8 +756,8 @@
               <span class="smart-report-style-desc">专业分析口径，强调数据摘要、工作亮点、关键洞察和风险建议。</span>
             </button>
             <button class="smart-report-style-option" :class="smartReportStyle === 'workhorse' ? 'active' : ''" @click="confirmSmartReportStyle('workhorse')">
-              <span class="smart-report-style-title">牛马</span>
-              <span class="smart-report-style-desc">面向领导汇报的表达倾向，突出工作投入、产出价值、风险兜底和下一步计划。</span>
+              <span class="smart-report-style-title">管理汇报</span>
+              <span class="smart-report-style-desc">面向领导和项目负责人，突出工作投入、核心产出、进展价值、风险处理和下一步计划。</span>
             </button>
           </div>
         </div>

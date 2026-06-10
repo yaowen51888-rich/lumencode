@@ -397,6 +397,99 @@ input, textarea { font-family: inherit; color: inherit; }
     0 8px 24px -12px var(--card-lift-drop-2);
 }
 
+@property --smart-report-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 90deg;
+}
+
+.smart-report-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    inset 0 1px 0 var(--card-lift-inset),
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 0 20px -6px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 10px 32px -16px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 8px 24px -12px var(--card-lift-drop-2);
+}
+
+.smart-report-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 85%, transparent) 0%,
+    color-mix(in srgb, #5ec2dc 70%, transparent) 40%,
+    color-mix(in srgb, var(--accent) 85%, transparent) 100%
+  );
+  pointer-events: none;
+}
+
+.smart-report-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--smart-report-border-angle),
+    transparent 0 18%,
+    color-mix(in srgb, #5ec2dc 72%, transparent) 28%,
+    color-mix(in srgb, var(--accent) 65%, transparent) 36%,
+    color-mix(in srgb, #5ec2dc 72%, transparent) 44%,
+    transparent 55% 100%
+  );
+  pointer-events: none;
+  animation: smart-report-border-flow 6s linear infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.smart-report-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.smart-report-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  box-shadow:
+    inset 0 1px 0 var(--card-lift-inset),
+    0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
+    0 0 28px -4px color-mix(in srgb, var(--accent) 28%, transparent),
+    0 12px 36px -14px color-mix(in srgb, var(--accent) 40%, transparent),
+    0 8px 24px -12px var(--card-lift-drop-2);
+}
+
+.smart-report-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.smart-report-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+@keyframes smart-report-border-flow {
+  to { --smart-report-border-angle: 450deg; }
+}
+
 .hooks-notice {
   display: flex;
   align-items: center;
@@ -1380,6 +1473,10 @@ input, textarea { font-family: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .smart-report-progress-bar {
     transition: none;
+  }
+
+  .smart-report-card::after {
+    animation: none;
   }
 }
 
