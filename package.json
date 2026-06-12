@@ -4,10 +4,12 @@
   "description": "LumenCode — AI 编码助手使用报告工具，从 JSONL 日志和 Git 仓库提取 AI 贡献度、效率与使用指标，支持 Web 可视化和命令行两种模式",
   "type": "module",
   "bin": {
-    "lumencode": "index.js"
+    "lumencode": "index.js",
+    "lumencode-mcp": "src/mcp/server.js"
   },
   "scripts": {
     "start": "node index.js",
+    "mcp": "node src/mcp/server.js",
     "test": "node --test test",
     "hooks:init": "node hooks/init-steps.js",
     "hooks:install": "node hooks/install.js",
@@ -35,6 +37,7 @@
   "files": [
     "hooks/",
     "lib/",
+    "src/mcp/",
     "public/",
     "data/pricing.json",
     "index.js",
@@ -44,7 +47,9 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "diff-match-patch": "^1.0.5",
-    "sql.js": "^1.14.1"
+    "sql.js": "^1.14.1",
+    "zod": "^4.4.3"
   }
 }
