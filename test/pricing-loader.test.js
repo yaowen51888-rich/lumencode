@@ -84,12 +84,11 @@ test('resolveModelPricing - aliasOf with non-existent target falls back to fuzzy
 test('resolveModelPricing - exact match (override has tier/fastMultiplier)', () => {
   const pricing = resolveModelPricing('claude-opus-4-6');
   assert.strictEqual(pricing.unknown, undefined);
-  assert.strictEqual(pricing.input, 15);
-  assert.strictEqual(pricing.output, 75);
-  // override 提供的 tier 应当存在
-  assert.ok(pricing.tier);
-  assert.strictEqual(pricing.tier.threshold, 200000);
-  assert.strictEqual(pricing.fastMultiplier, 6);
+  assert.strictEqual(pricing.input, 5);
+  assert.strictEqual(pricing.output, 25);
+  // Anthropic 官方定价：Opus 4.6+ 已降至 $5/$25
+  assert.strictEqual(pricing.tier, null);
+  assert.strictEqual(pricing.fastMultiplier, 2);
 });
 
 test('resolveModelPricing - override takes precedence over Portkey models', () => {

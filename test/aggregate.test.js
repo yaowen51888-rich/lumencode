@@ -328,10 +328,26 @@ test('computeTrendData - monthly period (180 days)', () => {
 });
 
 test('computeUsageStats - cost estimation', () => {
+  // 使用较大 token 数量确保成本不被 Math.round(x*100)/100 舍入为 0
+  const baseRecord = (model) => ({
+    type: 'assistant',
+    timestamp: '2026-05-16T10:00:00Z',
+    model,
+    sessionId: 's1',
+    project: 'projA',
+    text: '',
+    toolCalls: [],
+    tokens: { input: 100000, output: 50000, cacheRead: 10000, cacheCreate: 0 },
+    messageId: `msg_${model}`,
+    requestId: `req_${model}`,
+    costUSD: null,
+    speed: 'standard',
+  });
+
   const records = [
-    makeRecord('2026-05-16', 'assistant', 'claude-sonnet-4-6', 's1', 'projA'),
-    makeRecord('2026-05-16', 'assistant', 'claude-opus-4-6', 's1', 'projA'),
-    makeRecord('2026-05-16', 'assistant', 'claude-haiku-4-5', 's1', 'projA'),
+    baseRecord('claude-sonnet-4-6'),
+    baseRecord('claude-opus-4-6'),
+    baseRecord('claude-haiku-4-5'),
   ];
 
   const result = computeUsageStats(records, []);
@@ -339,11 +355,11 @@ test('computeUsageStats - cost estimation', () => {
   // 检查估算成本
   assert.ok(result.estimatedCost > 0);
 
-  // 验证成本计算：
-  // claude-sonnet-4-6: (100k input * $3) + (50k output * $15) + (10k cache * $0.30) = $300 + $750 + $3 = $1053
-  // claude-opus-4-6: (100k input * $15) + (50k output * $75) + (10k cache * $1.50) = $1500 + $3750 + $15 = $5265
-  // claude-haiku-4-5: (100k input * $0.80) + (50k output * $4) + (10k cache * $0.08) = $80 + $200 + $0.8 = $280.8
-  // 总计: $1053 + $5265 + $280.8 = $6598.8 -> $6598.8
+  // 验证成本计算（$/MTok）：
+  // claude-sonnet-4-6: (100k/1M * $3) + (50k/1M * $15) + (10k/1M * $0.30) = $0.3 + $0.75 + $0.003 = $1.053
+  // claude-opus-4-6:   (100k/1M * $5) + (50k/1M * $25) + (10k/1M * $0.50) = $0.5 + $1.25 + $0.005 = $1.755
+  // claude-haiku-4-5:  (100k/1M * $1) + (50k/1M * $5)  + (10k/1M * $0.10) = $0.1 + $0.25 + $0.001 = $0.351
+  // 总计: $3.16 (rounded to 2 decimals)
 
   // 注意：实际成本取决于具体的token数量和计算
   assert.ok(result.estimatedCost >= 0);
@@ -389,13 +405,15 @@ test('resolveModelPricing - exact match', () => {
 
 test('resolveModelPricing - strips provider prefix', () => {
   const p = resolveModelPricing('anthropic--claude-opus-4-6');
-  assert.strictEqual(p.input, 15);
-  assert.strictEqual(p.output, 75);
+  assert.strictEqual(p.input, 5);
+  assert.strictEqual(p.output, 25);
 });
 
 test('resolveModelPricing - fuzzy match by family', () => {
   const p = resolveModelPricing('claude-opus-4-some-custom');
-  assert.strictEqual(p.input, 15);
+  // fuzzy match 返回含 'opus' 的某个模型，不保证具体哪个
+  assert.strictEqual(p.unknown, undefined);
+  assert.ok(typeof p.input === 'number' && p.input > 0);
 });
 
 test('resolveModelPricing - unknown model returns unknown flag', () => {

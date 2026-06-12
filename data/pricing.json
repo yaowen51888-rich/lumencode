@@ -2,7 +2,7 @@
   "_meta": {
     "version": "1.0.0",
     "source": "https://configs.portkey.ai/pricing",
-    "syncedAt": "2026-05-22T03:10:37.537Z",
+    "syncedAt": "2026-06-12T03:50:00.000Z",
     "providers": [
       "anthropic",
       "openai",
@@ -26,42 +26,52 @@
       "fastMultiplier": 5
     },
     "claude-opus-4-6": {
-      "input": 15,
-      "output": 75,
-      "cacheRead": 1.5,
-      "cacheCreate": 18.75,
-      "tier": {
-        "threshold": 200000,
-        "multiplier": 2
-      },
-      "fastMultiplier": 6
+      "input": 5,
+      "output": 25,
+      "cacheRead": 0.5,
+      "cacheCreate": 6.25,
+      "tier": null,
+      "fastMultiplier": 2
     },
     "claude-haiku-4-5": {
-      "input": 0.8,
-      "output": 4,
-      "cacheRead": 0.08,
-      "cacheCreate": 1,
+      "input": 1,
+      "output": 5,
+      "cacheRead": 0.1,
+      "cacheCreate": 1.25,
       "tier": null,
       "fastMultiplier": 1
     },
     "claude-haiku-4-5-20251001": {
-      "input": 0.8,
-      "output": 4,
-      "cacheRead": 0.08,
-      "cacheCreate": 1,
+      "input": 1,
+      "output": 5,
+      "cacheRead": 0.1,
+      "cacheCreate": 1.25,
       "tier": null,
       "fastMultiplier": 1
     },
     "claude-opus-4-7": {
-      "input": 15,
-      "output": 75,
-      "cacheRead": 1.5,
-      "cacheCreate": 18.75,
-      "tier": {
-        "threshold": 200000,
-        "multiplier": 2
-      },
-      "fastMultiplier": 6
+      "input": 5,
+      "output": 25,
+      "cacheRead": 0.5,
+      "cacheCreate": 6.25,
+      "tier": null,
+      "fastMultiplier": 2
+    },
+    "claude-opus-4-8": {
+      "input": 5,
+      "output": 25,
+      "cacheRead": 0.5,
+      "cacheCreate": 6.25,
+      "tier": null,
+      "fastMultiplier": 2
+    },
+    "claude-fable-5": {
+      "input": 10,
+      "output": 50,
+      "cacheRead": 1,
+      "cacheCreate": 12.5,
+      "tier": null,
+      "fastMultiplier": 1
     },
     "claude-opus-4-7-20260515": {
       "aliasOf": "claude-opus-4-7"
@@ -154,13 +164,19 @@
       "aliasOf": "deepseek.v3.2"
     },
     "deepseek-v4-pro": {
-      "aliasOf": "deepseek.v3.2"
+      "input": 0.435,
+      "output": 0.87,
+      "cacheRead": 0.003625,
+      "cacheCreate": 0
     },
     "deepseek-r1": {
       "aliasOf": "deepseek.r1-v1:0"
     },
     "deepseek-chat": {
-      "aliasOf": "deepseek-chat"
+      "input": 0.14,
+      "output": 0.28,
+      "cacheRead": 0.028,
+      "cacheCreate": 0
     }
   },
   "models": {
