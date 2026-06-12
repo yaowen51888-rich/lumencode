@@ -252,7 +252,7 @@ test('computeAIContribution - tool filter keeps total project lines as denominat
   assert.equal(r.totalLinesChanged, 100);
 });
 
-test('computeAIContribution - file-level line attribution only counts matched files', () => {
+test('computeAIContribution - file-level evidence is tracked separately from main AI lines', () => {
   const commits = [
     {
       isAI: true,
@@ -507,6 +507,68 @@ test('computeAIContribution - negative signals reduce weighted ratio', () => {
   assert.equal(r.aiCommits, 1);
   // Weighted should reflect MEDIUM (0.7) weight
   assert.ok(r.weightedAILineRatio > 0);
+});
+
+test('computeAIContribution - line blame combines with unmatched file evidence', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'session_strong_file_overlap',
+      linesAdded: 1936,
+      linesDeleted: 2,
+      files: [
+        { path: 'covered.js', added: 1154, deleted: 2 },
+        { path: 'uncovered.js', added: 782, deleted: 0 },
+      ],
+      lineBlame: {
+        aiLines: 1154,
+        aiDeletedLines: 2,
+        totalLines: 1156,
+        fileBreakdown: {
+          'covered.js': { aiLines: 1154, humanLines: 0, aiDeletedLines: 2, humanDeletedLines: 0 },
+        },
+        source: 'step_blame',
+      },
+      aiEvidenceDetails: { matchedFiles: ['covered.js', 'uncovered.js'] },
+    },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiLinesChanged, 1938);
+  assert.equal(r.aiLineRatio, 1);
+  assert.equal(r.aiFileLinesAdded, 1936);
+  assert.equal(r.aiFileLinesDeleted, 2);
+});
+
+test('computeAIContribution - line blame leaves uncovered unmatched files out', () => {
+  const commits = [
+    {
+      isAI: true,
+      aiConfidence: 'high',
+      attributionType: 'session_strong_file_overlap',
+      linesAdded: 1936,
+      linesDeleted: 2,
+      files: [
+        { path: 'covered.js', added: 1154, deleted: 2 },
+        { path: 'manual.js', added: 782, deleted: 0 },
+      ],
+      lineBlame: {
+        aiLines: 1154,
+        aiDeletedLines: 2,
+        totalLines: 1156,
+        fileBreakdown: {
+          'covered.js': { aiLines: 1154, humanLines: 0, aiDeletedLines: 2, humanDeletedLines: 0 },
+        },
+        source: 'step_blame',
+      },
+      aiEvidenceDetails: { matchedFiles: ['covered.js'] },
+    },
+  ];
+  const r = computeAIContribution(commits);
+  assert.equal(r.aiLinesChanged, 1156);
+  assert.equal(r.aiLineRatio, 1156 / 1938);
+  assert.equal(r.aiFileLinesAdded, 1154);
+  assert.equal(r.aiFileLinesDeleted, 2);
 });
 
 test('computeAIContribution - merge commit excluded from AI', () => {

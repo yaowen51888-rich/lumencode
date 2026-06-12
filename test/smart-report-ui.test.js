@@ -51,3 +51,12 @@ test('smart report module has a prominent visual emphasis', () => {
   assert.match(html, /smart-report-label/);
   assert.match(html, /smart-report-icon/);
 });
+
+test('settings path tag actions are exposed for inline handlers', () => {
+  const html = readFileSync('public/index.html', 'utf8');
+  const app = readFileSync('public/app.js', 'utf8');
+
+  assert.match(html, /onclick="addPathTag\('cfgReposTags','cfgReposInput'\)"/);
+  assert.match(app, /window\.addPathTag\s*=\s*addPathTag/);
+  assert.match(app, /window\.removePathTag\s*=\s*removePathTag/);
+});

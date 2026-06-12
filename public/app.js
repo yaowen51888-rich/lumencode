@@ -1412,6 +1412,9 @@ function removePathTag(containerId, index) {
   renderPathTags(containerId, paths);
 }
 
+window.addPathTag = addPathTag;
+window.removePathTag = removePathTag;
+
 function getPathTags(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return [];
