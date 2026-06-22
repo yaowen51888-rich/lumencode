@@ -1039,7 +1039,19 @@ function appState() {
         return;
       }
       if (job.status === 'completed') {
-        this.finishSmartReportProgress();
+        // 仅在用户本会话主动触发生成（loading=true）时播放"生成完成"动画；
+        // 被动加载（init / 切换 agent / 切换日期）发现已完成的残留 job 时静默应用，避免"生成中"一闪而过
+        if (this.smartReportLoading) {
+          this.finishSmartReportProgress();
+        } else {
+          this.smartReportLoading = false;
+          this.smartReportStatusMessage = '';
+          this.smartReportStartedAt = '';
+          this.smartReportProgress = 0;
+          this.stopSmartReportPolling();
+          this.stopSmartReportElapsedTimer();
+          this.stopSmartReportCompletionTimer();
+        }
         return;
       }
       this.smartReportLoading = false;

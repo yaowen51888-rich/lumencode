@@ -5,6 +5,9 @@ import {
   buildSmartReportPrompt,
   buildAgentSpawnInvocation,
   buildAgentLookupInvocation,
+  stripCostFromBossMarkdown,
+  buildAgentFailureDetail,
+  checkAgentAvailable,
   createSmartReport,
   getAgentDefinition,
   normalizeSmartReportMarkdown,
@@ -162,13 +165,72 @@ test('workhorse smart report prompt uses boss source as leadership report style'
   assert.ok(prompt.includes('管理汇报'));
   assert.ok(prompt.includes('面向领导汇报'));
   assert.ok(prompt.includes('必须使用以下章节'));
-  assert.ok(prompt.includes('## 本期投入'));
-  assert.ok(prompt.includes('## 核心产出'));
-  assert.ok(prompt.includes('## 进展价值'));
-  assert.ok(prompt.includes('## 风险处理'));
+  assert.ok(prompt.includes('## 核心功能交付'));
+  assert.ok(prompt.includes('## 工作亮点'));
+  assert.ok(prompt.includes('## 进展与价值'));
+  assert.ok(prompt.includes('## 风险与跟进'));
+  assert.ok(!prompt.includes('## 本期投入'), '管理汇报不应再含本期投入章节');
   assert.ok(!prompt.includes('## 下一步计划'));
   assert.ok(prompt.includes('bossMarkdown'));
   assert.ok(prompt.includes('Boss Source Marker'));
+});
+
+test('stripCostFromBossMarkdown removes cost section/phrase and passes through clean text', () => {
+  // 无费用文本应原样透传
+  assert.equal(stripCostFromBossMarkdown('# Boss Source Marker'), '# Boss Source Marker');
+
+  const boss = [
+    '# 工作周报',
+    '',
+    '## 工作成果概述',
+    '本期完成多项功能开发。',
+    '',
+    '## 工作对比',
+    '相比上周，工作强度提升 15%，投入随工作量同步增长。',
+    '',
+    '## 技术工具投入',
+    '本期技术工具投入约 **$120**（日均 $30）。',
+    '按工作日折算，月度工具预算约 $660。',
+    '',
+  ].join('\n');
+  const stripped = stripCostFromBossMarkdown(boss);
+
+  assert.ok(!stripped.includes('技术工具投入'), '应移除费用章节标题');
+  assert.ok(!stripped.includes('$120'), '应移除金额');
+  assert.ok(!stripped.includes('月度工具预算'), '应移除月度预算');
+  assert.ok(!stripped.includes('投入随工作量同步增长'), '应移除费用环比短语');
+  assert.ok(stripped.includes('## 工作成果概述'), '应保留其他章节');
+  assert.ok(stripped.includes('## 工作对比'), '应保留对比章节');
+  assert.ok(stripped.includes('工作强度提升 15'), '应保留对比章节中的非费用内容');
+});
+
+test('workhorse context strips cost from bossMarkdown while default retains it', () => {
+  const sourceReports = {
+    detailedMarkdown: '# Detailed',
+    bossMarkdown: '# Boss\n\n## 技术工具投入\n投入 $120。\n\n## 工作成果\nOK',
+  };
+  const workhorse = buildSmartReportContext(reportData, '# Work', {
+    period: 'weekly', style: 'workhorse', sourceReports,
+  });
+  const def = buildSmartReportContext(reportData, '# Work', {
+    period: 'weekly', style: 'default', sourceReports,
+  });
+
+  assert.ok(!workhorse.sourceReports.bossMarkdown.includes('技术工具投入'), 'workhorse 应剥离费用章');
+  assert.ok(!workhorse.sourceReports.bossMarkdown.includes('$120'), 'workhorse 应剥离金额');
+  assert.ok(workhorse.sourceReports.bossMarkdown.includes('## 工作成果'), 'workhorse 应保留其他章');
+  assert.ok(def.sourceReports.bossMarkdown.includes('技术工具投入'), 'default 应保留费用章');
+  assert.ok(def.sourceReports.bossMarkdown.includes('$120'), 'default 应保留金额');
+});
+
+test('workhorse prompt bans cost and requires concrete feature extraction', () => {
+  const context = buildSmartReportContext(reportData, '# Work', { period: 'weekly', style: 'workhorse' });
+  const prompt = buildSmartReportPrompt(context);
+
+  assert.ok(prompt.includes('不得体现任何费用'), '应禁止费用表达');
+  assert.ok(prompt.includes('commitList'), '应引导基于 commitList 提炼');
+  assert.ok(prompt.includes('具体业务功能点'), '应要求提炼具体业务功能点');
+  assert.ok(prompt.includes('数据不足'), '应有数据不足兜底');
 });
 
 test('validateSmartReportMarkdown flags missing required sections', () => {
@@ -400,6 +462,23 @@ test('buildSmartReportPrompt enforces extrapolation uncertainty', () => {
   assert.ok(prompt.includes('面向领导汇报'), 'workhorse 应有领导汇报硬约束');
 });
 
+test('buildAgentFailureDetail surfaces stdout error when stderr is empty', () => {
+  // claude --print 把 API 错误写到 stdout、stderr 为空时，应取 stdout，避免无信息的 "exit 1"
+  assert.equal(
+    buildAgentFailureDetail('', 'API Error: 529 该模型当前访问量过大', 1),
+    'API Error: 529 该模型当前访问量过大',
+  );
+  // stderr 优先
+  assert.equal(buildAgentFailureDetail('some stderr', 'stdout content', 1), 'some stderr');
+  // 都为空时回退退出码
+  assert.equal(buildAgentFailureDetail('', '', 1), 'exit 1');
+  // stdout 很长时只取尾部 500 字符（错误信息通常在末尾）
+  const longStdout = 'x'.repeat(600) + 'API Error: 529 overflow';
+  const detail = buildAgentFailureDetail('', longStdout, 1);
+  assert.ok(detail.endsWith('API Error: 529 overflow'), '应取 stdout 尾部');
+  assert.ok(detail.length <= 500, '应截断到 500 字符内');
+});
+
 test('validateSmartReportMarkdown flags extrapolation without uncertainty hint', () => {
   const fullSections = '\n\n## 工作亮点分析\nOK\n\n## 关键洞察\nOK\n\n## 风险与建议\nOK';
   const warnings = validateSmartReportMarkdown(
@@ -469,4 +548,50 @@ test('createSmartReport rejects unavailable agents before running CLI when requi
   );
 
   assert.equal(called, false);
+});
+
+test('checkAgentAvailable retries transient probe failures and returns first success', async () => {
+  const calls = [];
+  const result = await checkAgentAvailable(
+    { name: 'claude', displayName: 'Claude Code', command: 'claude' },
+    {
+      retry: 2,
+      retryDelay: 0,
+      probe: async () => {
+        calls.push(1);
+        if (calls.length < 2) return { detected: false, error: 'exit 1' };
+        return { detected: true, version: 'claude 1.0.0' };
+      },
+    },
+  );
+
+  assert.equal(result.detected, true);
+  assert.equal(result.version, 'claude 1.0.0');
+  assert.equal(calls.length, 2, '首次失败后应重试一次即成功');
+});
+
+test('checkAgentAvailable returns last failure and warns when all retries exhausted', async () => {
+  const originalWarn = console.warn;
+  const warnings = [];
+  console.warn = (msg) => warnings.push(msg);
+
+  try {
+    const result = await checkAgentAvailable(
+      { name: 'codex', displayName: 'Codex', command: 'codex' },
+      {
+        retry: 1,
+        retryDelay: 0,
+        probe: async () => ({ detected: false, error: 'version check timeout' }),
+      },
+    );
+
+    assert.equal(result.detected, false);
+    assert.equal(result.error, 'version check timeout');
+    assert.ok(
+      warnings.some(w => String(w).includes('codex') && String(w).includes('version check timeout')),
+      '最终失败应打印诊断 warn: ' + JSON.stringify(warnings),
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
 });
