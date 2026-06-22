@@ -11,7 +11,7 @@
   <script defer src="/vendor/chart.umd.min.js"></script>
 </head>
 <body>
-  <div id="app" class="app-grid" :class="railCollapsed ? 'rail-collapsed' : ''" x-data="app()" x-init="init()" x-cloak>
+  <div id="app" class="app-grid" :class="railCollapsed ? 'rail-collapsed' : ''" x-data="app()" x-cloak>
     <!-- ── Rail ── -->
     <aside class="rail" :class="railCollapsed ? 'collapsed' : ''">
       <template x-if="!railCollapsed">
