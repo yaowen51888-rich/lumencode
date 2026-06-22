@@ -166,6 +166,7 @@ lumencode <command> [period] [date] [options]
 | `serve` | Start Web server (default port 4567) |
 | `report` | Generate CLI report (default command) |
 | `init` | Initialize config file |
+| `mcp` | Start MCP Server for Claude Code / Cursor etc. (see [MCP Server](#mcp-server)) |
 
 | Period | Description |
 |--------|-------------|
@@ -220,6 +221,67 @@ For customization, click the settings button (top-right corner) in the Web UI.
 - **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
 - **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`
 - **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
+
+---
+
+## MCP Server
+
+LumenCode ships with a built-in MCP Server that exposes its AI coding analytics as 7 tools, callable directly from **Claude Code / Cursor / Windsurf** and other MCP-compatible clients — query usage, generate weekly reports, and analyze code contribution right in the conversation, no need to switch to the Web UI.
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `usage_summary` | AI usage overview: token consumption, cost, session count, model distribution |
+| `daily_report` | Generate a usage report for a given date (Markdown) |
+| `work_report` | Work summary (weekly/monthly), supports normal / brief / boss styles |
+| `session_list` | List AI coding sessions within a time range |
+| `trend_analysis` | Usage trends: daily token, cost, and request volume |
+| `ai_contribution` | AI code contribution for a repo: contribution rate, commit attribution, hotspot files |
+| `cost_breakdown` | Cost breakdown: per-model / per-project spend and cache hit rate |
+
+### Configuration
+
+**Option 1: After global install (recommended)**
+
+```bash
+npm install -g lumencode@latest
+```
+
+Add to your client's MCP config (Claude Code `settings.json` shown):
+
+```json
+{
+  "mcpServers": {
+    "lumencode": {
+      "command": "lumencode-mcp"
+    }
+  }
+}
+```
+
+**Option 2: Source / dev mode**
+
+```json
+{
+  "mcpServers": {
+    "lumencode": {
+      "command": "node",
+      "args": ["src/mcp/server.js"]
+    }
+  }
+}
+```
+
+Cursor / Windsurf and other clients use the same `mcpServers` field — enter it via their respective settings. You can also run `npm run mcp` or `lumencode-mcp` directly in the foreground for debugging.
+
+### Highlights
+
+- **Zero-config** — Auto-detects `~/.claude` / `~/.codex` / OpenCode log directories and derives project paths from sessions
+- **stdio transport** — Standard MCP stdio protocol; scans and caches logs on first call, reuses thereafter
+- **Consistent results** — All tools share the same `lib/` stats and attribution implementations as the Web UI and CLI
+
+Once configured, ask your AI assistant directly, e.g. "How much did AI coding cost me this week?", "Analyze AI contribution for the idea repo", or "Generate this week's work summary".
 
 ---
 
