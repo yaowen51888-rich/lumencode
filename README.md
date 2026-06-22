@@ -166,6 +166,7 @@ lumencode <命令> [周期] [日期] [选项]
 | `serve` | 启动 Web 服务（默认端口 4567） |
 | `report` | 生成命令行报告（默认命令） |
 | `init` | 初始化配置文件 |
+| `mcp` | 启动 MCP Server，供 Claude Code / Cursor 等调用（详见 [MCP Server](#mcp-server)） |
 
 | 周期 | 说明 |
 |------|------|
@@ -238,6 +239,67 @@ node index.js hooks disable
 - **别名映射**：内置 28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
 - **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，成功结果缓存到 `data/pricing-cache.json`
 - **失败降级**：API 不可用时该模型按 0 计费，不影响其他模型与报告生成
+
+---
+
+## MCP Server
+
+LumenCode 内置 MCP Server，把 AI 编码分析能力暴露为 7 个工具，可供 **Claude Code / Cursor / Windsurf** 等支持 MCP 的客户端直接调用——在对话里就能查用量、生成周报、分析代码贡献度，无需切换到 Web 界面。
+
+### 工具清单
+
+| 工具 | 说明 |
+|------|------|
+| `usage_summary` | AI 用量概览：Token 消耗、成本、会话数、模型分布 |
+| `daily_report` | 生成指定日期的使用报告（Markdown） |
+| `work_report` | 工作汇报（周报/月报），支持 normal / brief / boss 三种风格 |
+| `session_list` | 列出指定时间范围内的 AI 编码会话 |
+| `trend_analysis` | 用量趋势：日级 Token、成本、请求量变化 |
+| `ai_contribution` | 指定仓库的 AI 代码贡献度：贡献率、commit 归因、热点文件 |
+| `cost_breakdown` | 成本分解：按模型 / 项目统计费用与缓存命中率 |
+
+### 配置方式
+
+**方式一：全局安装后（推荐）**
+
+```bash
+npm install -g lumencode@latest
+```
+
+在客户端的 MCP 配置中添加（以 Claude Code 的 `settings.json` 为例）：
+
+```json
+{
+  "mcpServers": {
+    "lumencode": {
+      "command": "lumencode-mcp"
+    }
+  }
+}
+```
+
+**方式二：源码 / 开发模式**
+
+```json
+{
+  "mcpServers": {
+    "lumencode": {
+      "command": "node",
+      "args": ["src/mcp/server.js"]
+    }
+  }
+}
+```
+
+Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自设置入口填入即可。也可用 `npm run mcp` 或 `lumencode-mcp` 直接前台启动调试。
+
+### 特性
+
+- **零配置**：自动检测 `~/.claude` / `~/.codex` / OpenCode 日志目录，从会话推导项目路径，无需手动指定
+- **stdio 传输**：标准 MCP stdio 协议；首次调用时扫描并缓存日志，后续复用
+- **结果一致**：所有工具与 Web 端 / CLI 共用 `lib/` 下的统计与归因实现
+
+配置完成后即可在 AI 助手中直接提问，例如「我这周 AI 编码花了多少成本？」「分析 idea 仓库的 AI 贡献度」「生成本周工作汇报」。
 
 ---
 
