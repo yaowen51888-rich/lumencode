@@ -588,3 +588,25 @@ test('computeAIContribution - merge commit excluded from AI', () => {
   assert.equal(r.aiCommits, 0);
   assert.equal(r.humanCommits, 1);
 });
+
+// ── AI-Metrics trailer 识别（任何工具都可能通过 skill/hook 注入，不绑定具体工具）──
+
+test('detectAICommit - AI-Metrics trailer is explicit AI without tool binding', () => {
+  // 仅含 AI-Metrics trailer（无 Co-Authored-By），不应硬性绑定到具体工具
+  const body = 'feat: x\n实现细节说明\nAI-Metrics:\n  total-lines: 98\n  total-files: 3';
+  const r = detectAICommit('feat: x', 'zyw@qq.com', body);
+  assert.equal(r.isAI, true);
+  assert.equal(r.aiConfidence, 'high');
+  assert.equal(r.attributionType, 'explicit');
+  assert.ok(r.signals.includes('aiMetrics'));
+  assert.equal(r.detectedTool, null);
+});
+
+test('detectAICommit - AI-Metrics promotes short-body commit to high', () => {
+  // body 很短、无 style 信号，仅靠 AI-Metrics 也应识别为 AI（修复 none 误判）
+  const body = 'refactor: x\nAI-Metrics:\n  total-lines: 99\n  total-files: 1';
+  const r = detectAICommit('refactor: x', 'zyw@qq.com', body);
+  assert.equal(r.aiConfidence, 'high');
+  assert.equal(r.attributionType, 'explicit');
+  assert.ok(r.signals.includes('aiMetrics'));
+});

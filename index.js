@@ -293,6 +293,12 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     extendedEnd.setDate(extendedEnd.getDate() + 2);
     const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
     let gs = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
+    // 外扩窗口仅用于跨天提交匹配；归因与统计严格按真实周期 [start, end]
+    if (gs.commitList) {
+      const windowStart = start;
+      const windowEnd = end + 'T23:59:59';
+      gs.commitList = gs.commitList.filter(c => (c.date || '') >= windowStart && (c.date || '') <= windowEnd);
+    }
     gs = await finalizeGitStats(gs, sessions, {
       attribution: config.aiAttribution,
       stepTracking: config.stepTracking,
