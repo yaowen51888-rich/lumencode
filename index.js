@@ -294,10 +294,16 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     const extendedEndStr = extendedEnd.toISOString().slice(0, 10) + 'T23:59:59';
     let gs = await getGitStatsForMultipleReposAsync(toolRepos, start, extendedEndStr);
     // 外扩窗口仅用于跨天提交匹配；归因与统计严格按真实周期 [start, end]
+    // 用 Date.parse 数值比较，避免对带时区偏移日期的字符串字典序错位
     if (gs.commitList) {
-      const windowStart = start;
-      const windowEnd = end + 'T23:59:59';
-      gs.commitList = gs.commitList.filter(c => (c.date || '') >= windowStart && (c.date || '') <= windowEnd);
+      const startMs = Date.parse(`${start}T00:00:00`);
+      const endMs = Date.parse(`${end}T23:59:59`);
+      if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+        gs.commitList = gs.commitList.filter(c => {
+          const t = Date.parse(c.date);
+          return Number.isFinite(t) && t >= startMs && t <= endMs;
+        });
+      }
     }
     gs = await finalizeGitStats(gs, sessions, {
       attribution: config.aiAttribution,

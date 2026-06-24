@@ -587,20 +587,21 @@ test('computeAIContribution - merge commit excluded from AI', () => {
   ];
   const r = computeAIContribution(commits);
   assert.equal(r.aiCommits, 0);
-  assert.equal(r.humanCommits, 1);
+  // merge 不计入 human（total 已排除 merge），故 humanCommits=0
+  assert.equal(r.humanCommits, 0);
 });
 
 // ── AI-Metrics trailer 识别（任何工具都可能通过 skill/hook 注入，不绑定具体工具）──
 
-test('detectAICommit - AI-Metrics trailer is explicit AI without tool binding', () => {
-  // 仅含 AI-Metrics trailer（无 Co-Authored-By），不应硬性绑定到具体工具
+test('detectAICommit - AI-Metrics trailer is explicit AI bound to generic-ai', () => {
+  // 仅含 AI-Metrics trailer（无 Co-Authored-By）：归 generic-ai 泛类，不绑具体工具
   const body = 'feat: x\n实现细节说明\nAI-Metrics:\n  total-lines: 98\n  total-files: 3';
   const r = detectAICommit('feat: x', 'zyw@qq.com', body);
   assert.equal(r.isAI, true);
   assert.equal(r.aiConfidence, 'high');
   assert.equal(r.attributionType, 'explicit');
   assert.ok(r.signals.includes('aiMetrics'));
-  assert.equal(r.detectedTool, null);
+  assert.equal(r.detectedTool, 'generic-ai');
 });
 
 test('detectAICommit - AI-Metrics promotes short-body commit to high', () => {
