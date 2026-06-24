@@ -1,6 +1,7 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
 import { detectAICommit, detectNegativeSignals, computeAIContribution, computeCommitTypes, computeFileHotspots, finalizeGitStats } from '../lib/git.js';
+import { classifyAttribution, aggregateAttribution } from '../lib/attribution.js';
 
 test('detectAICommit - Co-Authored-By: Claude', () => {
   const r = detectAICommit('feat: add x', 'me@x', 'Body line\nCo-Authored-By: Claude <noreply@anthropic.com>');
@@ -609,4 +610,35 @@ test('detectAICommit - AI-Metrics promotes short-body commit to high', () => {
   assert.equal(r.aiConfidence, 'high');
   assert.equal(r.attributionType, 'explicit');
   assert.ok(r.signals.includes('aiMetrics'));
+});
+
+// ── merge commit 排除契约（修复 reason='human_merge' 断裂）──
+
+test('classifyAttribution - human_merge produces reason=human_merge', () => {
+  const r = classifyAttribution({ attributionType: 'human_merge', aiConfidence: 'none', aiAssisted: false });
+  assert.equal(r.classification, 'human');
+  assert.equal(r.reason, 'human_merge');
+});
+
+test('aggregateAttribution - merge excluded (pre-classified item, 生产路径)', () => {
+  const s = aggregateAttribution([
+    { classification: 'confirmed_ai', reason: 'explicit_signature', added: 100, deleted: 0 },
+    { classification: 'human', reason: 'human_merge', added: 500, deleted: 10 },
+  ]);
+  assert.equal(s.mergeCommits, 1);
+  assert.equal(s.mergeCommitLines, 510);
+  assert.equal(s.totalItems, 1);
+  assert.equal(s.totalLinesChanged, 100);
+  assert.equal(s.confirmedAI, 1);
+  assert.equal(s.human, 0);
+});
+
+test('aggregateAttribution - merge excluded (raw input via classifyAttribution)', () => {
+  // 无预填 classification 时，aggregateAttribution 内部调 classifyAttribution 后须查 classified.reason
+  const s = aggregateAttribution([
+    { attributionType: 'human_merge', aiConfidence: 'none', aiAssisted: false, added: 500, deleted: 0 },
+  ]);
+  assert.equal(s.mergeCommits, 1);
+  assert.equal(s.totalItems, 0);
+  assert.equal(s.totalLinesChanged, 0);
 });
