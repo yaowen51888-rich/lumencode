@@ -33,6 +33,7 @@ registerParser(OpencodeParser);
 let cachedRecords = null;
 let cachedToolBreakdown = null;
 let cachedConfig = null;
+let pendingRecords = null;
 
 /**
  * 加载并缓存配置
@@ -69,31 +70,43 @@ async function ensureRecords() {
   if (cachedRecords) {
     return { records: cachedRecords, toolBreakdown: cachedToolBreakdown };
   }
+  // 并发去重：MCP 客户端可通过 stdio 并发发请求，
+  // 首次加载时复用同一个 in-flight promise，避免重复触发昂贵的解析。
+  if (pendingRecords) return pendingRecords;
 
-  const config = loadMcpConfig();
-  const includeProjects = config.repos && config.repos.length > 0
-    ? config.repos.map(r => normalizeProjectPath(r))
-    : config._autoRepos
-      ? config._autoRepos.map(r => normalizeProjectPath(r))
-      : null;
+  pendingRecords = (async () => {
+    const config = loadMcpConfig();
+    const includeProjects = config.repos && config.repos.length > 0
+      ? config.repos.map(r => normalizeProjectPath(r))
+      : config._autoRepos
+        ? config._autoRepos.map(r => normalizeProjectPath(r))
+        : null;
 
-  console.error('[LumenCode MCP] 正在扫描 AI 编码助手日志...');
+    console.error('[LumenCode MCP] 正在扫描 AI 编码助手日志...');
 
-  const { records, toolBreakdown } = await parseAllEnabledTools(config, {
-    excludeProjects: config.excludeProjects,
-    includeProjects,
-  });
+    const { records, toolBreakdown } = await parseAllEnabledTools(config, {
+      excludeProjects: config.excludeProjects,
+      includeProjects,
+    });
 
-  if (records.length > 0) {
-    await preloadUnknownPricing(records);
+    if (records.length > 0) {
+      await preloadUnknownPricing(records);
+    }
+
+    cachedRecords = records;
+    cachedToolBreakdown = toolBreakdown;
+
+    console.error(`[LumenCode MCP] 已加载 ${records.length} 条记录，工具: ${Object.keys(toolBreakdown).join(', ')}`);
+
+    return { records, toolBreakdown };
+  })();
+
+  try {
+    return await pendingRecords;
+  } catch (err) {
+    pendingRecords = null; // 解析失败：清空以便下次重试，而非永久卡在 rejected promise
+    throw err;
   }
-
-  cachedRecords = records;
-  cachedToolBreakdown = toolBreakdown;
-
-  console.error(`[LumenCode MCP] 已加载 ${records.length} 条记录，工具: ${Object.keys(toolBreakdown).join(', ')}`);
-
-  return { records, toolBreakdown };
 }
 
 // ── 创建 MCP Server ──

@@ -57,6 +57,14 @@ function filterByProject(records, project) {
   });
 }
 
+/**
+ * 按自定义日期范围过滤 records（统一入口，复用 filterRecordsByPeriod 的 custom 分支
+ * 与本地时间解析，避免各 handler 重复手写 slice(0,10) 过滤）
+ */
+function filterByDateRange(records, startDate, endDate) {
+  return filterRecordsByPeriod(records, 'custom', startDate, { customStart: startDate, customEnd: endDate });
+}
+
 // ── Tool schemas (Zod) ──
 
 export const toolSchemas = {
@@ -136,16 +144,10 @@ export async function handleUsageSummary(args, ctx) {
   const period = args.period || 'daily';
   const filtered = filterByProject(records, args.project);
 
-  const { filtered: periodRecords, start, end } = filterRecordsByPeriod(
-    period === 'daily' && args.startDate && args.endDate && args.endDate !== args.startDate
-      ? [...filtered]
-      : filtered,
-    period,
-    refDate,
-    args.startDate && args.endDate && args.endDate !== args.startDate
-      ? { customStart: args.startDate, customEnd: args.endDate }
-      : undefined,
-  );
+  const hasCustomRange = args.startDate && args.endDate && args.endDate !== args.startDate;
+  const { filtered: periodRecords, start, end } = hasCustomRange
+    ? filterByDateRange(filtered, args.startDate, args.endDate)
+    : filterRecordsByPeriod(filtered, period, refDate);
 
   if (periodRecords.length === 0) {
     return errorResult(`未找到 ${start} ~ ${end} 范围内的记录`);
@@ -220,11 +222,7 @@ export async function handleWorkReport(args, ctx) {
   const filtered = filterByProject(records, args.project);
 
   const { filtered: periodRecords, start, end } = args.startDate && args.endDate
-    ? { filtered: filtered.filter(r => {
-        if (!r.timestamp) return false;
-        const d = r.timestamp.slice(0, 10);
-        return d >= args.startDate && d <= args.endDate;
-      }), start: args.startDate, end: args.endDate }
+    ? filterByDateRange(filtered, args.startDate, args.endDate)
     : filterRecordsByPeriod(filtered, period, refDate);
 
   if (periodRecords.length === 0) {
@@ -247,11 +245,7 @@ export async function handleWorkReport(args, ctx) {
 
   // 上一周期对比
   const prevRange = computePrevPeriodRange(period, refDate);
-  const prevFiltered = filtered.filter(r => {
-    if (!r.timestamp) return false;
-    const d = r.timestamp.slice(0, 10);
-    return d >= prevRange.start && d <= prevRange.end;
-  });
+  const { filtered: prevFiltered } = filterByDateRange(filtered, prevRange.start, prevRange.end);
   const prevStats = prevFiltered.length > 0
     ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode)
     : null;
@@ -273,12 +267,9 @@ export async function handleSessionList(args, ctx) {
   const period = args.period || 'daily';
   const filtered = filterByProject(records, args.project);
 
-  const { filtered: periodRecords } = args.startDate && args.endDate && args.endDate !== args.startDate
-    ? { filtered: filtered.filter(r => {
-        if (!r.timestamp) return false;
-        const d = r.timestamp.slice(0, 10);
-        return d >= args.startDate && d <= args.endDate;
-      }) }
+  const hasCustomRange = args.startDate && args.endDate && args.endDate !== args.startDate;
+  const { filtered: periodRecords } = hasCustomRange
+    ? filterByDateRange(filtered, args.startDate, args.endDate)
     : filterRecordsByPeriod(filtered, period, refDate);
 
   const sessions = groupBySessions(periodRecords);
@@ -310,11 +301,7 @@ export async function handleTrendAnalysis(args, ctx) {
 
   // 上一周期对比
   const prevRange = computePrevPeriodRange(period, refDate);
-  const prevFiltered = filtered.filter(r => {
-    if (!r.timestamp) return false;
-    const d = r.timestamp.slice(0, 10);
-    return d >= prevRange.start && d <= prevRange.end;
-  });
+  const { filtered: prevFiltered } = filterByDateRange(filtered, prevRange.start, prevRange.end);
   const prevStats = prevFiltered.length > 0
     ? computeUsageStats(prevFiltered, config.scenarioKeywords, config.costMode)
     : null;
@@ -354,13 +341,8 @@ export async function handleAiContribution(args, ctx) {
     })();
 
   try {
-    const sessions = groupBySessions(
-      records.filter(r => {
-        if (!r.timestamp) return false;
-        const d = r.timestamp.slice(0, 10);
-        return d >= start && d <= end;
-      })
-    );
+    const { filtered: inRangeRecords } = filterByDateRange(records, start, end);
+    const sessions = groupBySessions(inRangeRecords);
 
     let gitStats = await getGitStatsForMultipleReposAsync([repoPath], start, end + 'T23:59:59');
     gitStats = await finalizeGitStats(gitStats, sessions, {
@@ -418,12 +400,9 @@ export async function handleCostBreakdown(args, ctx) {
   const period = args.period || 'daily';
   const filtered = filterByProject(records, args.project);
 
-  const { filtered: periodRecords, start, end } = args.startDate && args.endDate && args.endDate !== args.startDate
-    ? { filtered: filtered.filter(r => {
-        if (!r.timestamp) return false;
-        const d = r.timestamp.slice(0, 10);
-        return d >= args.startDate && d <= args.endDate;
-      }), start: args.startDate, end: args.endDate }
+  const hasCustomRange = args.startDate && args.endDate && args.endDate !== args.startDate;
+  const { filtered: periodRecords, start, end } = hasCustomRange
+    ? filterByDateRange(filtered, args.startDate, args.endDate)
     : filterRecordsByPeriod(filtered, period, refDate);
 
   if (periodRecords.length === 0) {
