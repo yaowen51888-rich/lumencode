@@ -113,7 +113,7 @@ async function ensureRecords() {
 
 const server = new McpServer({
   name: 'lumencode',
-  version: '1.3.6',
+  version: '1.3.7',
 });
 
 // 注册所有 tools

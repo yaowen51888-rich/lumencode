@@ -49,7 +49,7 @@ lumencode serve            # 启动 Web 服务，自动打开浏览器
 # 如果之前装过旧版本，先更新：
 npm update -g lumencode
 
-# 验证版本（确保 ≥ 1.3.5）
+# 验证版本（确保 ≥ 1.3.7）
 lumencode --version
 
 # 或零安装直接使用
@@ -323,6 +323,10 @@ Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自�
 ---
 
 ## 最近更新
+
+### v1.3.7 (2026-06-25)
+
+MCP Server（7 个分析工具） · AI-Metrics trailer 行级归因 · 智能报告管理汇报质量约束 · 统计/汇报页面查询缓存与并行优化 · 归因与日期过滤修复
 
 ### v1.3.5 (2026-06-11)
 
