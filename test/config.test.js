@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadConfig, initConfig, saveConfig } from '../lib/config.js';
+import { loadConfig, initConfig, saveConfig, DEFAULT_CONFIG } from '../lib/config.js';
 import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -147,75 +147,7 @@ test('initConfig - Creates file if it doesn\'t exist', () => {
 
     // Verify content is DEFAULT_CONFIG
     const fileContent = JSON.parse(readFileSync(testConfigFile, 'utf-8'));
-    assert.deepStrictEqual(fileContent, {
-      claudeDir: join(homedir(), '.claude'),
-      codexDir: '',
-      opencodeDir: '',
-      enabledTools: [],
-      repos: [],
-      excludeProjects: [],
-      blockQuota: null,
-      costMode: 'auto',
-      aiAttribution: {
-        windows: {
-          weakWindowMinutes: 30,
-          crossDayWindowDays: 3,
-        },
-        confidenceThresholds: {
-          high: 0.75,
-          medium: 0.45,
-          low: 0.20,
-        },
-        confidenceWeights: {
-          high: 1.0,
-          medium: 0.7,
-          low: 0.2,
-          none: 0,
-        },
-        scoreWeights: {
-          explicitSignature: 0.85,
-          explicitAuthor: 0.80,
-          genericAISignature: 0.70,
-          sessionStrong: 0.40,
-          sessionCrossDay: 0.25,
-          sessionWeak: 0.15,
-          sessionCrossDayWeak: 0.10,
-          fileOverlap: 0.30,
-          styleBulletList: 0.15,
-          styleConventionalScope: 0.05,
-          styleImperativeMood: 0.10,
-          styleLongStructuredBody: 0.05,
-          baselineDeviationHigh: 0.15,
-          baselineDeviationMedium: 0.08,
-          negativeMergeCommit: -0.50,
-          negativeInformal: -0.20,
-          negativeSmallScope: -0.15,
-          negativeWIP: -0.15,
-          humanBaselineMatch: -0.10,
-        },
-        explicitSignalPolicy: {
-          coAuthor: 'strong',
-          generatedWith: 'strong',
-          assistedBy: 'strong',
-          robotEmoji: 'medium',
-          genericAIKeywords: 'medium',
-        },
-      },
-      scenarioKeywords: {
-        coding: ['实现', '功能', '开发', '添加', '修改代码', 'implement', 'feature', 'add', 'refactor', '重构', '组件'],
-        testing: ['测试', 'test', 'spec', '覆盖率', 'coverage', '单元测试', 'unit test', 'jest', 'vitest', 'mocha'],
-        debugging: ['修复', 'bug', 'debug', 'fix', '报错', '错误', '异常', 'error', 'issue', '问题', '排查', '堆栈'],
-        documentation: ['文档', 'doc', 'readme', 'md', '注释', 'comment', '说明', '指南', 'guide'],
-        review: ['review', '审查', '检查', '代码审查', '/review'],
-        planning: ['计划', 'plan', '设计', '架构', '方案', 'design', 'architect'],
-      },
-      stepTracking: {
-        enabled: true,
-        dbPath: '.ccusage/steps.db',
-        maxFileSize: 10 * 1024 * 1024,
-        ignorePatterns: ['node_modules/', '.git/', 'dist/', 'build/', '.next/', '.cache/'],
-      },
-    }, 'Created file should contain DEFAULT_CONFIG');
+    assert.deepStrictEqual(fileContent, DEFAULT_CONFIG, 'Created file should contain DEFAULT_CONFIG');
 
     // Clean up created file for next test
     rmSync(testConfigFile);
