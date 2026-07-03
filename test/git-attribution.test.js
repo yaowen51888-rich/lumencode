@@ -656,3 +656,71 @@ test('finalizeGitStats - file override beats commit override', async () => {
   assert.equal(merged.attributionSummary.human, 1);
   assert.equal(merged.attributionSummary.humanLines, 12);
 });
+
+test('finalizeGitStats - resolves opencode origin-prefixed step session (D1)', async () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'git-step-opencode-origin-'));
+  try {
+    writeFileSync(join(tempRoot, 'oc.js'), 'const oc = true;\n');
+
+    const tracker = new StepTracker(tempRoot);
+    await tracker.open();
+    await tracker.recordStep({
+      origin: 'opencode',
+      sessionId: 'opencode:sess-oc',
+      toolName: 'Write',
+      toolInput: { file_path: join(tempRoot, 'oc.js') },
+      toolUseId: 'tu-oc',
+    });
+    tracker.close();
+
+    const stats = {
+      commitList: [
+        mkCommit({
+          repo: tempRoot,
+          hash: 'hoc',
+          sessionId: 'sess-oc',
+          sessionAttribution: 'strong',
+          files: [{ path: 'oc.js', added: 1, deleted: 0 }],
+          linesAdded: 1,
+        }),
+      ],
+    };
+    const sessions = [
+      mkSession({ id: 'sess-oc', project: tempRoot, primaryTool: 'opencode' }),
+    ];
+
+    await finalizeGitStats(stats, sessions);
+
+    assert.equal(stats.commitList[0].sessionId, 'sess-oc');
+    assert.equal(stats.commitList[0].lineBlame?.source, 'step_blame');
+    assert.equal(stats.commitList[0].lineBlame?.aiLines, 1);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('finalizeGitStats - merge commit stays human despite strong session + file overlap (D4)', async () => {
+  const merged = {
+    commits: 1, filesChanged: 1, linesAdded: 5, linesDeleted: 0,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({
+        hash: 'hMerge',
+        date: '2026-05-14T10:00:05',
+        subject: "Merge branch 'feature/x' into main",
+        files: [{ path: 'src/app.js', added: 5, deleted: 0 }],
+      }),
+    ],
+  };
+  const sessions = [mkSession({
+    toolSequence: [
+      { name: 'Bash', input: { command: 'git commit -m "merge"' }, timestamp: '2026-05-14T10:00:00' },
+      { name: 'Edit', input: { file_path: 'D:/myrepo/src/app.js' }, timestamp: '2026-05-14T09:59:30' },
+    ],
+  })];
+  await finalizeGitStats(merged, sessions);
+  // human_merge 是硬负信号：连续评分不得把 NONE 升回，否则 merge 被误计入 AI 占比
+  assert.equal(merged.commitList[0].attributionType, 'human_merge');
+  assert.equal(merged.commitList[0].aiConfidence, 'none');
+  assert.equal(merged.commitList[0].isAI, false);
+});
