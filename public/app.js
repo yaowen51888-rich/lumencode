@@ -1137,6 +1137,13 @@ function appState() {
       return `已等待 ${minutes} 分 ${String(rest).padStart(2, '0')} 秒`;
     },
 
+    // CLI 未安装的智能体 displayName 列表，供合并提示点名（左栏数据驱动，与此无关）
+    get missingSmartReportAgents() {
+      return this.smartReportTools
+        .filter(t => !t.detected)
+        .map(t => `${t.displayName} CLI`);
+    },
+
     scheduleSmartReportPolling() {
       this.stopSmartReportPolling();
       this.smartReportPollTimer = setTimeout(() => {

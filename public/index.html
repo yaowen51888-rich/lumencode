@@ -670,7 +670,7 @@
                       <button class="smart-agent-btn" :class="{ active: smartReportAgent === agent.name, unavailable: !agent.detected }" @click="setSmartReportAgent(agent.name)" :disabled="!agent.detected" :title="agent.detected ? agent.version : agent.error">
                         <span class="smart-agent-dot" :class="agent.detected ? 'available' : 'missing'"></span>
                         <span class="smart-agent-name" x-text="agent.displayName"></span>
-                        <span class="smart-agent-status" x-text="agent.detected ? '可连接' : '未检测'"></span>
+                        <span class="smart-agent-status" x-text="agent.detected ? '可连接' : 'CLI 未安装'"></span>
                       </button>
                     </template>
                   </div>
@@ -678,8 +678,8 @@
                     <span class="smart-report-spinner" x-show="smartReportLoading" x-cloak></span>
                     <span x-text="smartReportLoading ? '生成中...' : (smartReportMarkdown ? (smartReportNeedsUpdate ? '更新智能报告' : '重新生成') : '生成智能报告')"></span>
                   </button>
-                  <div x-show="smartReportTools.length > 0 && !smartReportTools.some(agent => agent.detected)" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;line-height:1.6;opacity:0.75;">
-                    未检测到可用的本地智能体命令。请确认 Claude Code、Codex 或 OpenCode 已安装，并且对应命令在启动 LumenCode 的终端 PATH 中可用。
+                  <div x-show="smartReportTools.length > 0 && missingSmartReportAgents.length > 0" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;line-height:1.6;opacity:0.75;">
+                    未检测到：<span class="font-mono" x-text="missingSmartReportAgents.join('、')"></span>。请确认对应命令在启动 LumenCode 的终端 PATH 中可用。
                   </div>
                   <div x-show="smartReportError" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--dest);border-radius:6px;color:var(--dest);font-size:12px;" x-text="smartReportError"></div>
                   <div x-show="smartReportNeedsUpdate" x-cloak style="margin-top:12px;padding:10px 12px;border:1px solid var(--dest);border-radius:6px;color:var(--dest);font-size:12px;line-height:1.6;" x-text="smartReportUpdateMessage"></div>
