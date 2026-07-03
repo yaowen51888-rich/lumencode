@@ -47,6 +47,9 @@ function appState() {
     smartReportMarkdown: '',
     smartReportHtml: '',
     smartReportCopied: false,
+    exportModalOpen: false,
+    exportModalAction: 'copy',
+    exportModalTarget: 'source',
     smartReportRecord: null,
     smartReportRecordMeta: '',
     smartReportNeedsUpdate: false,
@@ -1223,6 +1226,30 @@ function appState() {
 
     downloadReport() {
       downloadMarkdown(this.period, this.currentDate);
+    },
+
+    openExportModal(action) {
+      // 无智能报告 → 直接执行原报告，避免单选项空弹窗
+      if (!this.smartReportMarkdown) {
+        return action === 'copy' ? this.copyReport() : this.downloadReport();
+      }
+      this.exportModalAction = action;
+      this.exportModalTarget = 'source';
+      this.exportModalOpen = true;
+    },
+
+    closeExportModal() {
+      this.exportModalOpen = false;
+    },
+
+    confirmExport() {
+      const action = this.exportModalAction;
+      const target = this.exportModalTarget;
+      this.closeExportModal();
+      if (action === 'copy') {
+        return target === 'smart' ? this.copySmartReport() : this.copyReport();
+      }
+      return target === 'smart' ? this.downloadSmartReport() : this.downloadReport();
     },
 
     renderMarkdownToReportHtml(md) {
