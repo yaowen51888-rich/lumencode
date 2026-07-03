@@ -7,6 +7,7 @@ import {
   buildAgentLookupInvocation,
   stripCostFromBossMarkdown,
   buildAgentFailureDetail,
+  killAgentProcessTree,
   checkAgentAvailable,
   createSmartReport,
   getAgentDefinition,
@@ -287,6 +288,14 @@ test('buildAgentSpawnInvocation quotes args with spaces on Windows', () => {
   assert.equal(invocation.command, 'cmd.exe');
   assert.deepEqual(invocation.args.slice(0, 3), ['/d', '/s', '/c']);
   assert.equal(invocation.args[3], 'claude --print "hello world"');
+});
+
+test('codex agent skips git repo check for non-interactive generation', () => {
+  // 后台 spawn 无法交互式信任目录，缺此 flag codex exec 会直接报错拒绝运行
+  assert.ok(
+    getAgentDefinition('codex').args.includes('--skip-git-repo-check'),
+    'codex exec 必须带 --skip-git-repo-check'
+  );
 });
 
 test('buildAgentSpawnInvocation keeps direct spawn on non-Windows platforms', () => {
@@ -594,4 +603,22 @@ test('checkAgentAvailable returns last failure and warns when all retries exhaus
   } finally {
     console.warn = originalWarn;
   }
+});
+
+test('killAgentProcessTree kills whole process group on unix via negative pid', () => {
+  const killed = [];
+  killAgentProcessTree({ pid: 1234 }, 'linux', { kill: (pid, sig) => killed.push([pid, sig]) });
+  // 负 pid 杀整个进程组（含 npm shim 下的孙进程）
+  assert.deepEqual(killed, [[-1234, 'SIGTERM']]);
+});
+
+test('killAgentProcessTree invokes taskkill /T /F on windows', () => {
+  let spawnCall = null;
+  const fakeSpawn = (cmd, args) => {
+    spawnCall = [cmd, args];
+    return { on: () => {} };
+  };
+  killAgentProcessTree({ pid: 1234 }, 'win32', { spawn: fakeSpawn });
+  assert.equal(spawnCall[0], 'taskkill');
+  assert.deepEqual(spawnCall[1], ['/pid', '1234', '/T', '/F']);
 });

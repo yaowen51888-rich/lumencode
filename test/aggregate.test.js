@@ -497,3 +497,18 @@ test('groupBySessions - exposes shared attribution evidence fields', () => {
   assert.ok(session.shellCommands.includes('git commit -m "feat: x"'));
   assert.deepEqual(session.gitCommitTimestamps, ['2026-05-16T11:00:00Z']);
 });
+
+test('deduplicateRecords 排序确定：同 timestamp 按 sessionId/model 稳定 tie-break', () => {
+  // readdir 顺序漂移不应改变输出顺序，否则 cost 浮点累加顺序漂移殃及 sourceHash 稳定性
+  const base = { timestamp: '2026-05-28T10:00:00Z', tool: 'claude', inputTokens: 10, outputTokens: 5 };
+  const a = { ...base, sessionId: 's-a', model: 'm1' };
+  const b = { ...base, sessionId: 's-b', model: 'm1' };
+  const c = { ...base, sessionId: 's-a', model: 'm2' };
+
+  const ids1 = deduplicateRecords([b, c, a]).map(r => `${r.sessionId}|${r.model}`);
+  const ids2 = deduplicateRecords([c, a, b]).map(r => `${r.sessionId}|${r.model}`);
+
+  assert.deepEqual(ids1, ids2, '打乱输入顺序不应改变输出顺序');
+  // 预期全序：timestamp 同 → tool 同 → sessionId(s-a<s-b) → model(m1<m2)
+  assert.deepEqual(ids1, ['s-a|m1', 's-a|m2', 's-b|m1']);
+});

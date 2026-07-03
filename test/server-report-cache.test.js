@@ -409,3 +409,63 @@ test('api/smart-report treats legacy records with matching report hashes as fres
     else process.env.LUMENCODE_PORT = oldPort;
   }
 });
+
+test('api/smart-report treats v2 records with matching report hashes as fresh', async () => {
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  const oldPort = process.env.LUMENCODE_PORT;
+  process.env.LUMENCODE_NO_OPEN = '1';
+  process.env.LUMENCODE_PORT = '0';
+
+  const tempDir = mkdtempSync(join(tmpdir(), 'lumencode-smart-report-v2-fresh-'));
+  const configPath = join(tempDir, 'config.json');
+  const data = makeReportData();
+  const detailedMarkdown = generateWorkReport(data.usageStats, data.gitStats, 'daily', data.start, data.end, data.prevStats, {
+    level: 'detailed', platform: 'default', tool: 'all', projectName: '',
+  });
+  const briefMarkdown = generateWorkReport(data.usageStats, data.gitStats, 'daily', data.start, data.end, data.prevStats, {
+    level: 'brief', platform: 'default', tool: 'all', projectName: '',
+  });
+  // v2 记录：sourceHash 故意不一致（模拟重解析浮点漂移），但三个文本 hash 全等
+  saveSmartReportRecord(join(tempDir, 'smart-reports'), {
+    agent: 'codex',
+    period: 'daily',
+    date: '2026-05-28',
+    start: '2026-05-28',
+    end: '2026-05-28',
+    tool: 'all',
+    project: '',
+    level: 'detailed',
+    platform: 'default',
+    markdown: '# v2 smart report',
+    sourceHash: 'drifted-by-reparse',
+    sourceHashVersion: 2,
+    sourceReports: {
+      detailedHash: buildSourceHash(detailedMarkdown),
+      briefHash: buildSourceHash(briefMarkdown),
+      bossHash: '',
+    },
+  });
+
+  const server = startServer(
+    { claudeDir: tempDir, repos: [], enabledTools: [] },
+    null,
+    async () => data,
+    configPath,
+  );
+
+  try {
+    await waitForListening(server);
+    const port = server.address().port;
+    const res = await fetch(`http://127.0.0.1:${port}/api/smart-report?agent=codex&period=daily&date=2026-05-28&tool=all&level=detailed&platform=default`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.needsUpdate, false, 'sourceReports 文本 hash 全等时 v2 不应误报 needsUpdate');
+  } finally {
+    await closeServer(server);
+    rmSync(tempDir, { recursive: true, force: true });
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+  }
+});
