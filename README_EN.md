@@ -199,31 +199,6 @@ lumencode report weekly --work
 
 ---
 
-## Configuration
-
-v0.4.0+ supports Claude Code, Codex, and OpenCode. **Auto-detects** installed tools' log directories and project paths on first run.
-
-For customization, click the settings button (top-right corner) in the Web UI.
-
-| Setting | Description |
-|---------|-------------|
-| Claude Log Directory | Claude Code data directory (contains `projects/`), defaults to `~/.claude` |
-| Codex Log Directory | Codex data directory (contains `sessions/`), auto-detected |
-| OpenCode Log Directory | OpenCode data directory, auto-detected |
-| Enabled Tools | Specify which tools to enable, defaults to all detected |
-| Local Project Paths | Git repo paths for code commit stats and AI attribution |
-| Excluded Projects | Project names to exclude |
-| Scenario Keywords | Work type classification keyword JSON |
-
-### Model Pricing Data
-
-- **Local table** — 590 models pre-synced from [Portkey-AI/models](https://github.com/Portkey-AI/models) with vendor canonical names
-- **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
-- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`
-- **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
-
----
-
 ## MCP Server
 
 LumenCode ships with a built-in MCP Server that exposes its AI coding analytics as 7 tools, callable directly from **Claude Code / Cursor / Windsurf** and other MCP-compatible clients — query usage, generate weekly reports, and analyze code contribution right in the conversation, no need to switch to the Web UI.
@@ -282,6 +257,31 @@ Cursor / Windsurf and other clients use the same `mcpServers` field — enter it
 - **Consistent results** — All tools share the same `lib/` stats and attribution implementations as the Web UI and CLI
 
 Once configured, ask your AI assistant directly, e.g. "How much did AI coding cost me this week?", "Analyze AI contribution for the idea repo", or "Generate this week's work summary".
+
+---
+
+## Configuration
+
+v0.4.0+ supports Claude Code, Codex, and OpenCode. **Auto-detects** installed tools' log directories and project paths on first run.
+
+For customization, click the settings button (top-right corner) in the Web UI.
+
+| Setting | Description |
+|---------|-------------|
+| Claude Log Directory | Claude Code data directory (contains `projects/`), defaults to `~/.claude` |
+| Codex Log Directory | Codex data directory (contains `sessions/`), auto-detected |
+| OpenCode Log Directory | OpenCode data directory, auto-detected |
+| Enabled Tools | Specify which tools to enable, defaults to all detected |
+| Local Project Paths | Git repo paths for code commit stats and AI attribution |
+| Excluded Projects | Project names to exclude |
+| Scenario Keywords | Work type classification keyword JSON |
+
+### Model Pricing Data
+
+- **Local table** — 590 models pre-synced from [Portkey-AI/models](https://github.com/Portkey-AI/models) with vendor canonical names
+- **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
+- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`
+- **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
 
 ---
 

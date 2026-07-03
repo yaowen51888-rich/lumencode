@@ -199,49 +199,6 @@ lumencode report weekly --work
 
 ---
 
-## 配置
-
-v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自动检测**已安装工具的日志目录与项目路径。
-
-如需自定义，点击 Web 页面右上角设置按钮在线修改。
-
-| 配置项 | 说明 |
-|--------|------|
-| Claude 日志目录 | Claude Code 数据目录（含 `projects/` 子目录），默认 `~/.claude` |
-| Codex 日志目录 | Codex 数据目录（含 `sessions/` 子目录），默认自动检测 |
-| OpenCode 日志目录 | OpenCode 数据目录，默认自动检测 |
-| 启用工具 | 指定启用哪些工具，默认全部已检测到的工具 |
-| 本地项目路径 | 关联的 Git 仓库路径，用于代码提交统计与 AI 贡献度归因 |
-| 排除项目 | 不希望统计的项目名称 |
-| 场景关键词 | 工作类型分类关键词 JSON |
-
-### 行级 AI 归因（可选增强）
-
-行级归因通过 AI 编程工具 hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
-
-```bash
-# 在需要统计的 Git 项目根目录执行
-node index.js hooks status
-node index.js hooks enable       # 交互式选择工具、初始化 steps 并自动备份配置
-```
-
-开启时只会修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不会修改全局配置或其它项目。关闭可执行：
-
-```bash
-node index.js hooks disable
-```
-
-数据写入当前项目的 `.ccusage/steps.db`。该数据库包含用于归因的文件快照，已在本项目 `.gitignore` 中默认忽略；如果在其它仓库启用，也建议忽略 `.ccusage/`。
-
-### 模型定价数据
-
-- **本地表**：内置 590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价
-- **别名映射**：内置 28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
-- **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，成功结果缓存到 `data/pricing-cache.json`
-- **失败降级**：API 不可用时该模型按 0 计费，不影响其他模型与报告生成
-
----
-
 ## MCP Server
 
 LumenCode 内置 MCP Server，把 AI 编码分析能力暴露为 7 个工具，可供 **Claude Code / Cursor / Windsurf** 等支持 MCP 的客户端直接调用——在对话里就能查用量、生成周报、分析代码贡献度，无需切换到 Web 界面。
@@ -300,6 +257,49 @@ Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自�
 - **结果一致**：所有工具与 Web 端 / CLI 共用 `lib/` 下的统计与归因实现
 
 配置完成后即可在 AI 助手中直接提问，例如「我这周 AI 编码花了多少成本？」「分析 idea 仓库的 AI 贡献度」「生成本周工作汇报」。
+
+---
+
+## 配置
+
+v0.4.0 起支持 Claude Code、Codex、OpenCode 三种工具，**首次运行自动检测**已安装工具的日志目录与项目路径。
+
+如需自定义，点击 Web 页面右上角设置按钮在线修改。
+
+| 配置项 | 说明 |
+|--------|------|
+| Claude 日志目录 | Claude Code 数据目录（含 `projects/` 子目录），默认 `~/.claude` |
+| Codex 日志目录 | Codex 数据目录（含 `sessions/` 子目录），默认自动检测 |
+| OpenCode 日志目录 | OpenCode 数据目录，默认自动检测 |
+| 启用工具 | 指定启用哪些工具，默认全部已检测到的工具 |
+| 本地项目路径 | 关联的 Git 仓库路径，用于代码提交统计与 AI 贡献度归因 |
+| 排除项目 | 不希望统计的项目名称 |
+| 场景关键词 | 工作类型分类关键词 JSON |
+
+### 行级 AI 归因（可选增强）
+
+行级归因通过 AI 编程工具 hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
+
+```bash
+# 在需要统计的 Git 项目根目录执行
+node index.js hooks status
+node index.js hooks enable       # 交互式选择工具、初始化 steps 并自动备份配置
+```
+
+开启时只会修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不会修改全局配置或其它项目。关闭可执行：
+
+```bash
+node index.js hooks disable
+```
+
+数据写入当前项目的 `.ccusage/steps.db`。该数据库包含用于归因的文件快照，已在本项目 `.gitignore` 中默认忽略；如果在其它仓库启用，也建议忽略 `.ccusage/`。
+
+### 模型定价数据
+
+- **本地表**：内置 590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价
+- **别名映射**：内置 28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
+- **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，成功结果缓存到 `data/pricing-cache.json`
+- **失败降级**：API 不可用时该模型按 0 计费，不影响其他模型与报告生成
 
 ---
 
