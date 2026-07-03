@@ -49,7 +49,7 @@ lumencode serve            # Start Web server, auto-opens browser
 # If you have an older version installed, update first:
 npm update -g lumencode
 
-# Verify version (ensure ≥ 1.3.5)
+# Verify version (ensure ≥ 1.3.7)
 lumencode --version
 
 # Or run without installing
@@ -305,6 +305,10 @@ Once configured, ask your AI assistant directly, e.g. "How much did AI coding co
 ---
 
 ## What's New
+
+### v1.3.7 (2026-06-25)
+
+MCP Server (7 analytics tools) · AI-Metrics trailer line-level attribution · Smart report leadership-summary quality constraints · Dashboard/report query caching & parallelization · Attribution and date-filter fixes
 
 ### v1.3.5 (2026-06-11)
 
