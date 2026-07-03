@@ -56,7 +56,7 @@ lumencode serve            # 启动 Web 服务，自动打开浏览器
 # 如果之前装过旧版本，先更新：
 npm update -g lumencode
 
-# 验证版本（确保 ≥ 1.3.8）
+# 验证版本（确保 ≥ 1.3.9）
 lumencode --version
 
 # 或零安装直接使用
