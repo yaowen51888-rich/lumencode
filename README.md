@@ -39,6 +39,13 @@
 
 ---
 
+## 环境要求
+
+- Node.js >= 18.0.0
+- 已安装 Claude Code / Codex / OpenCode 中至少一个，并产生过会话日志
+
+---
+
 ## 3 秒上手
 
 ```bash
@@ -49,7 +56,7 @@ lumencode serve            # 启动 Web 服务，自动打开浏览器
 # 如果之前装过旧版本，先更新：
 npm update -g lumencode
 
-# 验证版本（确保 ≥ 1.3.7）
+# 验证版本（确保 ≥ 1.3.8）
 lumencode --version
 
 # 或零安装直接使用
@@ -315,22 +322,7 @@ node index.js hooks disable
 
 ---
 
-## 环境要求
-
-- Node.js >= 18.0.0
-- 已安装 Claude Code / Codex / OpenCode 中至少一个，并产生过会话日志
-
----
-
 ## 最近更新
-
-### v1.3.7 (2026-06-25)
-
-MCP Server（7 个分析工具） · AI-Metrics trailer 行级归因 · 智能报告管理汇报质量约束 · 统计/汇报页面查询缓存与并行优化 · 归因与日期过滤修复
-
-### v1.3.5 (2026-06-11)
-
-数据快照口径约束 · 外推不确定性标注 · Codex 行级归因修复 · 跨智能体风格共享 · SMART REPORT 视觉增强
 
 📖 [完整更新日志 → Releases](https://github.com/yaowen51888-rich/lumencode/releases)
 

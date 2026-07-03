@@ -39,6 +39,13 @@
 
 ---
 
+## Requirements
+
+- Node.js >= 18.0.0
+- At least one of Claude Code / Codex / OpenCode installed with existing session logs
+
+---
+
 ## Get Started in 3 Seconds
 
 ```bash
@@ -49,7 +56,7 @@ lumencode serve            # Start Web server, auto-opens browser
 # If you have an older version installed, update first:
 npm update -g lumencode
 
-# Verify version (ensure ≥ 1.3.7)
+# Verify version (ensure ≥ 1.3.8)
 lumencode --version
 
 # Or run without installing
@@ -297,22 +304,7 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 ---
 
-## Requirements
-
-- Node.js >= 18.0.0
-- At least one of Claude Code / Codex / OpenCode installed with existing session logs
-
----
-
 ## What's New
-
-### v1.3.7 (2026-06-25)
-
-MCP Server (7 analytics tools) · AI-Metrics trailer line-level attribution · Smart report leadership-summary quality constraints · Dashboard/report query caching & parallelization · Attribution and date-filter fixes
-
-### v1.3.5 (2026-06-11)
-
-Data snapshot scope constraints · Extrapolation uncertainty labels · Codex line attribution fix · Cross-agent style sharing · SMART REPORT visual enhancements
 
 📖 [Full changelog → Releases](https://github.com/yaowen51888-rich/lumencode/releases)
 
