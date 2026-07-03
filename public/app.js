@@ -1062,8 +1062,11 @@ function appState() {
       this.stopSmartReportElapsedTimer();
       this.stopSmartReportCompletionTimer();
       if (job.status === 'failed') {
-        this.smartReportError = job.error || '智能报告生成失败';
-        showToast(this.smartReportError);
+        // 仅主动生成（含轮询发现失败）才提示；被动加载撞残留 failed job 时静默
+        if (this.smartReportLoading) {
+          this.smartReportError = job.error || '智能报告生成失败';
+          showToast(this.smartReportError);
+        }
       }
     },
 

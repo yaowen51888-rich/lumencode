@@ -8,6 +8,7 @@ import {
   stripCostFromBossMarkdown,
   buildAgentFailureDetail,
   killAgentProcessTree,
+  isTransientError,
   checkAgentAvailable,
   createSmartReport,
   getAgentDefinition,
@@ -621,4 +622,56 @@ test('killAgentProcessTree invokes taskkill /T /F on windows', () => {
   killAgentProcessTree({ pid: 1234 }, 'win32', { spawn: fakeSpawn });
   assert.equal(spawnCall[0], 'taskkill');
   assert.deepEqual(spawnCall[1], ['/pid', '1234', '/T', '/F']);
+});
+
+test('isTransientError 仅识别限流/过载/网络瞬态错误', () => {
+  assert.equal(isTransientError(new Error('HTTP 429 Too Many Requests')), true);
+  assert.equal(isTransientError(new Error('503 Service Unavailable')), true);
+  assert.equal(isTransientError(new Error('529 overloaded')), true);
+  assert.equal(isTransientError(new Error('request failed: ECONNRESET')), true);
+  assert.equal(isTransientError(new Error('网络异常')), true);
+  assert.equal(isTransientError(new Error('连接超时')), true);
+  // 非瞬态：超时/鉴权/普通失败不重试
+  assert.equal(isTransientError(new Error('Claude Code 生成超时')), false);
+  assert.equal(isTransientError(new Error('Claude Code 生成失败: invalid api key')), false);
+  assert.equal(isTransientError(new Error('Codex 生成失败: exit 1')), false);
+});
+
+test('createSmartReport 对瞬态错误重试，非瞬态立即抛出', async () => {
+  const transient = new Error('HTTP 429 Too Many Requests');
+  const fatal = new Error('Claude Code 生成失败: invalid api key');
+  const ok = '# 报告\n\n内容';
+  const base = { agent: 'claude', reportData: { usageStats: {}, gitStats: {} }, workMarkdown: '', options: { retryDelayMs: 0 } };
+
+  // 第 1 次瞬态、第 2 次成功
+  let calls = 0;
+  const result = await createSmartReport({
+    ...base,
+    runner: async () => { calls += 1; if (calls === 1) throw transient; return ok; },
+  });
+  assert.equal(calls, 2);
+  assert.ok(result.startsWith('# 报告'));
+
+  // 非瞬态错误立即抛出，不重试
+  let calls2 = 0;
+  await assert.rejects(
+    createSmartReport({
+      ...base,
+      runner: async () => { calls2 += 1; throw fatal; },
+    }),
+    fatal,
+  );
+  assert.equal(calls2, 1);
+
+  // retryCount=0 时瞬态错误也不重试
+  let calls3 = 0;
+  await assert.rejects(
+    createSmartReport({
+      ...base,
+      options: { retryCount: 0, retryDelayMs: 0 },
+      runner: async () => { calls3 += 1; throw transient; },
+    }),
+    transient,
+  );
+  assert.equal(calls3, 1);
 });
