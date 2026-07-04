@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rmSync, existsSync } from 'fs';
+import { rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -186,8 +186,61 @@ test('preloadUnknownPricing - API 失败时不计算费用，不抛异常', asyn
     const pricing = resolveModelPricing('another-unknown-model-xyz');
     assert.strictEqual(pricing.unknown, true);
 
-    // 缓存文件不应该被创建
-    assert.ok(!existsSync(CACHE_FILE), 'API 失败时不应生成缓存');
+    // 失败记录持久化到 cache._meta.failedModels，TTL 内重启不再重试
+    assert.ok(existsSync(CACHE_FILE), '失败应写入 cache 文件记录 failedModels');
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    assert.ok(cache._meta.failedModels['another-unknown-model-xyz'], '失败模型应记入 failedModels');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('preloadUnknownPricing - 失败模型跨重启 TTL 内不重试', async () => {
+  const originalFetch = global.fetch;
+  let fetchCallCount = 0;
+  global.fetch = async () => {
+    fetchCallCount++;
+    return { ok: false, status: 500 };
+  };
+
+  try {
+    const records = [{ model: 'restart-skip-model', inputTokens: 100 }];
+    await preloadUnknownPricing(records);
+    const firstCount = fetchCallCount;
+    assert.ok(firstCount >= 1, '首次应调用 API');
+
+    // 模拟进程重启：重新初始化（从 cache 读回 failedModels）
+    initPricing();
+    await preloadUnknownPricing(records);
+    assert.strictEqual(fetchCallCount, firstCount, 'TTL 内重启不应再调用 API');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('preloadUnknownPricing - 失败记录超 TTL 后允许重试', async () => {
+  const originalFetch = global.fetch;
+  let fetchCallCount = 0;
+  global.fetch = async () => {
+    fetchCallCount++;
+    return { ok: false, status: 500 };
+  };
+
+  try {
+    const records = [{ model: 'expired-retry-model', inputTokens: 100 }];
+    await preloadUnknownPricing(records);
+    const firstCount = fetchCallCount;
+    assert.ok(firstCount >= 1);
+
+    // 手动把失败时间戳老化到 8 天前（超过 7 天 TTL）
+    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+    const aged = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    cache._meta.failedModels['expired-retry-model'] = aged;
+    writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
+
+    initPricing();
+    await preloadUnknownPricing(records);
+    assert.ok(fetchCallCount > firstCount, '超 TTL 后应重新尝试 API');
   } finally {
     global.fetch = originalFetch;
   }
