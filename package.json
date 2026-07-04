@@ -14,7 +14,8 @@
     "hooks:init": "node hooks/init-steps.js",
     "hooks:install": "node hooks/install.js",
     "hooks:install-claude": "node hooks/install.js",
-    "hooks:install-codex": "node hooks/install-codex.js"
+    "hooks:install-codex": "node hooks/install-codex.js",
+    "sync:pricing": "node scripts/sync-pricing.js"
   },
   "keywords": [
     "lumencode",
