@@ -307,7 +307,7 @@ function showDrill(title, html) {
 function renderSessionDrill(project, rows) {
   if (!rows.length) { showDrill(esc(project), '<div class="drill-empty">无数据</div>'); return; }
   const html = '<table class="drill-table">'
-    + '<tr><th></th><th>会话ID</th><th>开始</th><th>时长</th><th>请求</th><th>工具</th><th>文件</th><th>提交</th></tr>'
+    + '<tr><th></th><th>会话ID</th><th>开始</th><th>时长</th><th>请求</th><th>Tokens</th><th>工具</th><th>文件</th><th>提交</th></tr>'
     + rows.map((r, i) => {
         const start = r.startTime ? r.startTime.slice(0, 16).replace('T', ' ') : '-';
         const dur = r.duration ? (r.duration >= 3600 ? (r.duration / 3600).toFixed(1) + 'h' : r.duration >= 60 ? Math.round(r.duration / 60) + 'm' : r.duration + 's') : '-';
@@ -315,8 +315,11 @@ function renderSessionDrill(project, rows) {
         const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
         const tools = [...new Set(r.toolSequence || [])].slice(0, 3).join(', ');
         const fileCount = r.touchedFileCount || 0;
+        const tt = r.totalTokens || 0;
+        const ttStr = tt >= 1e6 ? (tt / 1e6).toFixed(1) + 'M' : tt >= 1e3 ? (tt / 1e3).toFixed(0) + 'K' : String(tt);
+        const badge = r.isHeavy ? `<span class="sess-badge heavy">🔥 ${ttStr}</span>` : r.isWarn ? `<span class="sess-badge warn">⚡ ${ttStr}</span>` : ttStr;
         const commitRows = cn > 0
-          ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="8"><table class="commit-subtable">
+          ? `<tr class="commit-subrow" data-idx="${i}" style="display:none;"><td colspan="9"><table class="commit-subtable">
                <tr><th>hash</th><th>type</th><th>subject</th><th class="num">+行</th><th class="num">-行</th><th>AI</th><th>证据</th></tr>
                ${r.commits.map(c => `<tr>
                  <td class="hash"><code>${c.hash.slice(0,7)}</code></td>
@@ -329,7 +332,7 @@ function renderSessionDrill(project, rows) {
                </tr>`).join('')}
              </table></td></tr>`
           : '';
-        return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${dur}</td><td>${r.requests || '-'}</td><td class="drill-text">${tools || '-'}</td><td>${fileCount || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
+        return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${dur}</td><td>${r.requests || '-'}</td><td class="num">${badge}</td><td class="drill-text">${tools || '-'}</td><td>${fileCount || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
       }).join('')
     + '</table>';
   showDrill(esc(project) + ' 会话记录', html);

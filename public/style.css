@@ -1618,5 +1618,10 @@ input, textarea { font-family: inherit; color: inherit; }
   font-size: 11px; font-weight: 500; background: var(--secondary); font-family: var(--font-mono);
 }
 
+/* ── Session token badge（会话爆表标记）── */
+.sess-badge { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.sess-badge.heavy { background: rgba(239, 68, 68, 0.18); color: #ef4444; }
+.sess-badge.warn { background: rgba(245, 158, 11, 0.18); color: #f59e0b; }
+
 /* ── No data hint ── */
 .no-data-hint { padding: 48px; text-align: center; opacity: 0.55; font-size: 14px; }
