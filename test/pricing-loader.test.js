@@ -170,7 +170,7 @@ test('preloadUnknownPricing - fetches unknown models and caches them', async () 
   }
 });
 
-test('preloadUnknownPricing - API 失败时不计算费用，不抛异常', async () => {
+test('preloadUnknownPricing - 瞬时失败（网络错误）不持久化、不抛异常、仍返回 unknown', async () => {
   const originalFetch = global.fetch;
   global.fetch = async () => {
     throw new Error('Network error');
@@ -186,10 +186,27 @@ test('preloadUnknownPricing - API 失败时不计算费用，不抛异常', asyn
     const pricing = resolveModelPricing('another-unknown-model-xyz');
     assert.strictEqual(pricing.unknown, true);
 
-    // 失败记录持久化到 cache._meta.failedModels，TTL 内重启不再重试
-    assert.ok(existsSync(CACHE_FILE), '失败应写入 cache 文件记录 failedModels');
+    // 瞬时失败不应写入 failedModels（下次重启可重试，避免一次抖动漏计 7 天）
+    if (existsSync(CACHE_FILE)) {
+      const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+      assert.ok(!cache._meta?.failedModels?.['another-unknown-model-xyz'], '瞬时失败不应持久化');
+    }
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('preloadUnknownPricing - 永久失败（404）持久化到 failedModels', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () => ({ ok: false, status: 404 });
+
+  try {
+    const records = [{ model: 'perm-fail-model-404', inputTokens: 100 }];
+    await preloadUnknownPricing(records);
+
+    assert.ok(existsSync(CACHE_FILE), '永久失败应写入 cache 文件');
     const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
-    assert.ok(cache._meta.failedModels['another-unknown-model-xyz'], '失败模型应记入 failedModels');
+    assert.ok(cache._meta.failedModels['perm-fail-model-404'], '404 应记入 failedModels');
   } finally {
     global.fetch = originalFetch;
   }
@@ -200,7 +217,7 @@ test('preloadUnknownPricing - 失败模型跨重启 TTL 内不重试', async () 
   let fetchCallCount = 0;
   global.fetch = async () => {
     fetchCallCount++;
-    return { ok: false, status: 500 };
+    return { ok: false, status: 404 };
   };
 
   try {
@@ -223,7 +240,7 @@ test('preloadUnknownPricing - 失败记录超 TTL 后允许重试', async () => 
   let fetchCallCount = 0;
   global.fetch = async () => {
     fetchCallCount++;
-    return { ok: false, status: 500 };
+    return { ok: false, status: 404 };
   };
 
   try {
@@ -241,6 +258,29 @@ test('preloadUnknownPricing - 失败记录超 TTL 后允许重试', async () => 
     initPricing();
     await preloadUnknownPricing(records);
     assert.ok(fetchCallCount > firstCount, '超 TTL 后应重新尝试 API');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('preloadUnknownPricing - 瞬时失败（5xx）跨重启允许重试', async () => {
+  const originalFetch = global.fetch;
+  let fetchCallCount = 0;
+  global.fetch = async () => {
+    fetchCallCount++;
+    return { ok: false, status: 500 };
+  };
+
+  try {
+    const records = [{ model: 'transient-retry-model', inputTokens: 100 }];
+    await preloadUnknownPricing(records);
+    const firstCount = fetchCallCount;
+    assert.ok(firstCount >= 1, '首次应调用 API');
+
+    // 模拟重启：瞬时失败不持久化，应再次尝试
+    initPricing();
+    await preloadUnknownPricing(records);
+    assert.ok(fetchCallCount > firstCount, '瞬时失败跨重启应重新尝试 API');
   } finally {
     global.fetch = originalFetch;
   }
