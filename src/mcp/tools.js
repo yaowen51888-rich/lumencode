@@ -443,6 +443,7 @@ export async function handleCostBreakdown(args, ctx) {
     cacheEfficiency: {
       cacheRead: stats.cacheRead,
       cacheCreate: stats.cacheCreate,
+      cacheSaving: stats.cacheSaving || 0,
       cacheRatio: stats.totalTokens > 0
         ? `${((stats.cacheRead / stats.totalTokens) * 100).toFixed(1)}%`
         : '0%',

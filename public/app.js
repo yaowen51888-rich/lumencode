@@ -632,7 +632,7 @@ function appState() {
         { label: '未启用', en: 'OFF', value: cacheTotal > 0 ? Math.max(0, 100 - this.cacheHitRate - Math.round((inputTok / cacheTotal) * 100)) : 0, color: 'var(--clay)' },
       ];
       const saving = costBreakdown?.cacheSaving || 0;
-      this.cacheSavingText = saving > 0 ? `本月缓存命中节省 <span class="font-mono" style="color:var(--forest)">$${saving.toFixed(2)}</span> ≈ 总成本 ${((saving / Math.max(cost, 1)) * 100).toFixed(1)}%` : '';
+      this.cacheSavingText = saving > 0 ? `本月缓存命中节省 <span class="font-mono" style="color:var(--forest)">$${saving.toFixed(2)}</span> ≈ 潜在成本降低 ${((saving / Math.max(cost + saving, 1)) * 100).toFixed(1)}%` : '';
 
       /* Timeline */
       this.renderTimeline(trendData, usageStats);
