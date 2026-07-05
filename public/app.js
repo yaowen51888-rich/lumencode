@@ -1,5 +1,5 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
-import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, toolDisplayName } from './utils.js';
+import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, TOOL_META, toolDisplayName } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
@@ -14,6 +14,8 @@ function appState() {
     view: 'ledger',
     period: 'daily',
     activeTool: 'all',
+    sourcePaletteOpen: false,
+    sourceQuery: '',
     railCollapsed: localStorage.getItem(STORAGE.SIDEBAR_COLLAPSED) === 'true',
     theme: localStorage.getItem(STORAGE.THEME) || 'dark',
     currentDate: todayISO(),
@@ -97,6 +99,47 @@ function appState() {
     },
     get generatedAt() { return fmtDate(new Date()) + ' · ' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) + ' UTC+8'; },
     get traceId() { return 'CT-' + this.currentDate.replace(/-/g, '-'); },
+
+    /* 15 工具 Coverage：active（本周期有 sessions）+ idle（已支持无数据），usagePct 按 sessions 占比 */
+    get coverageTools() {
+      const all = Object.keys(TOOL_META);
+      const maxSess = Math.max(1, ...all.map(n => this.toolSessions[n] || 0));
+      return all.map(name => {
+        const sess = this.toolSessions[name] || 0;
+        const idle = sess === 0;
+        return {
+          name,
+          displayName: toolDisplayName(name),
+          color: TOOL_COLORS[name] || 'var(--rust)',
+          sub: TOOL_SUB_NAMES[name] || name.toUpperCase(),
+          tokens: this.toolTokens[name] || '',
+          sessions: sess,
+          usagePct: sess ? Math.round((sess / maxSess) * 100) : 0,
+          idle,
+        };
+      });
+    },
+    get coverageActiveCount() { return this.coverageTools.filter(t => !t.idle).length; },
+    /* SourceSelector palette：当前选中工具 + 搜索过滤后的 active/idle 两组 */
+    get currentToolMeta() {
+      if (this.activeTool === 'all') {
+        return { name: 'all', displayName: '全部工具', sub: 'ALL SOURCES', color: null };
+      }
+      const t = this.coverageTools.find(x => x.name === this.activeTool);
+      return t || { name: this.activeTool, displayName: toolDisplayName(this.activeTool), sub: TOOL_SUB_NAMES[this.activeTool] || this.activeTool.toUpperCase(), color: TOOL_COLORS[this.activeTool] || 'var(--rust)' };
+    },
+    get filteredActiveTools() {
+      const q = this.sourceQuery.trim().toLowerCase();
+      const list = this.coverageTools.filter(t => !t.idle);
+      if (!q) return list;
+      return list.filter(t => t.displayName.toLowerCase().includes(q) || t.sub.toLowerCase().includes(q));
+    },
+    get filteredIdleTools() {
+      const q = this.sourceQuery.trim().toLowerCase();
+      const list = this.coverageTools.filter(t => t.idle);
+      if (!q) return list;
+      return list.filter(t => t.displayName.toLowerCase().includes(q) || t.sub.toLowerCase().includes(q));
+    },
 
     /* KPI defaults */
     kpiData: [
@@ -216,6 +259,7 @@ function appState() {
 
     /* ── init ── */
     async init() {
+      this.initSourcePaletteKb();
       this.loadStateFromHash();
       if (this.theme === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
@@ -359,6 +403,23 @@ function appState() {
       this.resetSmartReportDisplay();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
+    },
+
+    /* ── SourceSelector palette ── */
+    openSourcePalette() { this.sourceQuery = ''; this.sourcePaletteOpen = true; },
+    closeSourcePalette() { this.sourcePaletteOpen = false; },
+    setSource(name) { this.closeSourcePalette(); this.setTool(name); },
+    setView(v) { v === 'report' ? this.openReport() : this.showLedger(); },
+    initSourcePaletteKb() {
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          this.sourcePaletteOpen = !this.sourcePaletteOpen;
+          if (this.sourcePaletteOpen) this.sourceQuery = '';
+        } else if (e.key === 'Escape' && this.sourcePaletteOpen) {
+          this.sourcePaletteOpen = false;
+        }
+      });
     },
 
     setToolRankTab(tab) {

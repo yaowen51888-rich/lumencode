@@ -12,13 +12,42 @@
   <script defer src="/vendor/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- ── lumenCode logo sprite：3 极光花瓣 + 中心核，<use> 复用避免重复内联 ── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="lumencode-logo" viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id="lumen-logo-g" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#7480e8"/>
+          <stop offset="50%" stop-color="#5ec2dc"/>
+          <stop offset="100%" stop-color="#5ec2a8"/>
+        </linearGradient>
+        <radialGradient id="lumen-logo-core" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="60%" stop-color="#5ec2dc" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#7480e8"/>
+        </radialGradient>
+      </defs>
+      <circle cx="16" cy="16" r="13.5" fill="none" stroke="url(#lumen-logo-g)" stroke-width="0.9" stroke-opacity="0.35"/>
+      <g fill="url(#lumen-logo-g)">
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z"/>
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(120 16 16)"/>
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(240 16 16)"/>
+      </g>
+      <circle cx="16" cy="16" r="3.2" fill="url(#lumen-logo-core)"/>
+    </symbol>
+  </svg>
+
+  <!-- ── BrandStroke：顶部 1px aurora 呼吸线 ── -->
+  <div class="brand-stroke" aria-hidden="true"></div>
+
   <div id="app" class="app-grid" :class="railCollapsed ? 'rail-collapsed' : ''" x-data="app()" x-cloak>
     <!-- ── Rail ── -->
     <aside class="rail" :class="railCollapsed ? 'collapsed' : ''">
       <template x-if="!railCollapsed">
         <div style="display:flex;flex-direction:column;flex:1;">
           <div class="rail-header">
-            <div style="display:flex;align-items:center;gap:8px;width:100%;">
+            <div class="rail-brand-row">
+              <svg class="logo-mark" width="30" height="30" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
               <div class="rail-title"><span class="text-aurora-shimmer" x-text="appName.slice(0, 5)"></span><span x-text="appName.slice(5)"></span></div>
               <a class="rail-gh-link" href="https://github.com/yaowen51888-rich/lumencode" target="_blank" rel="noopener" title="GitHub">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -28,28 +57,24 @@
           </div>
 
           <nav class="rail-nav">
-            <span class="rail-nav-label">DATA SOURCES</span>
+            <span class="rail-nav-label">NAVIGATION</span>
             <ul class="rail-nav-list">
               <li>
-                <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" :style="activeTool === 'all' ? 'border-left-color: ' + colors.rust : ''">
-                  <span class="source-mark-stacked"><span style="background: var(--claude)"></span><span style="background: var(--codex)"></span><span style="background: var(--opencode)"></span></span>
+                <button class="rail-nav-page" :class="view === 'ledger' ? 'active' : ''" @click="setView('ledger')">
                   <div class="rail-nav-meta">
-                    <div class="rail-nav-meta-top"><span class="rail-nav-name">全部工具</span><span class="rail-nav-tokens" x-text="toolTokens.all"></span></div>
-                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">ALL SOURCES</span><span class="rail-nav-sessions" x-text="toolSessions.all + ' sess'"></span></div>
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">使用主页</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">LEDGER</span></div>
                   </div>
                 </button>
               </li>
-              <template x-for="tool in availableTools" :key="tool.name">
-                <li>
-                  <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :style="activeTool === tool.name ? 'border-left-color: ' + (toolColors[tool.name] || colors.rust) : ''">
-                    <span class="source-mark" :style="'background: ' + (toolColors[tool.name] || colors.rust)"></span>
-                    <div class="rail-nav-meta">
-                      <div class="rail-nav-meta-top"><span class="rail-nav-name" x-text="tool.displayName"></span><span class="rail-nav-tokens" x-text="toolTokens[tool.name] || '-'"></span></div>
-                      <div class="rail-nav-meta-bottom"><span class="rail-nav-sub" x-text="toolSubNames[tool.name] || tool.name.toUpperCase()"></span><span class="rail-nav-sessions" x-text="(toolSessions[tool.name] || 0) + ' sess'"></span></div>
-                    </div>
-                  </button>
-                </li>
-              </template>
+              <li>
+                <button class="rail-nav-page" :class="view === 'report' ? 'active' : ''" @click="setView('report')">
+                  <div class="rail-nav-meta">
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">工作汇报</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">REPORT</span></div>
+                  </div>
+                </button>
+              </li>
             </ul>
           </nav>
 
@@ -94,20 +119,15 @@
           <button class="rail-btn-icon" @click="railCollapsed = false" title="展开">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
           </button>
+          <svg class="logo-mark" width="24" height="24" style="margin:4px 0 12px" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
           <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
             <svg x-show="theme !== 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg x-show="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </button>
           <div style="margin: 12px 0;"><span class="rail-dot"></span></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" title="全部工具">
-              <span class="source-mark-stacked" style="width:10px;height:10px"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
-            </button>
-            <template x-for="tool in availableTools" :key="tool.name">
-              <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :title="tool.displayName">
-                <span class="source-mark" :style="'background:' + (toolColors[tool.name] || colors.rust)"></span>
-              </button>
-            </template>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <button class="rail-nav-mini" :class="view === 'ledger' ? 'active' : ''" @click="setView('ledger')" title="使用主页 · LEDGER">LED</button>
+            <button class="rail-nav-mini" :class="view === 'report' ? 'active' : ''" @click="setView('report')" title="工作汇报 · REPORT">REP</button>
           </div>
           <div style="margin-top:auto;padding-bottom:16px;">
             <span class="rail-status-dot" style="width:6px;height:6px"></span>
@@ -120,7 +140,11 @@
     <main class="main-content">
       <!-- ===== LEDGER VIEW ===== -->
       <div x-show="view === 'ledger'" style="display:block;">
-        <div style="padding: 32px 48px;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <!-- 右上角背景水印 logo -->
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
           <!-- Header -->
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px;">
             <div>
@@ -134,6 +158,16 @@
               </h1>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button class="source-trigger" @click="openSourcePalette()" title="切换数据源 (⌘K)">
+                <span class="source-mark-stacked" x-show="currentToolMeta.color === null"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+                <span class="source-mark" x-show="currentToolMeta.color !== null" :style="'background:' + currentToolMeta.color"></span>
+                <span class="source-trigger-meta">
+                  <span class="source-trigger-label">VIEWING · SOURCE</span>
+                  <span class="source-trigger-name" x-text="currentToolMeta.displayName"></span>
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45;margin-left:4px"><polyline points="6 9 12 15 18 9"/></svg>
+                <span class="source-trigger-kbd">⌘K</span>
+              </button>
               <button class="btn btn-outline" @click="openSettings()">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 设置
@@ -302,6 +336,44 @@
                   </div>
                 </template>
               </div>
+            </div>
+          </div>
+
+          <!-- Coverage —— 15 tools evidence，作为 §01 的上下文补充 -->
+          <div x-show="hasData" class="coverage-card" style="margin-top:56px;">
+            <div class="coverage-head">
+              <div class="coverage-head-left">
+                <span class="label">DATA SOURCES · COVERAGE</span>
+                <span class="coverage-head-summary">
+                  <span class="font-mono" x-text="coverageTools.length"></span> tools connected ·
+                  <span class="font-mono" x-text="coverageActiveCount"></span> active this period
+                </span>
+              </div>
+              <span class="label" style="opacity:0.4">one dashboard</span>
+            </div>
+            <div class="coverage-grid">
+              <template x-for="t in coverageTools" :key="t.name">
+                <button class="coverage-cell" :class="activeTool === t.name ? 'active' : ''" @click="setTool(t.name)" :title="t.displayName + ' · ' + t.sub">
+                  <div class="coverage-cell-head">
+                    <span class="source-mark" :style="'background:' + t.color"></span>
+                    <span class="coverage-cell-name" x-text="t.displayName"></span>
+                  </div>
+                  <template x-if="t.idle">
+                    <div class="coverage-cell-idle">
+                      <span class="coverage-idle-label">IDLE</span>
+                      <div class="coverage-bar-track"><div class="coverage-bar-fill" style="width:0%"></div></div>
+                    </div>
+                  </template>
+                  <template x-if="!t.idle">
+                    <div class="coverage-cell-active">
+                      <span class="font-mono coverage-tokens" x-text="t.tokens"></span>
+                      <div class="coverage-bar-track">
+                        <div class="coverage-bar-fill" :style="'width:' + t.usagePct + '%;background:' + t.color"></div>
+                      </div>
+                    </div>
+                  </template>
+                </button>
+              </template>
             </div>
           </div>
 
@@ -552,12 +624,26 @@
 
       <!-- ===== REPORT VIEW ===== -->
       <div x-show="view === 'report'" style="display:none;">
-        <div style="padding: 32px 48px;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <!-- 右上角背景水印 logo -->
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
           <!-- Toolbar -->
           <div class="report-toolbar">
             <button class="btn btn-outline" @click="showLedger()" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
               返回数据分析
+            </button>
+            <button class="source-trigger" @click="openSourcePalette()" title="切换数据源 (⌘K)">
+              <span class="source-mark-stacked" x-show="currentToolMeta.color === null"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+              <span class="source-mark" x-show="currentToolMeta.color !== null" :style="'background:' + currentToolMeta.color"></span>
+              <span class="source-trigger-meta">
+                <span class="source-trigger-label">VIEWING · SOURCE</span>
+                <span class="source-trigger-name" x-text="currentToolMeta.displayName"></span>
+              </span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45;margin-left:4px"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="source-trigger-kbd">⌘K</span>
             </button>
             <span style="flex:1;height:1px;background:var(--border)"></span>
             <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
@@ -839,6 +925,74 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Source Selector Palette (⌘K) ── -->
+    <div class="source-palette-overlay" x-show="sourcePaletteOpen" x-cloak x-effect="sourcePaletteOpen && $nextTick(() => { if ($refs.sourcePaletteInput) $refs.sourcePaletteInput.focus(); })" @click="closeSourcePalette()" @keydown.escape.prevent="closeSourcePalette()">
+      <div class="source-palette" role="dialog" aria-label="切换数据源" @click.stop>
+        <div class="source-palette-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" x-model="sourceQuery" x-ref="sourcePaletteInput" placeholder="搜索数据源 / 品牌 / 分类…">
+          <span class="source-palette-esc">ESC</span>
+          <button class="source-palette-close" @click="closeSourcePalette()" title="关闭" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="source-palette-body">
+          <!-- 全部工具（仅 all 模式或搜索时置顶） -->
+          <template x-if="activeTool === 'all' || sourceQuery">
+            <div class="source-palette-group">
+              <div class="source-palette-group-head"><span>数据源</span><span class="source-palette-group-tag">ALL</span></div>
+              <button class="source-palette-row" :class="activeTool === 'all' ? 'selected' : ''" @click="setSource('all')">
+                <span class="source-mark-stacked" style="width:10px;height:10px"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name">全部工具</span>
+                  <span class="source-palette-row-sub">ALL SOURCES</span>
+                </div>
+                <span class="font-mono source-palette-row-tokens" x-text="toolTokens.all"></span>
+                <svg x-show="activeTool === 'all'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </template>
+
+          <div class="source-palette-group" x-show="filteredActiveTools.length > 0" x-cloak>
+            <div class="source-palette-group-head"><span>本周期活跃</span><span class="source-palette-group-tag" x-text="filteredActiveTools.length + ' SOURCES'"></span></div>
+            <template x-for="t in filteredActiveTools" :key="t.name">
+              <button class="source-palette-row" :class="activeTool === t.name ? 'selected' : ''" @click="setSource(t.name)">
+                <span class="source-mark" :style="'background:' + t.color"></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name" x-text="t.displayName"></span>
+                  <span class="source-palette-row-sub" x-text="t.sub"></span>
+                </div>
+                <div class="source-palette-row-usage">
+                  <span class="font-mono source-palette-row-tokens" x-text="t.tokens"></span>
+                  <div class="source-palette-row-bar"><div :style="'width:' + t.usagePct + '%;background:' + t.color"></div></div>
+                </div>
+                <svg x-show="activeTool === t.name" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </template>
+          </div>
+
+          <div class="source-palette-group" x-show="filteredIdleTools.length > 0" x-cloak>
+            <div class="source-palette-group-head"><span>其他已支持工具</span><span class="source-palette-group-tag" x-text="filteredIdleTools.length + ' IDLE'"></span></div>
+            <template x-for="t in filteredIdleTools" :key="t.name">
+              <button class="source-palette-row" :class="activeTool === t.name ? 'selected' : ''" @click="setSource(t.name)">
+                <span class="source-mark" :style="'background:' + t.color"></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name" x-text="t.displayName"></span>
+                  <span class="source-palette-row-sub" x-text="t.sub"></span>
+                </div>
+                <span class="font-mono source-palette-row-idle">IDLE</span>
+                <svg x-show="activeTool === t.name" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </template>
+          </div>
+        </div>
+        <div class="source-palette-foot">
+          <span class="font-mono" x-text="coverageTools.length + ' tools · one dashboard'"></span>
+          <span style="opacity:0.45">MIT · lumenCode</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── Settings Modal ── -->
@@ -925,27 +1079,7 @@
   <div id="welcomePage" class="welcome-page" style="display:none;">
     <div class="welcome-card card">
       <div class="welcome-brand">
-        <svg width="56" height="56" viewBox="0 0 32 32" fill="none" style="margin-bottom:16px;">
-          <defs>
-            <linearGradient id="wc-g" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#7480e8"/>
-              <stop offset="50%" stop-color="#5ec2dc"/>
-              <stop offset="100%" stop-color="#5ec2a8"/>
-            </linearGradient>
-            <radialGradient id="wc-core" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="60%" stop-color="#5ec2dc" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="#7480e8"/>
-            </radialGradient>
-          </defs>
-          <circle cx="16" cy="16" r="13.5" fill="none" stroke="url(#wc-g)" stroke-width="0.9" stroke-opacity="0.35"/>
-          <g fill="url(#wc-g)">
-            <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z"/>
-            <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(120 16 16)"/>
-            <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(240 16 16)"/>
-          </g>
-          <circle cx="16" cy="16" r="3.2" fill="url(#wc-core)"/>
-        </svg>
+        <svg width="56" height="56" style="margin-bottom:16px;" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
         <h1 class="welcome-title">欢迎使用 LumenCode</h1>
         <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
       </div>
