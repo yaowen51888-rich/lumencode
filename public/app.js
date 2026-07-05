@@ -412,7 +412,10 @@ function appState() {
     openSourcePalette() { this.sourceQuery = ''; this.sourcePaletteOpen = true; },
     closeSourcePalette() { this.sourcePaletteOpen = false; },
     setSource(name) { this.closeSourcePalette(); this.setTool(name); },
-    setView(v) { v === 'report' ? this.openReport() : this.showLedger(); },
+    setView(v) {
+      if (v === 'settings') { this.view = 'settings'; this.saveStateToHash(); window.openSettings(); return; }
+      v === 'report' ? this.openReport() : this.showLedger();
+    },
     initSourcePaletteKb() {
       document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -1535,10 +1538,9 @@ function getPathTags(containerId) {
 }
 
 window.openSettings = async () => {
-  const modal = document.getElementById('settingsModal');
+  // 设置已迁移为独立页面（侧栏 nav），此处仅负责把配置加载进表单
   const hint = document.getElementById('cfgSaveHint');
   if (hint) { hint.textContent = ''; hint.className = ''; }
-  if (modal) modal.style.display = 'flex';
   try {
     const cfg = await fetchConfig();
     const dirEl = document.getElementById('cfgClaudeDir');

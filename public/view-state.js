@@ -1,4 +1,4 @@
-const VALID_VIEWS = new Set(['ledger', 'report']);
+const VALID_VIEWS = new Set(['ledger', 'report', 'settings']);
 const VALID_PERIODS = new Set(['daily', 'weekly', 'monthly', 'custom']);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

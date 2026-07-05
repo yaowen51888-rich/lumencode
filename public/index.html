@@ -75,6 +75,14 @@
                   </div>
                 </button>
               </li>
+              <li>
+                <button class="rail-nav-page" :class="view === 'settings' ? 'active' : ''" @click="setView('settings')">
+                  <div class="rail-nav-meta">
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">设置</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">SETTINGS</span></div>
+                  </div>
+                </button>
+              </li>
             </ul>
           </nav>
 
@@ -128,6 +136,7 @@
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
             <button class="rail-nav-mini" :class="view === 'ledger' ? 'active' : ''" @click="setView('ledger')" title="使用主页 · LEDGER">LED</button>
             <button class="rail-nav-mini" :class="view === 'report' ? 'active' : ''" @click="setView('report')" title="工作汇报 · REPORT">REP</button>
+            <button class="rail-nav-mini" :class="view === 'settings' ? 'active' : ''" @click="setView('settings')" title="设置 · SETTINGS">SET</button>
           </div>
           <div style="margin-top:auto;padding-bottom:16px;">
             <span class="rail-status-dot" style="width:6px;height:6px"></span>
@@ -167,10 +176,6 @@
                 </span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45;margin-left:4px"><polyline points="6 9 12 15 18 9"/></svg>
                 <span class="source-trigger-kbd">⌘K</span>
-              </button>
-              <button class="btn btn-outline" @click="openSettings()">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                设置
               </button>
               <button class="btn btn-outline" @click="exportCSV()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button class="btn btn-outline" @click="exportJSON()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> JSON</button>
@@ -820,6 +825,73 @@
           </div>
         </div>
       </div>
+
+      <!-- ===== SETTINGS VIEW ===== -->
+      <div x-show="view === 'settings'" style="display:none;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
+          <div class="settings-page-head" style="position:relative;z-index:1;margin-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span class="label">CONFIGURATION · 配置</span>
+            </div>
+            <h1 style="font-size:36px;line-height:1.05;font-weight:500;letter-spacing:-0.02em;">设置</h1>
+          </div>
+          <div class="card" style="position:relative;z-index:1;max-width:680px;padding:0;">
+            <div class="modal-body">
+              <!-- 数据源 -->
+              <div class="cfg-section-title">数据源</div>
+              <div class="form-group">
+                <label class="form-label">Claude 日志目录</label>
+                <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
+                <p class="form-hint">Claude Code 会话日志的存放路径，通常是 ~/.claude</p>
+              </div>
+              <!-- 代码仓库 -->
+              <div class="cfg-section-title" style="margin-top:28px;">代码仓库</div>
+              <div class="form-group">
+                <label class="form-label">项目路径</label>
+                <div id="cfgReposTags" class="path-tags"></div>
+                <div class="path-add-box">
+                  <span class="path-add-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </span>
+                  <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
+                  <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
+                </div>
+                <p class="form-hint">按回车或点击添加，路径可单独删除</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
+                <div id="cfgExcludeTags" class="path-tags"></div>
+                <div class="path-add-box">
+                  <span class="path-add-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </span>
+                  <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
+                  <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
+                </div>
+                <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
+              </div>
+              <!-- 场景分类（默认折叠） -->
+              <div style="margin-top:28px;">
+                <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsSection()">
+                  <span>场景分类</span>
+                  <svg id="cfgKeywordsArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
+                  <p class="form-hint" style="margin-bottom:12px;">根据工具调用中的关键词自动判断工作场景，点击可编辑</p>
+                  <div id="cfgKeywordsEditor"></div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
+              <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- ── Smart Report Style Modal ── -->
@@ -992,69 +1064,6 @@
           <span class="font-mono" x-text="coverageTools.length + ' tools · one dashboard'"></span>
           <span style="opacity:0.45">MIT · lumenCode</span>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Settings Modal ── -->
-  <div id="settingsModal" class="modal-overlay" style="display:none;">
-    <div class="modal-backdrop" onclick="closeSettings()"></div>
-    <div class="modal-panel" style="max-width:580px;">
-      <div class="modal-header">
-        <h3 style="font-size:15px;font-weight:500;">配置</h3>
-        <button class="rail-btn-icon" onclick="closeSettings()" style="color:var(--foreground);opacity:0.65;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <!-- 数据源 -->
-        <div class="cfg-section-title">数据源</div>
-        <div class="form-group">
-          <label class="form-label">Claude 日志目录</label>
-          <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
-          <p class="form-hint">Claude Code 会话日志的存放路径，通常是 ~/.claude</p>
-        </div>
-        <!-- 代码仓库 -->
-        <div class="cfg-section-title" style="margin-top:28px;">代码仓库</div>
-        <div class="form-group">
-          <label class="form-label">项目路径</label>
-          <div id="cfgReposTags" class="path-tags"></div>
-          <div class="path-add-box">
-            <span class="path-add-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </span>
-            <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
-            <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
-          </div>
-          <p class="form-hint">按回车或点击添加，路径可单独删除</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
-          <div id="cfgExcludeTags" class="path-tags"></div>
-          <div class="path-add-box">
-            <span class="path-add-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </span>
-            <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
-            <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
-          </div>
-          <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
-        </div>
-        <!-- 场景分类（默认折叠） -->
-        <div style="margin-top:28px;">
-          <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsSection()">
-            <span>场景分类</span>
-            <svg id="cfgKeywordsArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
-            <p class="form-hint" style="margin-bottom:12px;">根据工具调用中的关键词自动判断工作场景，点击可编辑</p>
-            <div id="cfgKeywordsEditor"></div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
-        <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
       </div>
     </div>
   </div>
