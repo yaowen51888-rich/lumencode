@@ -232,7 +232,8 @@ function appState() {
       return !this.hooksStatus.stepsInitialized ||
         !this.hooksStatus.claude?.enabled ||
         !this.hooksStatus.codex?.enabled ||
-        !this.hooksStatus.opencode?.enabled;
+        !this.hooksStatus.opencode?.enabled ||
+        !this.hooksStatus.gemini?.enabled;
     },
 
     get hooksStatusText() {
@@ -244,6 +245,7 @@ function appState() {
           `Claude ${this.hooksStatus.claude?.enabledCount || 0}/${total}`,
           `Codex ${this.hooksStatus.codex?.enabledCount || 0}/${total}`,
           `OpenCode ${this.hooksStatus.opencode?.enabledCount || 0}/${total}`,
+          `Gemini ${this.hooksStatus.gemini?.enabledCount || 0}/${total}`,
           `steps ${this.hooksStatus.stepsReadyCount || 0}/${total}`,
         ];
         return `设置内项目 hooks：${parts.join(' / ')}`;
@@ -252,6 +254,7 @@ function appState() {
         `Claude ${this.hooksStatus.claude?.enabled ? '已开启' : '未开启'}`,
         `Codex ${this.hooksStatus.codex?.enabled ? '已开启' : '未开启'}`,
         `OpenCode ${this.hooksStatus.opencode?.enabled ? '已开启' : '未开启'}`,
+        `Gemini ${this.hooksStatus.gemini?.enabled ? '已开启' : '未开启'}`,
         `steps ${this.hooksStatus.stepsInitialized ? '已初始化' : '未初始化'}`,
       ];
       return parts.join(' / ');

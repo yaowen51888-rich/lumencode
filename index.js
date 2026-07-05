@@ -21,7 +21,7 @@ const args = process.argv.slice(2);
 const command = args[0];
 
 function parseHookTools(values) {
-  const raw = values.length > 0 ? values : ['claude', 'codex', 'opencode'];
+  const raw = values.length > 0 ? values : ['claude', 'codex', 'opencode', 'gemini'];
   const tools = new Set();
   for (const value of raw) {
     for (const part of value.split(',')) {
