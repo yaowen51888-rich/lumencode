@@ -59,8 +59,8 @@
 | **Amp** | `~/.local/share/amp` | `AMP_DIR` | ✅ Full Support |
 | **Hermes Agent** | `~/.hermes` | `HERMES_DIR` | ✅ Full Support |
 | **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` | ✅ Full Support |
-| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ⚠️ Degraded (token totals only) |
-| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ⚠️ Degraded (cost only) |
+| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ✅ Full Support |
+| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ✅ Full Support |
 | **Droid** | `~/.factory/sessions` | `DROID_DIR` | ✅ Full Support |
 | **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` | ✅ Full Support |
 | **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` | ✅ Full Support |
@@ -68,7 +68,6 @@
 
 > **Notes**:
 > - ✅ Full Support: Session-level, token-level, and model-level statistics
-> - ⚠️ Degraded: Partial statistics only (e.g., Kimi has totals only, Codebuff has cost only)
 
 ---
 

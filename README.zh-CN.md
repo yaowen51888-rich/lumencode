@@ -59,8 +59,8 @@
 | **Amp** | `~/.local/share/amp` | `AMP_DIR` | ✅ 完整支持 |
 | **Hermes Agent** | `~/.hermes` | `HERMES_DIR` | ✅ 完整支持 |
 | **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` | ✅ 完整支持 |
-| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ⚠️ 降级（仅累积 token 总量） |
-| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ⚠️ 降级（仅费用） |
+| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ✅ 完整支持 |
+| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ✅ 完整支持 |
 | **Droid** | `~/.factory/sessions` | `DROID_DIR` | ✅ 完整支持 |
 | **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` | ✅ 完整支持 |
 | **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` | ✅ 完整支持 |
@@ -68,7 +68,6 @@
 
 > **说明**：
 > - ✅ 完整支持：支持会话级、Token 级、模型级统计
-> - ⚠️ 降级：仅支持部分统计（如 Kimi 只有总量，Codebuff 只有费用）
 
 ---
 
