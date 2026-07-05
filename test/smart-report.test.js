@@ -580,7 +580,7 @@ test('checkAgentAvailable retries transient probe failures and returns first suc
   assert.equal(calls.length, 2, '首次失败后应重试一次即成功');
 });
 
-test('checkAgentAvailable returns last failure and warns when all retries exhausted', async () => {
+test('checkAgentAvailable returns last failure silently (no console noise)', async () => {
   const originalWarn = console.warn;
   const warnings = [];
   console.warn = (msg) => warnings.push(msg);
@@ -597,10 +597,8 @@ test('checkAgentAvailable returns last failure and warns when all retries exhaus
 
     assert.equal(result.detected, false);
     assert.equal(result.error, 'version check timeout');
-    assert.ok(
-      warnings.some(w => String(w).includes('codex') && String(w).includes('version check timeout')),
-      '最终失败应打印诊断 warn: ' + JSON.stringify(warnings),
-    );
+    // 智能体未安装是正常态（15 工具不必装全），detected:false 已透传前端，不应刷屏
+    assert.equal(warnings.length, 0, '不应打印 warn: ' + JSON.stringify(warnings));
   } finally {
     console.warn = originalWarn;
   }
