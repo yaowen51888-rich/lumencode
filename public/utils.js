@@ -31,6 +31,9 @@ export function fmtShort(n) {
 // Chart 实例注册表
 const charts = {};
 
+// Re-export tool meta from tool-meta.js
+export { TOOL_META, TOOL_COLORS, TOOL_SUB_NAMES, toolColor, toolDisplayName, toolSubName } from './tool-meta.js';
+
 export function getChart(key) {
   return charts[key] || null;
 }

@@ -1,5 +1,5 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
-import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts } from './utils.js';
+import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, toolDisplayName } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
@@ -76,8 +76,8 @@ function appState() {
       rust: 'var(--rust)', dest: 'var(--dest)', forest: 'var(--forest)',
       ochre: 'var(--ochre)', clay: 'var(--clay)',
     },
-    toolColors: { claude: 'var(--claude)', codex: 'var(--codex)', opencode: 'var(--opencode)' },
-    toolSubNames: { claude: 'ANTHROPIC', codex: 'OPENAI', opencode: 'OSS' },
+    toolColors: TOOL_COLORS,
+    toolSubNames: TOOL_SUB_NAMES,
 
     /* computed getters */
     get periodMeta() { return this.periods.find(p => p.id === this.period) || this.periods[0]; },
@@ -750,8 +750,8 @@ function appState() {
 
       /* Source breakdown from real toolBreakdown data */
       const toolTokMap = {};
-      const toolColors = { claude: 'var(--claude)', codex: 'var(--codex)', opencode: 'var(--opencode)' };
-      const toolDisplayNames = { claude: 'Claude Code', codex: 'OpenAI Codex', opencode: 'OpenCode' };
+      const toolColors = this.toolColors;
+      const toolDisplayNames = (n) => toolDisplayName(n);
       if (usageStats.toolBreakdown) {
         for (const [k, v] of Object.entries(usageStats.toolBreakdown)) {
           toolTokMap[k] = (v.inputTokens || 0) + (v.outputTokens || 0);
@@ -765,7 +765,7 @@ function appState() {
         const isLast = i === sorted.length - 1;
         const pct = isLast ? Math.max(0, 100 - pctSum) : Math.round((tok / totalToolTok) * 100);
         pctSum += pct;
-        return { name: toolDisplayNames[name] || name, pct, tokens: fmtShort(tok), color: toolColors[name] || 'var(--foreground)' };
+        return { name: toolDisplayNames(name) || name, pct, tokens: fmtShort(tok), color: toolColors[name] || 'var(--foreground)' };
       });
 
       /* Line-level blame evidence */

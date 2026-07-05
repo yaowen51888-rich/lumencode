@@ -312,7 +312,11 @@ function renderSessionDrill(project, rows) {
         const start = r.startTime ? r.startTime.slice(0, 16).replace('T', ' ') : '-';
         const dur = r.duration ? (r.duration >= 3600 ? (r.duration / 3600).toFixed(1) + 'h' : r.duration >= 60 ? Math.round(r.duration / 60) + 'm' : r.duration + 's') : '-';
         const cn = r.commits?.length || 0;
-        const toggle = cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
+        const childN = r.children?.length || 0;
+        // 下钻优先子代理（爆表根因），其次提交
+        const toggle = childN > 0
+          ? `<button class="children-toggle" data-idx="${i}">▸</button>`
+          : cn > 0 ? `<button class="commit-toggle" data-idx="${i}">▸</button>` : '';
         const tools = [...new Set(r.toolSequence || [])].slice(0, 3).join(', ');
         const fileCount = r.touchedFileCount || 0;
         const tt = r.totalTokens || 0;
@@ -332,17 +336,34 @@ function renderSessionDrill(project, rows) {
                </tr>`).join('')}
              </table></td></tr>`
           : '';
-        return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${dur}</td><td>${r.requests || '-'}</td><td class="num">${badge}</td><td class="drill-text">${tools || '-'}</td><td>${fileCount || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}`;
+        const childRows = childN > 0
+          ? `<tr class="children-subrow" data-idx="${i}" style="display:none;"><td colspan="9"><table class="commit-subtable">
+               <tr><th>子会话</th><th class="num">Tokens</th><th>工具</th><th class="num">请求</th></tr>
+               ${r.children.map(c => {
+                 const ct = c.totalTokens || 0;
+                 const ctStr = ct >= 1e6 ? (ct / 1e6).toFixed(1) + 'M' : ct >= 1e3 ? (ct / 1e3).toFixed(0) + 'K' : String(ct);
+                 const cbadge = c.isHeavy ? `<span class="sess-badge heavy">🔥 ${ctStr}</span>` : c.isWarn ? `<span class="sess-badge warn">⚡ ${ctStr}</span>` : ctStr;
+                 return `<tr><td class="drill-text" title="${esc(c.id)}">${esc(String(c.id).slice(0, 12))}…</td><td class="num">${cbadge}</td><td>${esc(c.primaryTool || '-')}</td><td class="num">${c.requests || 0}</td></tr>`;
+               }).join('')}
+             </table></td></tr>`
+          : '';
+        return `<tr><td>${toggle}</td><td class="drill-text" title="${esc(r.id)}">${esc(r.id)}</td><td>${start}</td><td>${dur}</td><td>${r.requests || '-'}</td><td class="num">${badge}</td><td class="drill-text">${tools || '-'}</td><td>${fileCount || '-'}</td><td>${cn || '-'}</td></tr>${commitRows}${childRows}`;
       }).join('')
     + '</table>';
   showDrill(esc(project) + ' 会话记录', html);
-  document.querySelectorAll('.commit-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = btn.dataset.idx;
-      const sub = document.querySelector(`.commit-subrow[data-idx="${idx}"]`);
-      const open = sub.style.display !== 'none';
-      sub.style.display = open ? 'none' : '';
-      btn.textContent = open ? '▸' : '▾';
+  // 通用行展开：commit 子表 / children 子代理子表
+  const bindToggle = (toggleClass, subrowClass) => {
+    document.querySelectorAll('.' + toggleClass).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = btn.dataset.idx;
+        const sub = document.querySelector(`.${subrowClass}[data-idx="${idx}"]`);
+        if (!sub) return;
+        const open = sub.style.display !== 'none';
+        sub.style.display = open ? 'none' : '';
+        btn.textContent = open ? '▸' : '▾';
+      });
     });
-  });
+  };
+  bindToggle('commit-toggle', 'commit-subrow');
+  bindToggle('children-toggle', 'children-subrow');
 }

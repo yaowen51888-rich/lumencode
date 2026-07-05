@@ -117,7 +117,7 @@ export async function fetchHooksStatus() {
   return res.json();
 }
 
-export async function updateHooks(action, tools = ['claude', 'codex', 'opencode']) {
+export async function updateHooks(action, tools = ['claude', 'codex', 'opencode', 'gemini']) {
   const res = await fetch(API.HOOKS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
