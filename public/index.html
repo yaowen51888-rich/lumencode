@@ -838,57 +838,177 @@
             </div>
             <h1 style="font-size:36px;line-height:1.05;font-weight:500;letter-spacing:-0.02em;">设置</h1>
           </div>
-          <div class="card" style="position:relative;z-index:1;max-width:680px;padding:0;">
-            <div class="modal-body">
-              <!-- 数据源 -->
-              <div class="cfg-section-title">数据源</div>
-              <div class="form-group">
-                <label class="form-label">Claude 日志目录</label>
-                <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
-                <p class="form-hint">Claude Code 会话日志的存放路径，通常是 ~/.claude</p>
-              </div>
-              <!-- 代码仓库 -->
-              <div class="cfg-section-title" style="margin-top:28px;">代码仓库</div>
-              <div class="form-group">
-                <label class="form-label">项目路径</label>
-                <div id="cfgReposTags" class="path-tags"></div>
-                <div class="path-add-box">
-                  <span class="path-add-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </span>
-                  <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
-                  <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
+
+          <div class="settings-grid" style="position:relative;z-index:1;">
+            <!-- 数据源 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">数据源</div>
+                <div class="form-group">
+                  <label class="form-label">Claude 日志目录</label>
+                  <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
+                  <p class="form-hint">Claude Code 会话日志路径，通常是 ~/.claude</p>
                 </div>
-                <p class="form-hint">按回车或点击添加，路径可单独删除</p>
-              </div>
-              <div class="form-group">
-                <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
-                <div id="cfgExcludeTags" class="path-tags"></div>
-                <div class="path-add-box">
-                  <span class="path-add-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </span>
-                  <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
-                  <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
+                <div class="form-group">
+                  <label class="form-label">启用工具</label>
+                  <p class="form-hint" style="margin-top:0;margin-bottom:8px;">点选持久启用的工具（空=自动检测全部）</p>
+                  <div id="cfgEnabledToolsChips" class="cfg-chips"></div>
                 </div>
-                <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
-              </div>
-              <!-- 场景分类（默认折叠） -->
-              <div style="margin-top:28px;">
-                <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsSection()">
-                  <span>场景分类</span>
-                  <svg id="cfgKeywordsArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                <button id="cfgToolDirsToggle" class="cfg-advanced-toggle" onclick="toggleToolDirsSection()">
+                  <span>其他工具目录</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
-                <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
-                  <p class="form-hint" style="margin-bottom:12px;">根据工具调用中的关键词自动判断工作场景，点击可编辑</p>
-                  <div id="cfgKeywordsEditor"></div>
+                <div id="cfgToolDirsSection" class="cfg-advanced-body" style="display:none;">
+                  <p class="form-hint" style="margin-bottom:12px;">留空则自动检测；手动指定可覆盖默认路径</p>
+                  <div id="cfgToolDirsEditor"></div>
                 </div>
               </div>
-            </div>
-            <div class="modal-footer">
-              <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
-              <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
-            </div>
+            </section>
+
+            <!-- 代码仓库 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">代码仓库</div>
+                <div class="form-group">
+                  <label class="form-label">项目路径</label>
+                  <div id="cfgReposTags" class="path-tags"></div>
+                  <div class="path-add-box">
+                    <span class="path-add-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
+                    <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
+                  </div>
+                  <p class="form-hint">按回车或点击添加，路径可单独删除</p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
+                  <div id="cfgExcludeTags" class="path-tags"></div>
+                  <div class="path-add-box">
+                    <span class="path-add-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
+                    <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
+                  </div>
+                  <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- 计费与成本 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">计费与成本</div>
+                <div class="form-group">
+                  <label class="form-label">成本计算口径</label>
+                  <div class="cfg-radio-list" id="cfgCostModeGroup">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="auto">
+                      <span class="cfg-radio-text"><b>自动</b><span class="cfg-radio-desc">优先用日志自带成本，缺失则按定价估算</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="calculate">
+                      <span class="cfg-radio-text"><b>按定价重算</b><span class="cfg-radio-desc">忽略日志成本，统一按 token 定价计算</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="display">
+                      <span class="cfg-radio-text"><b>仅展示</b><span class="cfg-radio-desc">只显示日志原值，不估算</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 归因与追踪 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">归因与追踪</div>
+                <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
+                  <div>
+                    <label class="form-label" style="margin-bottom:2px;">步骤追踪</label>
+                    <p class="form-hint" style="margin-top:0;">记录工具调用步骤用于行级归因</p>
+                  </div>
+                  <label class="cfg-switch">
+                    <input type="checkbox" id="cfgStepEnabled">
+                    <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                  </label>
+                </div>
+                <button id="cfgStepAdvToggle" class="cfg-advanced-toggle" onclick="toggleStepAdvSection()">
+                  <span>高级参数</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgStepAdvSection" class="cfg-advanced-body" style="display:none;">
+                  <div class="form-group">
+                    <label class="form-label">数据库路径</label>
+                    <input type="text" id="cfgStepDbPath" class="form-input" placeholder=".ccusage/steps.db">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">单文件大小上限（字节）</label>
+                    <input type="number" id="cfgStepMaxSize" class="form-input" placeholder="10485760" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">忽略目录（逗号分隔）</label>
+                    <input type="text" id="cfgStepIgnore" class="form-input" placeholder="node_modules/, .git/, dist/">
+                  </div>
+                </div>
+                <button id="cfgAttributionToggle" class="cfg-advanced-toggle" onclick="toggleAttributionSection()">
+                  <span>AI 归因参数（专家）</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgAttributionSection" class="cfg-advanced-body" style="display:none;">
+                  <p class="form-hint" style="margin-bottom:8px;">阈值/权重等专家参数请直接编辑 <code>config.json</code>。当前值：</p>
+                  <pre id="cfgAttributionPreview" class="cfg-json-preview"></pre>
+                </div>
+              </div>
+            </section>
+
+            <!-- 场景分类 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">场景分类</div>
+                <p class="form-hint" style="margin-top:0;margin-bottom:12px;">根据工具调用关键词自动判断工作场景，点击编辑</p>
+                <div id="cfgKeywordsEditor"></div>
+              </div>
+            </section>
+
+            <!-- 外观偏好 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">外观偏好</div>
+                <div class="form-group">
+                  <label class="form-label">主题</label>
+                  <div class="cfg-radio-list">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgTheme" value="dark" @change="setTheme('dark')">
+                      <span class="cfg-radio-text"><b>夜间</b><span class="cfg-radio-desc">深色背景</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgTheme" value="light" @change="setTheme('light')">
+                      <span class="cfg-radio-text"><b>日间</b><span class="cfg-radio-desc">浅色背景</span></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">智能报告默认风格</label>
+                  <div class="cfg-radio-list">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgReportStyle" value="default" @change="setReportStyle('default')">
+                      <span class="cfg-radio-text"><b>默认</b><span class="cfg-radio-desc">专业分析口径</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgReportStyle" value="workhorse" @change="setReportStyle('workhorse')">
+                      <span class="cfg-radio-text"><b>管理汇报</b><span class="cfg-radio-desc">面向负责人的投入产出视角</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="settings-save-bar" style="position:relative;z-index:1;">
+            <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
+            <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
           </div>
         </div>
       </div>

@@ -289,13 +289,20 @@ function appState() {
     },
 
     /* ── theme ── */
-    toggleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem(STORAGE.THEME, this.theme);
-      if (this.theme === 'dark') document.documentElement.classList.add('dark');
+    toggleTheme() { this.setTheme(this.theme === 'dark' ? 'light' : 'dark'); },
+    setTheme(v) {
+      if (v !== 'dark' && v !== 'light') return;
+      if (this.theme === v) return;
+      this.theme = v;
+      localStorage.setItem(STORAGE.THEME, v);
+      if (v === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
       /* re-render charts to pick up new colors */
       if (this.lastReportData && this.view === 'ledger') this.renderCharts(this.lastReportData);
+    },
+    setReportStyle(v) {
+      this.smartReportStyle = v === 'workhorse' ? 'workhorse' : 'default';
+      localStorage.setItem(STORAGE.SMART_REPORT_STYLE, this.smartReportStyle);
     },
 
     /* ── tools ── */
@@ -545,6 +552,8 @@ function appState() {
       this.view = state.view;
       this.period = state.period;
       if (state.currentDate) this.currentDate = state.currentDate;
+      // 直链/刷新进入 settings 时，表单元素已随 x-show 渲染在 DOM，立即填充
+      if (state.view === 'settings') window.openSettings?.();
     },
 
     saveStateToHash() {
@@ -1475,15 +1484,6 @@ window.closeSettings = () => {
   if (modal) modal.style.display = 'none';
 };
 
-/* ── Advanced Section Toggle ── */
-window.toggleKeywordsSection = () => {
-  const section = document.getElementById('cfgKeywordsSection');
-  const btn = document.getElementById('cfgKeywordsToggle');
-  if (!section || !btn) return;
-  const isHidden = section.style.display === 'none';
-  section.style.display = isHidden ? 'block' : 'none';
-  btn.classList.toggle('expanded', isHidden);
-};
 
 /* ── Path Tag Editor ── */
 const FOLDER_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
@@ -1537,6 +1537,144 @@ function getPathTags(containerId) {
   return Array.from(container.querySelectorAll('.path-tag-text')).map(el => el.textContent);
 }
 
+/* ── Settings: tool dirs / enabled chips / costMode / stepTracking ── */
+// 工具目录键 + 展示名 + 默认路径占位（与 lib/parsers/* 的 defaultDir 对齐）
+const TOOL_DIR_DEFS = [
+  { key: 'codexDir',    name: 'codex',    ph: '~/.codex' },
+  { key: 'opencodeDir', name: 'opencode', ph: '~/.local/share/opencode' },
+  { key: 'geminiDir',   name: 'gemini',   ph: '~/.gemini' },
+  { key: 'qwenDir',     name: 'qwen',     ph: '~/.qwen' },
+  { key: 'gooseDir',    name: 'goose',    ph: '~/.config/goose' },
+  { key: 'ampDir',      name: 'amp',      ph: '~/.amp' },
+  { key: 'hermesDir',   name: 'hermes',   ph: '~/.hermes' },
+  { key: 'openclawDir', name: 'openclaw', ph: '~/.openclaw' },
+  { key: 'kimiDir',     name: 'kimi',     ph: '~/.kimi' },
+  { key: 'codebuffDir', name: 'codebuff', ph: '~/.codebuff' },
+  { key: 'droidDir',    name: 'droid',    ph: '~/.droid' },
+  { key: 'piDir',       name: 'pi',       ph: '~/.pi' },
+  { key: 'kiloDir',     name: 'kilo',     ph: '~/.kilo' },
+  { key: 'copilotDir',  name: 'copilot',  ph: '~/.copilot/otel' },
+];
+
+function renderToolDirsEditor(cfg) {
+  const container = document.getElementById('cfgToolDirsEditor');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const def of TOOL_DIR_DEFS) {
+    // meta 来自静态 TOOL_META（受信常量，非用户输入），innerHTML 无注入风险
+    const meta = TOOL_META[def.name] || { displayName: def.name, color: 'var(--muted-foreground)' };
+    const row = document.createElement('div');
+    row.className = 'cfg-dir-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'cfg-dir-label';
+    lbl.innerHTML = `<span class="cfg-tool-dot" style="background:${meta.color}"></span>${meta.displayName}`;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'form-input cfg-dir-input';
+    inp.dataset.key = def.key;
+    inp.placeholder = def.ph;
+    inp.value = cfg[def.key] || '';
+    row.appendChild(lbl);
+    row.appendChild(inp);
+    container.appendChild(row);
+  }
+}
+
+function collectToolDirs() {
+  const out = {};
+  for (const inp of document.querySelectorAll('#cfgToolDirsEditor .cfg-dir-input')) {
+    out[inp.dataset.key] = inp.value.trim();
+  }
+  return out;
+}
+
+function renderEnabledToolsChips(enabledTools) {
+  const container = document.getElementById('cfgEnabledToolsChips');
+  if (!container) return;
+  container.innerHTML = '';
+  const enabled = Array.isArray(enabledTools) ? enabledTools : [];
+  // 空数组语义=自动检测全部，UI 上表现为全不选（保存时空数组维持自动）
+  for (const def of TOOL_DIR_DEFS) {
+    // meta 来自静态 TOOL_META（受信常量），innerHTML 无注入风险
+    const meta = TOOL_META[def.name] || { displayName: def.name, color: 'var(--muted-foreground)' };
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'cfg-toggle-chip' + (enabled.includes(def.name) ? ' active' : '');
+    chip.dataset.tool = def.name;
+    chip.innerHTML = `<span class="cfg-tool-dot" style="background:${meta.color}"></span>${meta.displayName}`;
+    chip.onclick = () => chip.classList.toggle('active');
+    container.appendChild(chip);
+  }
+}
+
+function collectEnabledTools() {
+  return Array.from(document.querySelectorAll('#cfgEnabledToolsChips .cfg-toggle-chip.active'))
+    .map(el => el.dataset.tool);
+}
+
+function setCostModeRadio(value) {
+  const v = ['auto', 'calculate', 'display'].includes(value) ? value : 'auto';
+  const el = document.querySelector(`input[name="cfgCostMode"][value="${v}"]`);
+  if (el) el.checked = true;
+}
+function getCostModeRadio() {
+  const el = document.querySelector('input[name="cfgCostMode"]:checked');
+  return el ? el.value : 'auto';
+}
+
+function fillStepTracking(st) {
+  const enabled = document.getElementById('cfgStepEnabled');
+  if (enabled) enabled.checked = st && st.enabled !== false;
+  const db = document.getElementById('cfgStepDbPath');
+  if (db) db.value = st?.dbPath || '';
+  const max = document.getElementById('cfgStepMaxSize');
+  if (max) max.value = st?.maxFileSize || '';
+  const ign = document.getElementById('cfgStepIgnore');
+  if (ign) ign.value = Array.isArray(st?.ignorePatterns) ? st.ignorePatterns.join(', ') : '';
+}
+
+function collectStepTracking() {
+  const ign = (document.getElementById('cfgStepIgnore')?.value || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  return {
+    enabled: document.getElementById('cfgStepEnabled')?.checked !== false,
+    dbPath: document.getElementById('cfgStepDbPath')?.value.trim() || '.ccusage/steps.db',
+    maxFileSize: Number(document.getElementById('cfgStepMaxSize')?.value) || 10485760,
+    ignorePatterns: ign,
+  };
+}
+
+function showAttributionPreview(att) {
+  const pre = document.getElementById('cfgAttributionPreview');
+  if (!pre) return;
+  try { pre.textContent = JSON.stringify(att, null, 2); }
+  catch { pre.textContent = '(无法序列化)'; }
+}
+
+function syncAppearanceRadios() {
+  const appEl = document.querySelector('[x-data]');
+  const app = appEl?._x_dataStack?.[0];
+  const theme = app?.theme || 'dark';
+  const style = app?.smartReportStyle || 'default';
+  const tEl = document.querySelector(`input[name="cfgTheme"][value="${theme}"]`);
+  if (tEl) tEl.checked = true;
+  const sEl = document.querySelector(`input[name="cfgReportStyle"][value="${style}"]`);
+  if (sEl) sEl.checked = true;
+}
+
+// 三个折叠区开关
+window.toggleToolDirsSection = () => toggleCfgFold('cfgToolDirsSection', 'cfgToolDirsToggle');
+window.toggleStepAdvSection = () => toggleCfgFold('cfgStepAdvSection', 'cfgStepAdvToggle');
+window.toggleAttributionSection = () => toggleCfgFold('cfgAttributionSection', 'cfgAttributionToggle');
+function toggleCfgFold(sectionId, btnId) {
+  const section = document.getElementById(sectionId);
+  const btn = document.getElementById(btnId);
+  if (!section || !btn) return;
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  btn.classList.toggle('expanded', isHidden);
+}
+
 window.openSettings = async () => {
   // 设置已迁移为独立页面（侧栏 nav），此处仅负责把配置加载进表单
   const hint = document.getElementById('cfgSaveHint');
@@ -1548,6 +1686,12 @@ window.openSettings = async () => {
     renderPathTags('cfgReposTags', cfg.repos || []);
     renderPathTags('cfgExcludeTags', cfg.excludeProjects || []);
     renderKeywordsEditor(cfg.scenarioKeywords || {});
+    renderToolDirsEditor(cfg);
+    renderEnabledToolsChips(cfg.enabledTools || []);
+    setCostModeRadio(cfg.costMode);
+    fillStepTracking(cfg.stepTracking);
+    showAttributionPreview(cfg.aiAttribution);
+    syncAppearanceRadios();
   } catch (err) {
     showToast('加载配置失败: ' + err.message);
   }
@@ -1575,6 +1719,10 @@ window.saveSettings = async () => {
     repos: getPathTags('cfgReposTags'),
     excludeProjects: getPathTags('cfgExcludeTags'),
     scenarioKeywords,
+    ...collectToolDirs(),
+    enabledTools: collectEnabledTools(),
+    costMode: getCostModeRadio(),
+    stepTracking: collectStepTracking(),
   };
   try {
     await saveConfig(payload);

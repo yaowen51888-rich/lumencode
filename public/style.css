@@ -1928,3 +1928,82 @@ input, textarea { font-family: inherit; color: inherit; }
 
 /* ── No data hint ── */
 .no-data-hint { padding: 48px; text-align: center; opacity: 0.55; font-size: 14px; }
+
+/* ── Settings page (multi-card grid) ── */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+  align-items: start; /* 卡片高度自适应，顶端对齐 */
+}
+.cfg-card { overflow: hidden; }
+.cfg-card-body { padding: 22px 24px 24px; }
+@media (max-width: 820px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}
+
+/* 启用工具 chips */
+.cfg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cfg-toggle-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--foreground);
+  cursor: pointer; opacity: 0.5;
+  transition: opacity 0.12s, border-color 0.12s, background 0.12s;
+}
+.cfg-toggle-chip:hover { opacity: 0.8; }
+.cfg-toggle-chip.active { opacity: 1; border-color: var(--foreground); background: var(--ink-8); }
+.cfg-tool-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* 其他工具目录编辑器 */
+.cfg-dir-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.cfg-dir-label { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.cfg-dir-input { font-size: 12px; padding: 6px 10px; }
+
+/* radio 列表 */
+.cfg-radio-list { display: flex; flex-direction: column; gap: 8px; }
+.cfg-radio-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: border-color 0.12s, background 0.12s;
+}
+.cfg-radio-row:hover { border-color: var(--muted-foreground); }
+.cfg-radio-row:has(input:checked) { border-color: var(--foreground); background: var(--ink-8); }
+.cfg-radio-row input[type="radio"] { margin-top: 3px; accent-color: var(--foreground); }
+.cfg-radio-text { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.cfg-radio-text b { font-weight: 500; }
+.cfg-radio-desc { font-size: 11px; opacity: 0.55; }
+
+/* 开关 switch */
+.cfg-switch { position: relative; display: inline-block; width: 38px; height: 22px; cursor: pointer; flex: none; }
+.cfg-switch input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.cfg-switch-track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--border); transition: background 0.15s;
+}
+.cfg-switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--foreground);
+  transition: transform 0.15s;
+}
+.cfg-switch input:checked + .cfg-switch-track { background: var(--accent, var(--claude, #d97757)); }
+.cfg-switch input:checked + .cfg-switch-track .cfg-switch-thumb { transform: translateX(16px); background: #fff; }
+
+/* 归因 JSON 预览 */
+.cfg-json-preview {
+  margin: 0; padding: 10px 12px; max-height: 200px; overflow: auto;
+  font-family: var(--font-mono, monospace); font-size: 11px; line-height: 1.5;
+  background: var(--input-background); border: 1px solid var(--border); border-radius: 6px;
+  white-space: pre-wrap; word-break: break-all; opacity: 0.85;
+}
+
+/* sticky 保存条 */
+.settings-save-bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 20px; padding: 14px 20px;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+}
