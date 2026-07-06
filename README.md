@@ -96,11 +96,6 @@ npx lumencode@latest serve
 
 ## Highlights
 
-<div align="center">
-  <img src="doc/核心能力-en.png" alt="LumenCode Core Capabilities" width="720">
-</div>
-
-
 | Highlight | Description |
 |-----------|-------------|
 | 🎯 **Line-Level AI Attribution** | Hook-based step tracking identifies AI participation for each line of code. Not "AI helped with this commit" — "This line was written by AI" |
@@ -184,6 +179,12 @@ npx lumencode@latest serve
 ![Light Mode](doc/浅色模式.png)
 
 > Dark mode is the default theme — the screenshots above were taken in dark mode.
+
+### Settings
+
+> Configure data sources (15 tool directories), enabled tools, cost mode, step-tracking attribution, scenario keywords, and appearance — all from the sidebar Settings page, organized into cards.
+
+![Settings Page](doc/设置页面.png)
 
 ---
 
@@ -296,7 +297,7 @@ Once configured, ask your AI assistant directly, e.g. "How much did AI coding co
 
 v0.4.0+ supports 15 AI coding tools (Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI). **Auto-detects** installed tools' log directories and project paths on first run.
 
-For customization, click the settings button (top-right corner) in the Web UI.
+For customization, open the **Settings** page from the left sidebar rail. Settings are organized into cards: Data Sources, Repositories, Cost & Billing, Attribution & Tracking, Scenario Keywords, and Appearance.
 
 | Setting | Description |
 |---------|-------------|
@@ -319,6 +320,9 @@ For customization, click the settings button (top-right corner) in the Web UI.
 | Local Project Paths | Git repo paths for code commit stats and AI attribution |
 | Excluded Projects | Project names to exclude |
 | Scenario Keywords | Work type classification keyword JSON |
+| Cost Mode | Cost calculation source: `auto` (prefer log cost, fall back to pricing) · `calculate` (always recompute from token pricing) · `display` (raw log values only) |
+| Step Tracking | Toggle step-level recording for line attribution (see [Line-Level AI Attribution](#line-level-ai-attribution-optional)) |
+| AI Attribution Params | Expert thresholds/weights for attribution scoring — read-only preview in UI; edit `config.json` directly to change |
 
 ### Model Pricing Data
 
@@ -333,7 +337,7 @@ For customization, click the settings button (top-right corner) in the Web UI.
 
 | Issue | Solution |
 |-------|----------|
-| Browser shows "No Data" | First run will guide you through config; if skipped, click settings button (top-right) |
+| Browser shows "No Data" | First run will guide you through config; if skipped, open the Settings page (left sidebar) |
 | Log directory not found on Windows | Default path is `C:\Users\<username>\.claude`, ensure `projects/` subdirectory exists |
 | Port 4567 in use | Set env variable: `set LUMENCODE_PORT=8080 && lumencode serve` |
 | Git stats not found | v0.2.0+ auto-derives project path from session `cwd`. Manual override available in settings |

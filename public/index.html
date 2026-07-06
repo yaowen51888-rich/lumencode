@@ -967,8 +967,14 @@
             <section class="card cfg-card">
               <div class="cfg-card-body">
                 <div class="cfg-section-title">场景分类</div>
-                <p class="form-hint" style="margin-top:0;margin-bottom:12px;">根据工具调用关键词自动判断工作场景，点击编辑</p>
-                <div id="cfgKeywordsEditor"></div>
+                <p class="form-hint" style="margin-top:0;margin-bottom:12px;">根据工具调用关键词自动判断工作场景，默认关键词已覆盖常见场景，无需修改</p>
+                <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsFold()">
+                  <span>编辑关键词</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
+                  <div id="cfgKeywordsEditor"></div>
+                </div>
               </div>
             </section>
 

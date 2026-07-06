@@ -1662,10 +1662,11 @@ function syncAppearanceRadios() {
   if (sEl) sEl.checked = true;
 }
 
-// 三个折叠区开关
+// 四个折叠区开关
 window.toggleToolDirsSection = () => toggleCfgFold('cfgToolDirsSection', 'cfgToolDirsToggle');
 window.toggleStepAdvSection = () => toggleCfgFold('cfgStepAdvSection', 'cfgStepAdvToggle');
 window.toggleAttributionSection = () => toggleCfgFold('cfgAttributionSection', 'cfgAttributionToggle');
+window.toggleKeywordsFold = () => toggleCfgFold('cfgKeywordsSection', 'cfgKeywordsToggle');
 function toggleCfgFold(sectionId, btnId) {
   const section = document.getElementById(sectionId);
   const btn = document.getElementById(btnId);
