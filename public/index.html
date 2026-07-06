@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>LumenCode</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,13 +12,42 @@
   <script defer src="/vendor/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- ── lumenCode logo sprite：3 极光花瓣 + 中心核，<use> 复用避免重复内联 ── -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="lumencode-logo" viewBox="0 0 32 32">
+      <defs>
+        <linearGradient id="lumen-logo-g" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#7480e8"/>
+          <stop offset="50%" stop-color="#5ec2dc"/>
+          <stop offset="100%" stop-color="#5ec2a8"/>
+        </linearGradient>
+        <radialGradient id="lumen-logo-core" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="60%" stop-color="#5ec2dc" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#7480e8"/>
+        </radialGradient>
+      </defs>
+      <circle cx="16" cy="16" r="13.5" fill="none" stroke="url(#lumen-logo-g)" stroke-width="0.9" stroke-opacity="0.35"/>
+      <g fill="url(#lumen-logo-g)">
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z"/>
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(120 16 16)"/>
+        <path d="M 16 3.6 C 20.6 7.6, 20.9 12.6, 16 15.4 C 11.1 12.6, 11.4 7.6, 16 3.6 Z" transform="rotate(240 16 16)"/>
+      </g>
+      <circle cx="16" cy="16" r="3.2" fill="url(#lumen-logo-core)"/>
+    </symbol>
+  </svg>
+
+  <!-- ── BrandStroke：顶部 1px aurora 呼吸线 ── -->
+  <div class="brand-stroke" aria-hidden="true"></div>
+
   <div id="app" class="app-grid" :class="railCollapsed ? 'rail-collapsed' : ''" x-data="app()" x-cloak>
     <!-- ── Rail ── -->
     <aside class="rail" :class="railCollapsed ? 'collapsed' : ''">
       <template x-if="!railCollapsed">
         <div style="display:flex;flex-direction:column;flex:1;">
           <div class="rail-header">
-            <div style="display:flex;align-items:center;gap:8px;width:100%;">
+            <div class="rail-brand-row">
+              <svg class="logo-mark" width="30" height="30" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
               <div class="rail-title"><span class="text-aurora-shimmer" x-text="appName.slice(0, 5)"></span><span x-text="appName.slice(5)"></span></div>
               <a class="rail-gh-link" href="https://github.com/yaowen51888-rich/lumencode" target="_blank" rel="noopener" title="GitHub">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -27,28 +57,32 @@
           </div>
 
           <nav class="rail-nav">
-            <span class="rail-nav-label">DATA SOURCES</span>
+            <span class="rail-nav-label">NAVIGATION</span>
             <ul class="rail-nav-list">
               <li>
-                <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" :style="activeTool === 'all' ? 'border-left-color: ' + colors.rust : ''">
-                  <span class="source-mark-stacked"><span style="background: var(--claude)"></span><span style="background: var(--codex)"></span><span style="background: var(--opencode)"></span></span>
+                <button class="rail-nav-page" :class="view === 'ledger' ? 'active' : ''" @click="setView('ledger')">
                   <div class="rail-nav-meta">
-                    <div class="rail-nav-meta-top"><span class="rail-nav-name">全部工具</span><span class="rail-nav-tokens" x-text="toolTokens.all"></span></div>
-                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">ALL SOURCES</span><span class="rail-nav-sessions" x-text="toolSessions.all + ' sess'"></span></div>
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">使用主页</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">LEDGER</span></div>
                   </div>
                 </button>
               </li>
-              <template x-for="tool in availableTools" :key="tool.name">
-                <li>
-                  <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :style="activeTool === tool.name ? 'border-left-color: ' + (toolColors[tool.name] || colors.rust) : ''">
-                    <span class="source-mark" :style="'background: ' + (toolColors[tool.name] || colors.rust)"></span>
-                    <div class="rail-nav-meta">
-                      <div class="rail-nav-meta-top"><span class="rail-nav-name" x-text="tool.displayName"></span><span class="rail-nav-tokens" x-text="toolTokens[tool.name] || '-'"></span></div>
-                      <div class="rail-nav-meta-bottom"><span class="rail-nav-sub" x-text="toolSubNames[tool.name] || tool.name.toUpperCase()"></span><span class="rail-nav-sessions" x-text="(toolSessions[tool.name] || 0) + ' sess'"></span></div>
-                    </div>
-                  </button>
-                </li>
-              </template>
+              <li>
+                <button class="rail-nav-page" :class="view === 'report' ? 'active' : ''" @click="setView('report')">
+                  <div class="rail-nav-meta">
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">工作汇报</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">REPORT</span></div>
+                  </div>
+                </button>
+              </li>
+              <li>
+                <button class="rail-nav-page" :class="view === 'settings' ? 'active' : ''" @click="setView('settings')">
+                  <div class="rail-nav-meta">
+                    <div class="rail-nav-meta-top"><span class="rail-nav-name">设置</span></div>
+                    <div class="rail-nav-meta-bottom"><span class="rail-nav-sub">SETTINGS</span></div>
+                  </div>
+                </button>
+              </li>
             </ul>
           </nav>
 
@@ -93,20 +127,16 @@
           <button class="rail-btn-icon" @click="railCollapsed = false" title="展开">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
           </button>
+          <svg class="logo-mark" width="24" height="24" style="margin:4px 0 12px" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
           <button class="rail-btn-icon" @click="toggleTheme()" :title="theme === 'dark' ? '切换日间模式' : '切换夜间模式'">
             <svg x-show="theme !== 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg x-show="theme === 'dark'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </button>
           <div style="margin: 12px 0;"><span class="rail-dot"></span></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <button class="rail-nav-item" :class="activeTool === 'all' ? 'active' : ''" @click="setTool('all')" title="全部工具">
-              <span class="source-mark-stacked" style="width:10px;height:10px"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
-            </button>
-            <template x-for="tool in availableTools" :key="tool.name">
-              <button class="rail-nav-item" :class="activeTool === tool.name ? 'active' : ''" @click="setTool(tool.name)" :title="tool.displayName">
-                <span class="source-mark" :style="'background:' + (toolColors[tool.name] || colors.rust)"></span>
-              </button>
-            </template>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <button class="rail-nav-mini" :class="view === 'ledger' ? 'active' : ''" @click="setView('ledger')" title="使用主页 · LEDGER">LED</button>
+            <button class="rail-nav-mini" :class="view === 'report' ? 'active' : ''" @click="setView('report')" title="工作汇报 · REPORT">REP</button>
+            <button class="rail-nav-mini" :class="view === 'settings' ? 'active' : ''" @click="setView('settings')" title="设置 · SETTINGS">SET</button>
           </div>
           <div style="margin-top:auto;padding-bottom:16px;">
             <span class="rail-status-dot" style="width:6px;height:6px"></span>
@@ -119,7 +149,11 @@
     <main class="main-content">
       <!-- ===== LEDGER VIEW ===== -->
       <div x-show="view === 'ledger'" style="display:block;">
-        <div style="padding: 32px 48px;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <!-- 右上角背景水印 logo -->
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
           <!-- Header -->
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px;">
             <div>
@@ -133,9 +167,15 @@
               </h1>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-outline" @click="openSettings()">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                设置
+              <button class="source-trigger" @click="openSourcePalette()" title="切换数据源 (⌘K)">
+                <span class="source-mark-stacked" x-show="currentToolMeta.color === null"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+                <span class="source-mark" x-show="currentToolMeta.color !== null" :style="'background:' + currentToolMeta.color"></span>
+                <span class="source-trigger-meta">
+                  <span class="source-trigger-label">VIEWING · SOURCE</span>
+                  <span class="source-trigger-name" x-text="currentToolMeta.displayName"></span>
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45;margin-left:4px"><polyline points="6 9 12 15 18 9"/></svg>
+                <span class="source-trigger-kbd">⌘K</span>
               </button>
               <button class="btn btn-outline" @click="exportCSV()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button class="btn btn-outline" @click="exportJSON()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> JSON</button>
@@ -301,6 +341,44 @@
                   </div>
                 </template>
               </div>
+            </div>
+          </div>
+
+          <!-- Coverage —— 15 tools evidence，作为 §01 的上下文补充 -->
+          <div x-show="hasData" class="coverage-card" style="margin-top:56px;">
+            <div class="coverage-head">
+              <div class="coverage-head-left">
+                <span class="label">DATA SOURCES · COVERAGE</span>
+                <span class="coverage-head-summary">
+                  <span class="font-mono" x-text="coverageTools.length"></span> tools connected ·
+                  <span class="font-mono" x-text="coverageActiveCount"></span> active this period
+                </span>
+              </div>
+              <span class="label" style="opacity:0.4">one dashboard</span>
+            </div>
+            <div class="coverage-grid">
+              <template x-for="t in coverageTools" :key="t.name">
+                <button class="coverage-cell" :class="activeTool === t.name ? 'active' : ''" @click="setTool(t.name)" :title="t.displayName + ' · ' + t.sub">
+                  <div class="coverage-cell-head">
+                    <span class="source-mark" :style="'background:' + t.color"></span>
+                    <span class="coverage-cell-name" x-text="t.displayName"></span>
+                  </div>
+                  <template x-if="t.idle">
+                    <div class="coverage-cell-idle">
+                      <span class="coverage-idle-label">IDLE</span>
+                      <div class="coverage-bar-track"><div class="coverage-bar-fill" style="width:0%"></div></div>
+                    </div>
+                  </template>
+                  <template x-if="!t.idle">
+                    <div class="coverage-cell-active">
+                      <span class="font-mono coverage-tokens" x-text="t.tokens"></span>
+                      <div class="coverage-bar-track">
+                        <div class="coverage-bar-fill" :style="'width:' + t.usagePct + '%;background:' + t.color"></div>
+                      </div>
+                    </div>
+                  </template>
+                </button>
+              </template>
             </div>
           </div>
 
@@ -551,12 +629,26 @@
 
       <!-- ===== REPORT VIEW ===== -->
       <div x-show="view === 'report'" style="display:none;">
-        <div style="padding: 32px 48px;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <!-- 右上角背景水印 logo -->
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
           <!-- Toolbar -->
           <div class="report-toolbar">
             <button class="btn btn-outline" @click="showLedger()" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
               返回数据分析
+            </button>
+            <button class="source-trigger" @click="openSourcePalette()" title="切换数据源 (⌘K)">
+              <span class="source-mark-stacked" x-show="currentToolMeta.color === null"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+              <span class="source-mark" x-show="currentToolMeta.color !== null" :style="'background:' + currentToolMeta.color"></span>
+              <span class="source-trigger-meta">
+                <span class="source-trigger-label">VIEWING · SOURCE</span>
+                <span class="source-trigger-name" x-text="currentToolMeta.displayName"></span>
+              </span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45;margin-left:4px"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="source-trigger-kbd">⌘K</span>
             </button>
             <span style="flex:1;height:1px;background:var(--border)"></span>
             <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
@@ -733,6 +825,199 @@
           </div>
         </div>
       </div>
+
+      <!-- ===== SETTINGS VIEW ===== -->
+      <div x-show="view === 'settings'" style="display:none;">
+        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+          <div class="logo-watermark" aria-hidden="true">
+            <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
+          </div>
+          <div class="settings-page-head" style="position:relative;z-index:1;margin-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span class="label">CONFIGURATION · 配置</span>
+            </div>
+            <h1 style="font-size:36px;line-height:1.05;font-weight:500;letter-spacing:-0.02em;">设置</h1>
+          </div>
+
+          <div class="settings-grid" style="position:relative;z-index:1;">
+            <!-- 数据源 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">数据源</div>
+                <div class="form-group">
+                  <label class="form-label">Claude 日志目录</label>
+                  <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
+                  <p class="form-hint">Claude Code 会话日志路径，通常是 ~/.claude</p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">启用工具</label>
+                  <p class="form-hint" style="margin-top:0;margin-bottom:8px;">点选持久启用的工具（空=自动检测全部）</p>
+                  <div id="cfgEnabledToolsChips" class="cfg-chips"></div>
+                </div>
+                <button id="cfgToolDirsToggle" class="cfg-advanced-toggle" onclick="toggleToolDirsSection()">
+                  <span>其他工具目录</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgToolDirsSection" class="cfg-advanced-body" style="display:none;">
+                  <p class="form-hint" style="margin-bottom:12px;">留空则自动检测；手动指定可覆盖默认路径</p>
+                  <div id="cfgToolDirsEditor"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 代码仓库 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">代码仓库</div>
+                <div class="form-group">
+                  <label class="form-label">项目路径</label>
+                  <div id="cfgReposTags" class="path-tags"></div>
+                  <div class="path-add-box">
+                    <span class="path-add-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
+                    <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
+                  </div>
+                  <p class="form-hint">按回车或点击添加，路径可单独删除</p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
+                  <div id="cfgExcludeTags" class="path-tags"></div>
+                  <div class="path-add-box">
+                    <span class="path-add-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
+                    <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
+                  </div>
+                  <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- 计费与成本 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">计费与成本</div>
+                <div class="form-group">
+                  <label class="form-label">成本计算口径</label>
+                  <div class="cfg-radio-list" id="cfgCostModeGroup">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="auto">
+                      <span class="cfg-radio-text"><b>自动</b><span class="cfg-radio-desc">优先用日志自带成本，缺失则按定价估算</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="calculate">
+                      <span class="cfg-radio-text"><b>按定价重算</b><span class="cfg-radio-desc">忽略日志成本，统一按 token 定价计算</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgCostMode" value="display">
+                      <span class="cfg-radio-text"><b>仅展示</b><span class="cfg-radio-desc">只显示日志原值，不估算</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 归因与追踪 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">归因与追踪</div>
+                <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
+                  <div>
+                    <label class="form-label" style="margin-bottom:2px;">步骤追踪</label>
+                    <p class="form-hint" style="margin-top:0;">记录工具调用步骤用于行级归因</p>
+                  </div>
+                  <label class="cfg-switch">
+                    <input type="checkbox" id="cfgStepEnabled">
+                    <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                  </label>
+                </div>
+                <button id="cfgStepAdvToggle" class="cfg-advanced-toggle" onclick="toggleStepAdvSection()">
+                  <span>高级参数</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgStepAdvSection" class="cfg-advanced-body" style="display:none;">
+                  <div class="form-group">
+                    <label class="form-label">数据库路径</label>
+                    <input type="text" id="cfgStepDbPath" class="form-input" placeholder=".ccusage/steps.db">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">单文件大小上限（字节）</label>
+                    <input type="number" id="cfgStepMaxSize" class="form-input" placeholder="10485760" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">忽略目录（逗号分隔）</label>
+                    <input type="text" id="cfgStepIgnore" class="form-input" placeholder="node_modules/, .git/, dist/">
+                  </div>
+                </div>
+                <button id="cfgAttributionToggle" class="cfg-advanced-toggle" onclick="toggleAttributionSection()">
+                  <span>AI 归因参数（专家）</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgAttributionSection" class="cfg-advanced-body" style="display:none;">
+                  <p class="form-hint" style="margin-bottom:8px;">阈值/权重等专家参数请直接编辑 <code>config.json</code>。当前值：</p>
+                  <pre id="cfgAttributionPreview" class="cfg-json-preview"></pre>
+                </div>
+              </div>
+            </section>
+
+            <!-- 场景分类 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">场景分类</div>
+                <p class="form-hint" style="margin-top:0;margin-bottom:12px;">根据工具调用关键词自动判断工作场景，默认关键词已覆盖常见场景，无需修改</p>
+                <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsFold()">
+                  <span>编辑关键词</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
+                  <div id="cfgKeywordsEditor"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 外观偏好 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">外观偏好</div>
+                <div class="form-group">
+                  <label class="form-label">主题</label>
+                  <div class="cfg-radio-list">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgTheme" value="dark" @change="setTheme('dark')">
+                      <span class="cfg-radio-text"><b>夜间</b><span class="cfg-radio-desc">深色背景</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgTheme" value="light" @change="setTheme('light')">
+                      <span class="cfg-radio-text"><b>日间</b><span class="cfg-radio-desc">浅色背景</span></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">智能报告默认风格</label>
+                  <div class="cfg-radio-list">
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgReportStyle" value="default" @change="setReportStyle('default')">
+                      <span class="cfg-radio-text"><b>默认</b><span class="cfg-radio-desc">专业分析口径</span></span>
+                    </label>
+                    <label class="cfg-radio-row">
+                      <input type="radio" name="cfgReportStyle" value="workhorse" @change="setReportStyle('workhorse')">
+                      <span class="cfg-radio-text"><b>管理汇报</b><span class="cfg-radio-desc">面向负责人的投入产出视角</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="settings-save-bar" style="position:relative;z-index:1;">
+            <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
+            <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- ── Smart Report Style Modal ── -->
@@ -805,6 +1090,7 @@
             <div><span style="color:var(--claude)">Claude</span> .claude/settings.local.json</div>
             <div><span style="color:var(--codex)">Codex</span> .codex/config.toml</div>
             <div><span style="color:var(--opencode)">OpenCode</span> .opencode/plugins/lumencode-step-tracker.js</div>
+            <div><span style="color:var(--gemini)">Gemini</span> .gemini/settings.json</div>
           </div>
         </div>
         <div class="modal-footer" style="gap:8px;">
@@ -838,67 +1124,72 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Settings Modal ── -->
-  <div id="settingsModal" class="modal-overlay" style="display:none;">
-    <div class="modal-backdrop" onclick="closeSettings()"></div>
-    <div class="modal-panel" style="max-width:580px;">
-      <div class="modal-header">
-        <h3 style="font-size:15px;font-weight:500;">配置</h3>
-        <button class="rail-btn-icon" onclick="closeSettings()" style="color:var(--foreground);opacity:0.65;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <!-- 数据源 -->
-        <div class="cfg-section-title">数据源</div>
-        <div class="form-group">
-          <label class="form-label">Claude 日志目录</label>
-          <input type="text" id="cfgClaudeDir" class="form-input" placeholder="例如: C:/Users/xxx/.claude">
-          <p class="form-hint">Claude Code 会话日志的存放路径，通常是 ~/.claude</p>
-        </div>
-        <!-- 代码仓库 -->
-        <div class="cfg-section-title" style="margin-top:28px;">代码仓库</div>
-        <div class="form-group">
-          <label class="form-label">项目路径</label>
-          <div id="cfgReposTags" class="path-tags"></div>
-          <div class="path-add-box">
-            <span class="path-add-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </span>
-            <input type="text" id="cfgReposInput" class="path-add-input" placeholder="粘贴或输入绝对路径..." onkeydown="if(event.key==='Enter')addPathTag('cfgReposTags','cfgReposInput')">
-            <button class="path-add-btn" onclick="addPathTag('cfgReposTags','cfgReposInput')">添加</button>
-          </div>
-          <p class="form-hint">按回车或点击添加，路径可单独删除</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">排除项目 <span style="opacity:0.4;font-weight:400;">（可选）</span></label>
-          <div id="cfgExcludeTags" class="path-tags"></div>
-          <div class="path-add-box">
-            <span class="path-add-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </span>
-            <input type="text" id="cfgExcludeInput" class="path-add-input" placeholder="输入要排除的项目名..." onkeydown="if(event.key==='Enter')addPathTag('cfgExcludeTags','cfgExcludeInput')">
-            <button class="path-add-btn" onclick="addPathTag('cfgExcludeTags','cfgExcludeInput')">添加</button>
-          </div>
-          <p class="form-hint">按回车或点击添加，项目名称可单独删除</p>
-        </div>
-        <!-- 场景分类（默认折叠） -->
-        <div style="margin-top:28px;">
-          <button id="cfgKeywordsToggle" class="cfg-advanced-toggle" onclick="toggleKeywordsSection()">
-            <span>场景分类</span>
-            <svg id="cfgKeywordsArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    <!-- ── Source Selector Palette (⌘K) ── -->
+    <div class="source-palette-overlay" x-show="sourcePaletteOpen" x-cloak x-effect="sourcePaletteOpen && $nextTick(() => { if ($refs.sourcePaletteInput) $refs.sourcePaletteInput.focus(); })" @click="closeSourcePalette()" @keydown.escape.prevent="closeSourcePalette()">
+      <div class="source-palette" role="dialog" aria-label="切换数据源" @click.stop>
+        <div class="source-palette-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.45"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" x-model="sourceQuery" x-ref="sourcePaletteInput" placeholder="搜索数据源 / 品牌 / 分类…">
+          <span class="source-palette-esc">ESC</span>
+          <button class="source-palette-close" @click="closeSourcePalette()" title="关闭" aria-label="关闭">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <div id="cfgKeywordsSection" class="cfg-advanced-body" style="display:none;">
-            <p class="form-hint" style="margin-bottom:12px;">根据工具调用中的关键词自动判断工作场景，点击可编辑</p>
-            <div id="cfgKeywordsEditor"></div>
+        </div>
+        <div class="source-palette-body">
+          <!-- 全部工具（仅 all 模式或搜索时置顶） -->
+          <template x-if="activeTool === 'all' || sourceQuery">
+            <div class="source-palette-group">
+              <div class="source-palette-group-head"><span>数据源</span><span class="source-palette-group-tag">ALL</span></div>
+              <button class="source-palette-row" :class="activeTool === 'all' ? 'selected' : ''" @click="setSource('all')">
+                <span class="source-mark-stacked" style="width:10px;height:10px"><span style="background:var(--claude);flex:1"></span><span style="background:var(--codex);flex:1"></span><span style="background:var(--opencode);flex:1"></span></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name">全部工具</span>
+                  <span class="source-palette-row-sub">ALL SOURCES</span>
+                </div>
+                <span class="font-mono source-palette-row-tokens" x-text="toolTokens.all"></span>
+                <svg x-show="activeTool === 'all'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </template>
+
+          <div class="source-palette-group" x-show="filteredActiveTools.length > 0" x-cloak>
+            <div class="source-palette-group-head"><span>本周期活跃</span><span class="source-palette-group-tag" x-text="filteredActiveTools.length + ' SOURCES'"></span></div>
+            <template x-for="t in filteredActiveTools" :key="t.name">
+              <button class="source-palette-row" :class="activeTool === t.name ? 'selected' : ''" @click="setSource(t.name)">
+                <span class="source-mark" :style="'background:' + t.color"></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name" x-text="t.displayName"></span>
+                  <span class="source-palette-row-sub" x-text="t.sub"></span>
+                </div>
+                <div class="source-palette-row-usage">
+                  <span class="font-mono source-palette-row-tokens" x-text="t.tokens"></span>
+                  <div class="source-palette-row-bar"><div :style="'width:' + t.usagePct + '%;background:' + t.color"></div></div>
+                </div>
+                <svg x-show="activeTool === t.name" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </template>
+          </div>
+
+          <div class="source-palette-group" x-show="filteredIdleTools.length > 0" x-cloak>
+            <div class="source-palette-group-head"><span>其他已支持工具</span><span class="source-palette-group-tag" x-text="filteredIdleTools.length + ' IDLE'"></span></div>
+            <template x-for="t in filteredIdleTools" :key="t.name">
+              <button class="source-palette-row" :class="activeTool === t.name ? 'selected' : ''" @click="setSource(t.name)">
+                <span class="source-mark" :style="'background:' + t.color"></span>
+                <div class="source-palette-row-meta">
+                  <span class="source-palette-row-name" x-text="t.displayName"></span>
+                  <span class="source-palette-row-sub" x-text="t.sub"></span>
+                </div>
+                <span class="font-mono source-palette-row-idle">IDLE</span>
+                <svg x-show="activeTool === t.name" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.7"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </template>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
-        <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+        <div class="source-palette-foot">
+          <span class="font-mono" x-text="coverageTools.length + ' tools · one dashboard'"></span>
+          <span style="opacity:0.45">MIT · lumenCode</span>
+        </div>
       </div>
     </div>
   </div>
@@ -924,10 +1215,7 @@
   <div id="welcomePage" class="welcome-page" style="display:none;">
     <div class="welcome-card card">
       <div class="welcome-brand">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin-bottom:16px;">
-          <rect x="8" y="12" width="32" height="24" rx="6" stroke="var(--foreground)" stroke-width="2.5" fill="none"/>
-          <path d="M16 22L22 28L32 18" stroke="var(--foreground)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
+        <svg width="56" height="56" style="margin-bottom:16px;" role="img" aria-label="lumenCode"><use href="#lumencode-logo"/></svg>
         <h1 class="welcome-title">欢迎使用 LumenCode</h1>
         <p class="welcome-subtitle">AI 编码助手使用统计与代码产出分析工具</p>
       </div>

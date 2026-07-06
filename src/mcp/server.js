@@ -15,18 +15,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig } from '../../lib/config.js';
 import { detectClaudeDir, deriveProjectPaths } from '../../lib/parser.js';
-import { parseAllEnabledTools, registerParser, detectAvailableTools } from '../../lib/parsers/index.js';
-import { ClaudeParser } from '../../lib/parsers/claude.js';
-import { CodexParser } from '../../lib/parsers/codex.js';
-import { OpencodeParser } from '../../lib/parsers/opencode.js';
+import { parseAllEnabledTools, detectAvailableTools } from '../../lib/parsers/index.js';
+import { registerAllParsers } from '../../lib/parsers/register.js';
 import { preloadUnknownPricing } from '../../lib/pricing-loader.js';
 import { normalizeProjectPath } from '../../lib/aggregate.js';
 import { toolSchemas, toolHandlers } from './tools.js';
 
 // 注册解析器
-registerParser(ClaudeParser);
-registerParser(CodexParser);
-registerParser(OpencodeParser);
+registerAllParsers();
 
 // ── 数据缓存 ──
 

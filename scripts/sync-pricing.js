@@ -14,10 +14,8 @@
 import { readFileSync, writeFileSync, renameSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { registerParser, parseAllEnabledTools } from '../lib/parsers/index.js';
-import { ClaudeParser } from '../lib/parsers/claude.js';
-import { CodexParser } from '../lib/parsers/codex.js';
-import { OpencodeParser } from '../lib/parsers/opencode.js';
+import { parseAllEnabledTools } from '../lib/parsers/index.js';
+import { registerAllParsers } from '../lib/parsers/register.js';
 import { detectClaudeDir, deriveProjectPaths } from '../lib/parser.js';
 import { loadConfig } from '../lib/config.js';
 import { inferProvider, convertPortkeyPricing } from '../lib/pricing-loader.js';
@@ -53,9 +51,7 @@ function samePrice(a, b) {
 
 // 扫描日志，收集真实出现过的模型名（不按项目筛，避免漏掉其他项目里的新模型）
 async function collectUsedModels() {
-  registerParser(ClaudeParser);
-  registerParser(CodexParser);
-  registerParser(OpencodeParser);
+  registerAllParsers();
   let config = loadConfig();
   if (!config.claudeDir) config.claudeDir = detectClaudeDir();
   if ((!config.repos || config.repos.length === 0) && config.claudeDir) {

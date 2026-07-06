@@ -7,25 +7,21 @@ import { generateReport, generateWorkReport, generateBossReport } from './lib/re
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 import { identifyBillingBlocks } from './lib/blocks.js';
-import { registerParser, parseAllEnabledTools, detectAvailableTools } from './lib/parsers/index.js';
-import { ClaudeParser } from './lib/parsers/claude.js';
-import { CodexParser } from './lib/parsers/codex.js';
-import { OpencodeParser } from './lib/parsers/opencode.js';
+import { parseAllEnabledTools, detectAvailableTools } from './lib/parsers/index.js';
+import { registerAllParsers } from './lib/parsers/register.js';
 import { initPricing, preloadUnknownPricing } from './lib/pricing-loader.js';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
 import { enableHooks, disableHooks, getHooksStatus, HOOK_TOOLS, initStepTracking } from './lib/hooks-manager.js';
 
 // 注册所有解析器
-registerParser(ClaudeParser);
-registerParser(CodexParser);
-registerParser(OpencodeParser);
+registerAllParsers();
 
 const args = process.argv.slice(2);
 const command = args[0];
 
 function parseHookTools(values) {
-  const raw = values.length > 0 ? values : ['claude', 'codex', 'opencode'];
+  const raw = values.length > 0 ? values : ['claude', 'codex', 'opencode', 'gemini'];
   const tools = new Set();
   for (const value of raw) {
     for (const part of value.split(',')) {
@@ -34,6 +30,7 @@ function parseHookTools(values) {
       if (tool === 'claude' || tool === 'claude-code') tools.add(HOOK_TOOLS.CLAUDE);
       else if (tool === 'codex') tools.add(HOOK_TOOLS.CODEX);
       else if (tool === 'opencode' || tool === 'open-code') tools.add(HOOK_TOOLS.OPENCODE);
+      else if (tool === 'gemini' || tool === 'gemini-cli') tools.add(HOOK_TOOLS.GEMINI);
       else throw new Error(`不支持的 hooks 工具: ${part}`);
     }
   }
@@ -45,7 +42,8 @@ function detectedHookTools(status = getHooksStatus(process.cwd())) {
   if (status.claude.configExists || status.claude.enabled) tools.push(HOOK_TOOLS.CLAUDE);
   if (status.codex.configExists || status.codex.enabled) tools.push(HOOK_TOOLS.CODEX);
   if (status.opencode.configExists || status.opencode.enabled) tools.push(HOOK_TOOLS.OPENCODE);
-  return tools.length > 0 ? tools : [HOOK_TOOLS.CLAUDE, HOOK_TOOLS.CODEX, HOOK_TOOLS.OPENCODE];
+  if (status.gemini.configExists || status.gemini.enabled) tools.push(HOOK_TOOLS.GEMINI);
+  return tools.length > 0 ? tools : [HOOK_TOOLS.CLAUDE, HOOK_TOOLS.CODEX, HOOK_TOOLS.OPENCODE, HOOK_TOOLS.GEMINI];
 }
 
 function formatEnabled(value) {
@@ -58,6 +56,7 @@ function printHooksStatus(status) {
   console.log(`- Claude Code: ${status.claude.invalid ? '配置文件 JSON 无效' : formatEnabled(status.claude.enabled)}${claudeMode ? ` (${claudeMode})` : ''}`);
   console.log(`- Codex: ${formatEnabled(status.codex.enabled)}`);
   console.log(`- OpenCode: ${formatEnabled(status.opencode.enabled)}`);
+  console.log(`- Gemini CLI: ${status.gemini.invalid ? '配置文件 JSON 无效' : formatEnabled(status.gemini.enabled)}`);
   console.log(`- steps 数据库: ${status.stepsInitialized ? '已初始化' : '未初始化'}`);
   console.log(`- 项目: ${status.projectRoot}`);
 }
@@ -73,7 +72,9 @@ function printHookResults(results, action) {
 function hookToolName(tool) {
   if (tool === HOOK_TOOLS.CLAUDE) return 'Claude Code';
   if (tool === HOOK_TOOLS.CODEX) return 'Codex';
-  return 'OpenCode';
+  if (tool === HOOK_TOOLS.OPENCODE) return 'OpenCode';
+  if (tool === HOOK_TOOLS.GEMINI) return 'Gemini CLI';
+  return 'Unknown';
 }
 
 function createPromptSession() {

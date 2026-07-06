@@ -285,6 +285,8 @@ export async function handleSessionList(args, ctx) {
     totalTokens: s.totalTokens || 0,
     isHeavy: !!s.isHeavy,
     isWarn: !!s.isWarn,
+    parentSessionId: s.parentSessionId || '',
+    children: s.children || [],
     models: s.models,
     primaryTool: s.primaryTool,
     touchedFiles: (s.touchedFiles || []).slice(0, 10),

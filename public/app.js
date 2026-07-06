@@ -1,5 +1,5 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
-import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts } from './utils.js';
+import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, TOOL_META, toolDisplayName } from './utils.js';
 import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
@@ -14,6 +14,8 @@ function appState() {
     view: 'ledger',
     period: 'daily',
     activeTool: 'all',
+    sourcePaletteOpen: false,
+    sourceQuery: '',
     railCollapsed: localStorage.getItem(STORAGE.SIDEBAR_COLLAPSED) === 'true',
     theme: localStorage.getItem(STORAGE.THEME) || 'dark',
     currentDate: todayISO(),
@@ -76,8 +78,8 @@ function appState() {
       rust: 'var(--rust)', dest: 'var(--dest)', forest: 'var(--forest)',
       ochre: 'var(--ochre)', clay: 'var(--clay)',
     },
-    toolColors: { claude: 'var(--claude)', codex: 'var(--codex)', opencode: 'var(--opencode)' },
-    toolSubNames: { claude: 'ANTHROPIC', codex: 'OPENAI', opencode: 'OSS' },
+    toolColors: TOOL_COLORS,
+    toolSubNames: TOOL_SUB_NAMES,
 
     /* computed getters */
     get periodMeta() { return this.periods.find(p => p.id === this.period) || this.periods[0]; },
@@ -97,6 +99,47 @@ function appState() {
     },
     get generatedAt() { return fmtDate(new Date()) + ' · ' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) + ' UTC+8'; },
     get traceId() { return 'CT-' + this.currentDate.replace(/-/g, '-'); },
+
+    /* 15 工具 Coverage：active（本周期有 sessions）+ idle（已支持无数据），usagePct 按 sessions 占比 */
+    get coverageTools() {
+      const all = Object.keys(TOOL_META);
+      const maxSess = Math.max(1, ...all.map(n => this.toolSessions[n] || 0));
+      return all.map(name => {
+        const sess = this.toolSessions[name] || 0;
+        const idle = sess === 0;
+        return {
+          name,
+          displayName: toolDisplayName(name),
+          color: TOOL_COLORS[name] || 'var(--rust)',
+          sub: TOOL_SUB_NAMES[name] || name.toUpperCase(),
+          tokens: this.toolTokens[name] || '',
+          sessions: sess,
+          usagePct: sess ? Math.round((sess / maxSess) * 100) : 0,
+          idle,
+        };
+      });
+    },
+    get coverageActiveCount() { return this.coverageTools.filter(t => !t.idle).length; },
+    /* SourceSelector palette：当前选中工具 + 搜索过滤后的 active/idle 两组 */
+    get currentToolMeta() {
+      if (this.activeTool === 'all') {
+        return { name: 'all', displayName: '全部工具', sub: 'ALL SOURCES', color: null };
+      }
+      const t = this.coverageTools.find(x => x.name === this.activeTool);
+      return t || { name: this.activeTool, displayName: toolDisplayName(this.activeTool), sub: TOOL_SUB_NAMES[this.activeTool] || this.activeTool.toUpperCase(), color: TOOL_COLORS[this.activeTool] || 'var(--rust)' };
+    },
+    get filteredActiveTools() {
+      const q = this.sourceQuery.trim().toLowerCase();
+      const list = this.coverageTools.filter(t => !t.idle);
+      if (!q) return list;
+      return list.filter(t => t.displayName.toLowerCase().includes(q) || t.sub.toLowerCase().includes(q));
+    },
+    get filteredIdleTools() {
+      const q = this.sourceQuery.trim().toLowerCase();
+      const list = this.coverageTools.filter(t => t.idle);
+      if (!q) return list;
+      return list.filter(t => t.displayName.toLowerCase().includes(q) || t.sub.toLowerCase().includes(q));
+    },
 
     /* KPI defaults */
     kpiData: [
@@ -189,7 +232,8 @@ function appState() {
       return !this.hooksStatus.stepsInitialized ||
         !this.hooksStatus.claude?.enabled ||
         !this.hooksStatus.codex?.enabled ||
-        !this.hooksStatus.opencode?.enabled;
+        !this.hooksStatus.opencode?.enabled ||
+        !this.hooksStatus.gemini?.enabled;
     },
 
     get hooksStatusText() {
@@ -201,6 +245,7 @@ function appState() {
           `Claude ${this.hooksStatus.claude?.enabledCount || 0}/${total}`,
           `Codex ${this.hooksStatus.codex?.enabledCount || 0}/${total}`,
           `OpenCode ${this.hooksStatus.opencode?.enabledCount || 0}/${total}`,
+          `Gemini ${this.hooksStatus.gemini?.enabledCount || 0}/${total}`,
           `steps ${this.hooksStatus.stepsReadyCount || 0}/${total}`,
         ];
         return `设置内项目 hooks：${parts.join(' / ')}`;
@@ -209,6 +254,7 @@ function appState() {
         `Claude ${this.hooksStatus.claude?.enabled ? '已开启' : '未开启'}`,
         `Codex ${this.hooksStatus.codex?.enabled ? '已开启' : '未开启'}`,
         `OpenCode ${this.hooksStatus.opencode?.enabled ? '已开启' : '未开启'}`,
+        `Gemini ${this.hooksStatus.gemini?.enabled ? '已开启' : '未开启'}`,
         `steps ${this.hooksStatus.stepsInitialized ? '已初始化' : '未初始化'}`,
       ];
       return parts.join(' / ');
@@ -216,6 +262,7 @@ function appState() {
 
     /* ── init ── */
     async init() {
+      this.initSourcePaletteKb();
       this.loadStateFromHash();
       if (this.theme === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
@@ -242,13 +289,20 @@ function appState() {
     },
 
     /* ── theme ── */
-    toggleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem(STORAGE.THEME, this.theme);
-      if (this.theme === 'dark') document.documentElement.classList.add('dark');
+    toggleTheme() { this.setTheme(this.theme === 'dark' ? 'light' : 'dark'); },
+    setTheme(v) {
+      if (v !== 'dark' && v !== 'light') return;
+      if (this.theme === v) return;
+      this.theme = v;
+      localStorage.setItem(STORAGE.THEME, v);
+      if (v === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
       /* re-render charts to pick up new colors */
       if (this.lastReportData && this.view === 'ledger') this.renderCharts(this.lastReportData);
+    },
+    setReportStyle(v) {
+      this.smartReportStyle = v === 'workhorse' ? 'workhorse' : 'default';
+      localStorage.setItem(STORAGE.SMART_REPORT_STYLE, this.smartReportStyle);
     },
 
     /* ── tools ── */
@@ -359,6 +413,26 @@ function appState() {
       this.resetSmartReportDisplay();
       this.loadCurrentView();
       if (this.view === 'report') this.loadReportContent();
+    },
+
+    /* ── SourceSelector palette ── */
+    openSourcePalette() { this.sourceQuery = ''; this.sourcePaletteOpen = true; },
+    closeSourcePalette() { this.sourcePaletteOpen = false; },
+    setSource(name) { this.closeSourcePalette(); this.setTool(name); },
+    setView(v) {
+      if (v === 'settings') { this.view = 'settings'; this.saveStateToHash(); window.openSettings(); return; }
+      v === 'report' ? this.openReport() : this.showLedger();
+    },
+    initSourcePaletteKb() {
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          this.sourcePaletteOpen = !this.sourcePaletteOpen;
+          if (this.sourcePaletteOpen) this.sourceQuery = '';
+        } else if (e.key === 'Escape' && this.sourcePaletteOpen) {
+          this.sourcePaletteOpen = false;
+        }
+      });
     },
 
     setToolRankTab(tab) {
@@ -478,6 +552,8 @@ function appState() {
       this.view = state.view;
       this.period = state.period;
       if (state.currentDate) this.currentDate = state.currentDate;
+      // 直链/刷新进入 settings 时，表单元素已随 x-show 渲染在 DOM，立即填充
+      if (state.view === 'settings') window.openSettings?.();
     },
 
     saveStateToHash() {
@@ -750,8 +826,8 @@ function appState() {
 
       /* Source breakdown from real toolBreakdown data */
       const toolTokMap = {};
-      const toolColors = { claude: 'var(--claude)', codex: 'var(--codex)', opencode: 'var(--opencode)' };
-      const toolDisplayNames = { claude: 'Claude Code', codex: 'OpenAI Codex', opencode: 'OpenCode' };
+      const toolColors = this.toolColors;
+      const toolDisplayNames = (n) => toolDisplayName(n);
       if (usageStats.toolBreakdown) {
         for (const [k, v] of Object.entries(usageStats.toolBreakdown)) {
           toolTokMap[k] = (v.inputTokens || 0) + (v.outputTokens || 0);
@@ -765,7 +841,7 @@ function appState() {
         const isLast = i === sorted.length - 1;
         const pct = isLast ? Math.max(0, 100 - pctSum) : Math.round((tok / totalToolTok) * 100);
         pctSum += pct;
-        return { name: toolDisplayNames[name] || name, pct, tokens: fmtShort(tok), color: toolColors[name] || 'var(--foreground)' };
+        return { name: toolDisplayNames(name) || name, pct, tokens: fmtShort(tok), color: toolColors[name] || 'var(--foreground)' };
       });
 
       /* Line-level blame evidence */
@@ -1408,15 +1484,6 @@ window.closeSettings = () => {
   if (modal) modal.style.display = 'none';
 };
 
-/* ── Advanced Section Toggle ── */
-window.toggleKeywordsSection = () => {
-  const section = document.getElementById('cfgKeywordsSection');
-  const btn = document.getElementById('cfgKeywordsToggle');
-  if (!section || !btn) return;
-  const isHidden = section.style.display === 'none';
-  section.style.display = isHidden ? 'block' : 'none';
-  btn.classList.toggle('expanded', isHidden);
-};
 
 /* ── Path Tag Editor ── */
 const FOLDER_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
@@ -1470,11 +1537,149 @@ function getPathTags(containerId) {
   return Array.from(container.querySelectorAll('.path-tag-text')).map(el => el.textContent);
 }
 
+/* ── Settings: tool dirs / enabled chips / costMode / stepTracking ── */
+// 工具目录键 + 展示名 + 默认路径占位（与 lib/parsers/* 的 defaultDir 对齐）
+const TOOL_DIR_DEFS = [
+  { key: 'codexDir',    name: 'codex',    ph: '~/.codex' },
+  { key: 'opencodeDir', name: 'opencode', ph: '~/.local/share/opencode' },
+  { key: 'geminiDir',   name: 'gemini',   ph: '~/.gemini' },
+  { key: 'qwenDir',     name: 'qwen',     ph: '~/.qwen' },
+  { key: 'gooseDir',    name: 'goose',    ph: '~/.config/goose' },
+  { key: 'ampDir',      name: 'amp',      ph: '~/.amp' },
+  { key: 'hermesDir',   name: 'hermes',   ph: '~/.hermes' },
+  { key: 'openclawDir', name: 'openclaw', ph: '~/.openclaw' },
+  { key: 'kimiDir',     name: 'kimi',     ph: '~/.kimi' },
+  { key: 'codebuffDir', name: 'codebuff', ph: '~/.codebuff' },
+  { key: 'droidDir',    name: 'droid',    ph: '~/.droid' },
+  { key: 'piDir',       name: 'pi',       ph: '~/.pi' },
+  { key: 'kiloDir',     name: 'kilo',     ph: '~/.kilo' },
+  { key: 'copilotDir',  name: 'copilot',  ph: '~/.copilot/otel' },
+];
+
+function renderToolDirsEditor(cfg) {
+  const container = document.getElementById('cfgToolDirsEditor');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const def of TOOL_DIR_DEFS) {
+    // meta 来自静态 TOOL_META（受信常量，非用户输入），innerHTML 无注入风险
+    const meta = TOOL_META[def.name] || { displayName: def.name, color: 'var(--muted-foreground)' };
+    const row = document.createElement('div');
+    row.className = 'cfg-dir-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'cfg-dir-label';
+    lbl.innerHTML = `<span class="cfg-tool-dot" style="background:${meta.color}"></span>${meta.displayName}`;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'form-input cfg-dir-input';
+    inp.dataset.key = def.key;
+    inp.placeholder = def.ph;
+    inp.value = cfg[def.key] || '';
+    row.appendChild(lbl);
+    row.appendChild(inp);
+    container.appendChild(row);
+  }
+}
+
+function collectToolDirs() {
+  const out = {};
+  for (const inp of document.querySelectorAll('#cfgToolDirsEditor .cfg-dir-input')) {
+    out[inp.dataset.key] = inp.value.trim();
+  }
+  return out;
+}
+
+function renderEnabledToolsChips(enabledTools) {
+  const container = document.getElementById('cfgEnabledToolsChips');
+  if (!container) return;
+  container.innerHTML = '';
+  const enabled = Array.isArray(enabledTools) ? enabledTools : [];
+  // 空数组语义=自动检测全部，UI 上表现为全不选（保存时空数组维持自动）
+  for (const def of TOOL_DIR_DEFS) {
+    // meta 来自静态 TOOL_META（受信常量），innerHTML 无注入风险
+    const meta = TOOL_META[def.name] || { displayName: def.name, color: 'var(--muted-foreground)' };
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'cfg-toggle-chip' + (enabled.includes(def.name) ? ' active' : '');
+    chip.dataset.tool = def.name;
+    chip.innerHTML = `<span class="cfg-tool-dot" style="background:${meta.color}"></span>${meta.displayName}`;
+    chip.onclick = () => chip.classList.toggle('active');
+    container.appendChild(chip);
+  }
+}
+
+function collectEnabledTools() {
+  return Array.from(document.querySelectorAll('#cfgEnabledToolsChips .cfg-toggle-chip.active'))
+    .map(el => el.dataset.tool);
+}
+
+function setCostModeRadio(value) {
+  const v = ['auto', 'calculate', 'display'].includes(value) ? value : 'auto';
+  const el = document.querySelector(`input[name="cfgCostMode"][value="${v}"]`);
+  if (el) el.checked = true;
+}
+function getCostModeRadio() {
+  const el = document.querySelector('input[name="cfgCostMode"]:checked');
+  return el ? el.value : 'auto';
+}
+
+function fillStepTracking(st) {
+  const enabled = document.getElementById('cfgStepEnabled');
+  if (enabled) enabled.checked = st && st.enabled !== false;
+  const db = document.getElementById('cfgStepDbPath');
+  if (db) db.value = st?.dbPath || '';
+  const max = document.getElementById('cfgStepMaxSize');
+  if (max) max.value = st?.maxFileSize || '';
+  const ign = document.getElementById('cfgStepIgnore');
+  if (ign) ign.value = Array.isArray(st?.ignorePatterns) ? st.ignorePatterns.join(', ') : '';
+}
+
+function collectStepTracking() {
+  const ign = (document.getElementById('cfgStepIgnore')?.value || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  return {
+    enabled: document.getElementById('cfgStepEnabled')?.checked !== false,
+    dbPath: document.getElementById('cfgStepDbPath')?.value.trim() || '.ccusage/steps.db',
+    maxFileSize: Number(document.getElementById('cfgStepMaxSize')?.value) || 10485760,
+    ignorePatterns: ign,
+  };
+}
+
+function showAttributionPreview(att) {
+  const pre = document.getElementById('cfgAttributionPreview');
+  if (!pre) return;
+  try { pre.textContent = JSON.stringify(att, null, 2); }
+  catch { pre.textContent = '(无法序列化)'; }
+}
+
+function syncAppearanceRadios() {
+  const appEl = document.querySelector('[x-data]');
+  const app = appEl?._x_dataStack?.[0];
+  const theme = app?.theme || 'dark';
+  const style = app?.smartReportStyle || 'default';
+  const tEl = document.querySelector(`input[name="cfgTheme"][value="${theme}"]`);
+  if (tEl) tEl.checked = true;
+  const sEl = document.querySelector(`input[name="cfgReportStyle"][value="${style}"]`);
+  if (sEl) sEl.checked = true;
+}
+
+// 四个折叠区开关
+window.toggleToolDirsSection = () => toggleCfgFold('cfgToolDirsSection', 'cfgToolDirsToggle');
+window.toggleStepAdvSection = () => toggleCfgFold('cfgStepAdvSection', 'cfgStepAdvToggle');
+window.toggleAttributionSection = () => toggleCfgFold('cfgAttributionSection', 'cfgAttributionToggle');
+window.toggleKeywordsFold = () => toggleCfgFold('cfgKeywordsSection', 'cfgKeywordsToggle');
+function toggleCfgFold(sectionId, btnId) {
+  const section = document.getElementById(sectionId);
+  const btn = document.getElementById(btnId);
+  if (!section || !btn) return;
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  btn.classList.toggle('expanded', isHidden);
+}
+
 window.openSettings = async () => {
-  const modal = document.getElementById('settingsModal');
+  // 设置已迁移为独立页面（侧栏 nav），此处仅负责把配置加载进表单
   const hint = document.getElementById('cfgSaveHint');
   if (hint) { hint.textContent = ''; hint.className = ''; }
-  if (modal) modal.style.display = 'flex';
   try {
     const cfg = await fetchConfig();
     const dirEl = document.getElementById('cfgClaudeDir');
@@ -1482,6 +1687,12 @@ window.openSettings = async () => {
     renderPathTags('cfgReposTags', cfg.repos || []);
     renderPathTags('cfgExcludeTags', cfg.excludeProjects || []);
     renderKeywordsEditor(cfg.scenarioKeywords || {});
+    renderToolDirsEditor(cfg);
+    renderEnabledToolsChips(cfg.enabledTools || []);
+    setCostModeRadio(cfg.costMode);
+    fillStepTracking(cfg.stepTracking);
+    showAttributionPreview(cfg.aiAttribution);
+    syncAppearanceRadios();
   } catch (err) {
     showToast('加载配置失败: ' + err.message);
   }
@@ -1509,6 +1720,10 @@ window.saveSettings = async () => {
     repos: getPathTags('cfgReposTags'),
     excludeProjects: getPathTags('cfgExcludeTags'),
     scenarioKeywords,
+    ...collectToolDirs(),
+    enabledTools: collectEnabledTools(),
+    costMode: getCostModeRadio(),
+    stepTracking: collectStepTracking(),
   };
   try {
     await saveConfig(payload);
