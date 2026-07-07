@@ -11,11 +11,15 @@
 </p>
 
 <p align="center">
-  <b>AI 编码助手使用分析</b> —— 精确到每一行代码的 AI 归因 · 十五工具统一 · 智能周报生成
+  <b>AI 编码助手使用分析</b> —— 一行命令，看清 AI 到底帮你写了多少代码
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="#命令用法">命令</a> · <a href="#常见问题">FAQ</a> · <a href="#更新日志">更新日志</a>
+  15 工具统一 · 行级 AI 归因 · 600+ 模型成本估算 · 一键可发布周报
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="#命令用法">命令</a> · <a href="#mcp-server">MCP</a> · <a href="#常见问题">FAQ</a> · <a href="#最近更新">更新日志</a>
 </p>
 <div align="center">
   <img src="doc/数据分析页面.png" alt="LumenCode Dashboard" width="800">
@@ -26,48 +30,49 @@
 
 ## 它解决什么问题？
 
-> 「AI 帮你写了多少代码？」「订阅这些工具值不值？」—— 与其手算，不如一条命令搞定。
+> 「AI 帮你写了多少代码？」「订阅这些工具值不值？」—— 与其手算，一条命令搞定。
 
-| 场景 | 用 lumencode 解决 |
+| 场景 | 用 LumenCode 解决 |
 |------|----------------------|
-| **精确量化 AI 贡献** | 不是模糊的"大概写了不少"，而是精确到「4,200 行代码中 3,180 行由 AI 辅助完成」。**每一行都有数可查。** |
-| **证明 AI ROI** | 周报自动生成：「本周 AI 辅助 12 个提交，节省约 8 小时编码时间，Token 花费 $18.5」。**老板一看就懂。** |
-| **写周报/月报** | 选周期 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
-| **按项目汇报** | 多项目并行时，选择单个项目生成独立汇报，方便向不同项目负责人对齐 |
-| **对齐 Sprint 周期** | 支持自定义起止日期，不再被日/周/月固定周期限制 |
-| **追踪 AI 成本** | 600+ 模型内置定价（含 GLM、Kimi、Qwen、DeepSeek），自动算出等效 API 花销 |
+| **精确量化 AI 贡献** | 不是模糊的"大概写了不少"，而是「4,200 行中 3,180 行由 AI 辅助完成」。**每一行都有数可查。** |
+| **证明 AI ROI** | 周报自动生成：「本周 AI 辅助 12 个提交，节省约 8 小时，花费 $18.5」。**老板一看就懂。** |
+| **3 秒写周报** | 选周期 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
+| **按项目汇报** | 多项目并行时，选择单个项目生成独立汇报，向不同负责人对齐 |
+| **对齐 Sprint 周期** | 自定义任意起止日期，不再被日/周/月固定周期限制 |
+| **追踪 AI 成本** | 600+ 模型内置定价（含 GLM/Kimi/Qwen/DeepSeek），自动算出等效 API 花销 |
 
 ---
 
 ## 环境要求
 
 - Node.js >= 18.0.0
-- 已安装支持的 AI 编码工具中至少一个，并产生过会话日志（Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI）
+- 已安装[支持的工具](#支持的工具与数据目录)中至少一个，并产生过会话日志
 
 ---
 
 ## 支持的工具与数据目录
 
-| 工具 | 默认日志目录 | 环境变量（可选） | 状态 |
-|------|-------------|-----------------|------|
-| **Claude Code** | `~/.claude` | `CLAUDE_DIR` | ✅ 完整支持 |
-| **OpenAI Codex** | `~/.codex` | `CODEX_DIR` | ✅ 完整支持 |
-| **OpenCode** | `~/.opencode` | `OPENCODE_DIR` | ✅ 完整支持 |
-| **Gemini CLI** | `~/.gemini` | `GEMINI_DIR` | ✅ 完整支持 |
-| **Qwen Code** | `~/.qwen` | `QWEN_DIR` | ✅ 完整支持 |
-| **Goose** | `~/.local/share/goose` | `GOOSE_DIR` | ✅ 完整支持 |
-| **Amp** | `~/.local/share/amp` | `AMP_DIR` | ✅ 完整支持 |
-| **Hermes Agent** | `~/.hermes` | `HERMES_DIR` | ✅ 完整支持 |
-| **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` | ✅ 完整支持 |
-| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ✅ 完整支持 |
-| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ✅ 完整支持 |
-| **Droid** | `~/.factory/sessions` | `DROID_DIR` | ✅ 完整支持 |
-| **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` | ✅ 完整支持 |
-| **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` | ✅ 完整支持 |
-| **GitHub Copilot CLI** | `~/.copilot/otel` | `COPILOT_OTEL_FILE_EXPORTER_PATH` / `COPILOT_DATA_DIR` | ✅ 完整支持 |
+15 款 AI 编码工具，全部 ✅ 完整支持（会话级 / Token 级 / 模型级统计）。
 
-> **说明**：
-> - ✅ 完整支持：支持会话级、Token 级、模型级统计
+| 工具 | 默认日志目录 | 环境变量（可选） |
+|------|-------------|-----------------|
+| **Claude Code** | `~/.claude` | `CLAUDE_DIR` |
+| **OpenAI Codex** | `~/.codex` | `CODEX_DIR` |
+| **OpenCode** | `~/.opencode` | `OPENCODE_DIR` |
+| **Gemini CLI** | `~/.gemini` | `GEMINI_DIR` |
+| **Qwen Code** | `~/.qwen` | `QWEN_DIR` |
+| **Goose** | `~/.local/share/goose` | `GOOSE_DIR` |
+| **Amp** | `~/.local/share/amp` | `AMP_DIR` |
+| **Hermes Agent** | `~/.hermes` | `HERMES_DIR` |
+| **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` |
+| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` |
+| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` |
+| **Droid** | `~/.factory/sessions` | `DROID_DIR` |
+| **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` |
+| **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` |
+| **GitHub Copilot CLI** | `~/.copilot/otel` | `COPILOT_OTEL_FILE_EXPORTER_PATH` / `COPILOT_DATA_DIR` |
+
+> 未列出环境变量时，按默认目录自动检测；多账号可用逗号分隔多个目录。
 
 ---
 
@@ -78,10 +83,7 @@
 npm install -g lumencode@latest
 lumencode serve            # 启动 Web 服务，自动打开浏览器
 
-# 如果之前装过旧版本，先更新：
-npm update -g lumencode
-
-# 验证版本（确保 ≥ 1.3.9）
+# 验证版本（确保 ≥ 1.4.0）
 lumencode --version
 
 # 或零安装直接使用
@@ -90,25 +92,26 @@ npx lumencode@latest serve
 
 > ⚠️ **遇到旧版本？** 运行 `npm cache clean --force && npm install -g lumencode@latest` 强制刷新缓存后重装。
 
-**零配置启动** —— 自动检测 `~/.claude`、`~/.codex`、`~/.opencode`、`~/.gemini`、`~/.qwen`、`~/.local/share/goose`、`~/.local/share/amp`、`~/.hermes`、`~/.openclaw`、`~/.kimi`、`~/.config/manicode`、`~/.factory/sessions`、`~/.pi/agent/sessions`、`~/.local/share/kilo`、`~/.copilot/otel` 日志目录，从会话里推导项目路径。
+**零配置开箱即用** —— 首次运行自动检测上表全部 15 款工具的日志目录，从会话元数据推导项目路径，无需手动配置。
 
 ---
 
 ## 产品亮点
 
+> 核心：**行级归因 × 十五工具统一 × 精确成本 × 一键周报**——把 AI 编码的投入产出算到每一行、每一分钱。
+
 | 亮点 | 说明 |
 |------|------|
-| 🎯 **行级 AI 归因** | 通过 hook 步骤追踪，精确识别每一行代码的 AI 参与度。不是"这个提交 AI 帮忙了"，而是"这行代码是 AI 写的" |
-| 🌐 **十五工具统一** | Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI 数据全自动汇总，左侧标签一键切换 |
-| 📝 **自然语言工作汇报** | 详报/简报一键生成，支持标准 Markdown / 飞书 / 钉钉三种格式，每个板块附诊断解读 |
-| 🤖 **智能报告生成** | 连接本地 OpenCode CLI，对受限统计上下文和原始工作汇报做 AI 分析，支持默认风格与面向领导汇报的「牛马」风格 |
-| 📂 **按项目独立汇报** | 右侧面板选择项目，生成该项目的独立工作汇报（commits + AI 交互量 + 热点文件） |
-| 📅 **自定义时间范围** | 除日/周/月外，支持选择任意起止日期，方便对齐 Sprint 周期 |
-| 💰 **精确费用估算** | 600+ 模型本地定价（含 GLM/Kimi/Qwen/DeepSeek）+ Portkey API 兜底，未知模型不计费而非乱算 |
-| 📦 **零配置开箱即用** | 首次运行自动检测工具目录、推导项目路径 |
-| 🔍 **数据钻取** | 点击任意图表下钻明细，从汇总数据到具体会话/提交一气呵成 |
-| 📈 **趋势与洞察** | 周报/月报附峰值日识别、连续活跃分析、工具使用五类分布（编辑/阅读/执行/规划/研究） |
-| 🌙 **亮/暗主题** | 亮色/暗色主题一键切换，全图表自适配 |
+| 🎯 **行级 AI 归因** | 不是"AI 帮了这个提交"，而是"这行代码是 AI 写的"——hook 步骤追踪，精确到每一行 |
+| 🌐 **十五工具统一** | Claude Code / Codex / Copilot 等 15 款工具数据全自动汇总，一键切换、跨工具对比 |
+| 📝 **一键可发布周报** | 详报 / 简报秒生成，Markdown / 飞书 / 钉钉三格式，复制即粘贴，每板块附洞察解读 |
+| 🤖 **AI 智能报告** | 调用本地 Claude Code / Codex / OpenCode 之一，基于统计与工作汇报生成含亮点、洞察、风险、建议的 AI 分析报告，支持默认与面向领导的「牛马」风格 |
+| 💰 **精确成本估算** | 600+ 模型定价库（含 GLM/Kimi/Qwen/DeepSeek）+ Portkey API 兜底，未知模型按 $0 计费——只报真实，不乱猜 |
+| 📂 **按项目独立汇报** | 多项目并行，各自生成独立汇报（commits + AI 交互量 + 热点文件），向不同负责人对齐 |
+| 📅 **Sprint 周期对齐** | 日 / 周 / 月之外，自定义任意起止日期，贴合迭代节奏 |
+| 🔍 **下钻与趋势洞察** | 图表点击下钻到会话 / 提交；峰值日、连续活跃、工具使用五类分布一目了然 |
+| 📦 **零配置开箱即用** | 首次运行自动检测工具目录、推导项目路径，装完即用 |
+| 🌙 **亮 / 暗主题** | 暗色默认，全图表自适配 |
 
 ---
 
@@ -155,9 +158,9 @@ npx lumencode@latest serve
 
 - **详报** —— 完整数据 + 洞察解读 + 板块编号，适合周报、月报
 - **简报** —— 3-5 句话核心摘要，适合日报或群消息
-- **智能报告** —— 页面内调用本地 OpenCode CLI 生成 AI 分析报告，补充数据摘要、工作亮点分析、关键洞察、风险与建议
-- **风格选择** —— 生成前可选择默认风格，或「牛马」风格输出更适合向领导汇报的表达倾向
-- **持久化与更新提醒** —— 智能报告会按周期、项目、报告层级和风格保存；统计数据变化后提示重新生成
+- **智能报告** —— 页面内调用本地 Claude Code / Codex / OpenCode 之一生成 AI 分析，含数据摘要、工作亮点、关键洞察、风险与建议
+- **风格选择** —— 生成前可选默认风格，或「牛马」风格输出更适合向领导汇报的表达倾向
+- **持久化与更新提醒** —— 智能报告按周期、项目、报告层级和风格保存；统计数据变化后提示重新生成
 - **多平台格式** —— 标准 Markdown / 飞书 / 钉钉，一键切换
 - **按项目生成** —— 右侧面板选择项目，生成该项目的独立汇报
 
@@ -295,27 +298,11 @@ Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自�
 
 ## 配置
 
-v0.4.0+ 起支持 15 种 AI 编码工具（Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI），**首次运行自动检测**已安装工具的日志目录与项目路径。
-
-如需自定义，在左侧侧栏打开「设置」页面在线修改。设置按卡片分区：数据源、代码仓库、计费与成本、归因与追踪、场景分类、外观偏好。
+**首次运行自动检测**已安装工具的日志目录与项目路径。如需自定义，在左侧侧栏打开「设置」页面在线修改。设置按卡片分区：数据源、代码仓库、计费与成本、归因与追踪、场景分类、外观偏好。
 
 | 配置项 | 说明 |
 |--------|------|
-| Claude 日志目录 | Claude Code 数据目录（含 `projects/` 子目录），默认 `~/.claude` |
-| Codex 日志目录 | Codex 数据目录（含 `sessions/` 子目录），默认自动检测 |
-| OpenCode 日志目录 | OpenCode 数据目录，默认自动检测 |
-| Gemini 日志目录 | Gemini CLI 数据目录，默认自动检测 |
-| Qwen 日志目录 | Qwen Code 数据目录，默认自动检测 |
-| Goose 日志目录 | Goose 数据目录，默认自动检测 |
-| Amp 日志目录 | Amp 数据目录，默认自动检测 |
-| Hermes 日志目录 | Hermes Agent 数据目录，默认自动检测 |
-| OpenClaw 日志目录 | OpenClaw 数据目录，默认自动检测 |
-| Kimi 日志目录 | Kimi CLI 数据目录，默认自动检测 |
-| Codebuff 日志目录 | Codebuff 数据目录，默认自动检测 |
-| Droid 日志目录 | Droid 数据目录，默认自动检测 |
-| Pi Agent 日志目录 | Pi Agent 数据目录，默认自动检测 |
-| Kilo 日志目录 | Kilo 数据目录，默认自动检测 |
-| Copilot 日志目录 | GitHub Copilot CLI 数据目录，默认自动检测 |
+| 各工具日志目录 | 15 款工具的数据目录，默认按上表自动检测，可在设置页或 `config.json` 覆盖 |
 | 启用工具 | 指定启用哪些工具，默认全部已检测到的工具 |
 | 本地项目路径 | 关联的 Git 仓库路径，用于代码提交统计与 AI 贡献度归因 |
 | 排除项目 | 不希望统计的项目名称 |
@@ -326,7 +313,7 @@ v0.4.0+ 起支持 15 种 AI 编码工具（Claude Code / Codex / OpenCode / Gemi
 
 ### 行级 AI 归因（可选增强）
 
-行级归因通过 AI 编程工具 hook 记录文件编辑步骤，用于把 AI 贡献从提交级/文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：没有初始化数据库时 hook 会静默跳过，不影响正常使用。
+行级归因通过 AI 编程工具 hook 记录文件编辑步骤，把 AI 贡献从提交级 / 文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：未初始化数据库时 hook 会静默跳过，不影响正常使用。
 
 ```bash
 # 在需要统计的 Git 项目根目录执行
@@ -334,20 +321,20 @@ node index.js hooks status
 node index.js hooks enable       # 交互式选择工具、初始化 steps 并自动备份配置
 ```
 
-开启时只会修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不会修改全局配置或其它项目。关闭可执行：
+开启时只修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不影响全局配置或其它项目。关闭执行：
 
 ```bash
 node index.js hooks disable
 ```
 
-数据写入当前项目的 `.ccusage/steps.db`。该数据库包含用于归因的文件快照，已在本项目 `.gitignore` 中默认忽略；如果在其它仓库启用，也建议忽略 `.ccusage/`。
+数据写入当前项目的 `.ccusage/steps.db`（含归因用的文件快照），已在本项目 `.gitignore` 中默认忽略；在其它仓库启用时也建议忽略 `.ccusage/`。
 
 ### 模型定价数据
 
-- **本地表**：内置 590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价
-- **别名映射**：内置 28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
-- **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，成功结果缓存到 `data/pricing-cache.json`
-- **失败降级**：API 不可用时该模型按 0 计费，不影响其他模型与报告生成
+- **本地表**：590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价
+- **别名映射**：28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
+- **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，结果缓存到 `data/pricing-cache.json`，本地 + 兜底覆盖 600+ 模型
+- **失败降级**：API 不可用时该模型按 $0 计费，不影响其他模型与报告生成
 
 ---
 
@@ -358,8 +345,9 @@ node index.js hooks disable
 | 浏览器显示「暂无数据」 | 首次启动会引导配置；如已跳过，在左侧侧栏打开「设置」页面 |
 | Windows 下日志目录不存在 | 默认路径为 `C:\Users\<用户名>\.claude`，确认该目录下有 `projects/` 子目录 |
 | 端口 4567 被占用 | 设置环境变量：`set LUMENCODE_PORT=8080 && lumencode serve` |
-| 找不到 Git 统计数据 | v0.2.0+ 已自动从会话 `cwd` 推导项目路径，仍未识别时可在设置中手动指定 |
+| 找不到 Git 统计数据 | 已自动从会话 `cwd` 推导项目路径，仍未识别时可在设置中手动指定 |
 | 费用显示 $0 | 该模型未在定价表中，可临时联网让 API 兜底，或在 `data/pricing.json` 的 `overrides` 中添加 `aliasOf` 别名 |
+| 智能报告不可用 | 智能报告需本地 Claude Code / Codex / OpenCode 之一可调用，请确认对应命令在终端 PATH 中 |
 
 ---
 

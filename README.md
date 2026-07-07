@@ -11,11 +11,15 @@
 </p>
 
 <p align="center">
-  <b>AI Coding Assistant Analytics</b> — Line-Level AI Attribution · Fifteen-Tool Unified · Smart Weekly Reports
+  <b>AI Coding Assistant Analytics</b> — One command to see exactly how much code AI wrote for you
 </p>
 
 <p align="center">
-  <a href="README.zh-CN.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#faq">FAQ</a> · <a href="#changelog">Changelog</a>
+  15-Tool Unified · Line-Level AI Attribution · 600+ Model Cost Estimation · One-Click Weekly Report
+</p>
+
+<p align="center">
+  <a href="README.zh-CN.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#mcp-server">MCP</a> · <a href="#faq">FAQ</a> · <a href="#whats-new">Changelog</a>
 </p>
 <div align="center">
   <img src="doc/数据分析页面.png" alt="LumenCode Dashboard" width="800">
@@ -28,12 +32,12 @@
 
 > "How much code did AI write?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
 
-| Scenario | Solved by lumencode |
+| Scenario | Solved by LumenCode |
 |----------|--------------------------|
 | **Precise AI Contribution** | Not vague "AI helped a lot" — "3,180 out of 4,200 lines were AI-assisted." **Every line accounted for.** |
 | **Proving AI ROI** | Auto-generated weekly report: "This week AI assisted 12 commits, saved ~8 hours, cost $18.50." **Management gets it instantly.** |
-| **Writing weekly reports** | Pick period → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
-| **Per-project reporting** | Configure multiple projects, then select one to generate an independent work report for each project lead |
+| **Weekly reports in 3 seconds** | Pick period → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
+| **Per-project reporting** | Configure multiple projects, then select one to generate an independent report for each project lead |
 | **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
 | **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
 
@@ -42,32 +46,33 @@
 ## Requirements
 
 - Node.js >= 18.0.0
-- At least one of the supported AI coding tools installed with existing session logs (Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI)
+- At least one of the [supported tools](#supported-tools--data-directories) installed with existing session logs
 
 ---
 
 ## Supported Tools & Data Directories
 
-| Tool | Default Log Directory | Env Var (Optional) | Status |
-|------|---------------------|-------------------|--------|
-| **Claude Code** | `~/.claude` | `CLAUDE_DIR` | ✅ Full Support |
-| **OpenAI Codex** | `~/.codex` | `CODEX_DIR` | ✅ Full Support |
-| **OpenCode** | `~/.opencode` | `OPENCODE_DIR` | ✅ Full Support |
-| **Gemini CLI** | `~/.gemini` | `GEMINI_DIR` | ✅ Full Support |
-| **Qwen Code** | `~/.qwen` | `QWEN_DIR` | ✅ Full Support |
-| **Goose** | `~/.local/share/goose` | `GOOSE_DIR` | ✅ Full Support |
-| **Amp** | `~/.local/share/amp` | `AMP_DIR` | ✅ Full Support |
-| **Hermes Agent** | `~/.hermes` | `HERMES_DIR` | ✅ Full Support |
-| **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` | ✅ Full Support |
-| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` | ✅ Full Support |
-| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` | ✅ Full Support |
-| **Droid** | `~/.factory/sessions` | `DROID_DIR` | ✅ Full Support |
-| **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` | ✅ Full Support |
-| **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` | ✅ Full Support |
-| **GitHub Copilot CLI** | `~/.copilot/otel` | `COPILOT_OTEL_FILE_EXPORTER_PATH` / `COPILOT_DATA_DIR` | ✅ Full Support |
+15 AI coding tools, all ✅ Fully Supported (session-level / token-level / model-level statistics).
 
-> **Notes**:
-> - ✅ Full Support: Session-level, token-level, and model-level statistics
+| Tool | Default Log Directory | Env Var (Optional) |
+|------|---------------------|-------------------|
+| **Claude Code** | `~/.claude` | `CLAUDE_DIR` |
+| **OpenAI Codex** | `~/.codex` | `CODEX_DIR` |
+| **OpenCode** | `~/.opencode` | `OPENCODE_DIR` |
+| **Gemini CLI** | `~/.gemini` | `GEMINI_DIR` |
+| **Qwen Code** | `~/.qwen` | `QWEN_DIR` |
+| **Goose** | `~/.local/share/goose` | `GOOSE_DIR` |
+| **Amp** | `~/.local/share/amp` | `AMP_DIR` |
+| **Hermes Agent** | `~/.hermes` | `HERMES_DIR` |
+| **OpenClaw** | `~/.openclaw` | `OPENCLAW_DIR` |
+| **Kimi CLI** | `~/.kimi` | `KIMI_DIR` |
+| **Codebuff** | `~/.config/manicode` | `CODEBUFF_DIR` |
+| **Droid** | `~/.factory/sessions` | `DROID_DIR` |
+| **Pi Agent** | `~/.pi/agent/sessions` | `PI_AGENT_DIR` |
+| **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` |
+| **GitHub Copilot CLI** | `~/.copilot/otel` | `COPILOT_OTEL_FILE_EXPORTER_PATH` / `COPILOT_DATA_DIR` |
+
+> Without env vars set, the default directory is auto-detected. Multiple accounts can be comma-separated.
 
 ---
 
@@ -78,10 +83,7 @@
 npm install -g lumencode@latest
 lumencode serve            # Start Web server, auto-opens browser
 
-# If you have an older version installed, update first:
-npm update -g lumencode
-
-# Verify version (ensure ≥ 1.3.8)
+# Verify version (ensure ≥ 1.4.0)
 lumencode --version
 
 # Or run without installing
@@ -90,25 +92,26 @@ npx lumencode@latest serve
 
 > ⚠️ **Stuck on an old version?** Run `npm cache clean --force && npm install -g lumencode@latest` to flush the cache and reinstall.
 
-**Zero-config startup** — Auto-dects `~/.claude`, `~/.codex`, `~/.opencode`, `~/.gemini`, `~/.qwen`, `~/.local/share/goose`, `~/.local/share/amp`, `~/.hermes`, `~/.openclaw`, `~/.kimi`, `~/.config/manicode`, `~/.factory/sessions`, `~/.pi/agent/sessions`, `~/.local/share/kilo`, `~/.copilot/otel` log directories. Derives project paths from session metadata.
+**Zero-config out of the box** — First run auto-detects all 15 tools' log directories above and derives project paths from session metadata. No manual setup needed.
 
 ---
 
 ## Highlights
 
+> Core: **line-level attribution × fifteen-tool unified × precise cost × one-click reports** — accounting for AI coding's ROI down to every line, every cent.
+
 | Highlight | Description |
 |-----------|-------------|
-| 🎯 **Line-Level AI Attribution** | Hook-based step tracking identifies AI participation for each line of code. Not "AI helped with this commit" — "This line was written by AI" |
-| 🌐 **Fifteen-Tool Unified** | Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI data auto-aggregated, sidebar tab to switch |
-| 📝 **Natural Language Work Summary** | Detailed / Brief reports with insight commentary. Standard Markdown / Lark / DingTalk formats, one-click toggle |
-| 🤖 **Smart Report Generation** | Connects to the local OpenCode CLI to analyze bounded statistics and source work reports, with Default and leadership-oriented "Workhorse" styles |
-| 📂 **Per-Project Reports** | Select a project from the right panel to generate an independent report (commits + AI interaction volume + hotspot files) |
-| 📅 **Custom Date Ranges** | Beyond daily/weekly/monthly — pick any start and end date, perfect for aligning with Sprint cycles |
-| 💰 **Precise Cost Estimation** | 600+ model local pricing (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback. Unknown models counted at $0, never guessed |
-| 📦 **Zero-Config Out of the Box** | First run auto-detects tool directories and derives project paths |
-| 🔍 **Data Drill-Down** | Click any chart to dive from aggregate stats to individual sessions/commits |
-| 📈 **Trends & Insights** | Peak day detection, consecutive active streaks, tool usage 5-category distribution (editing/reading/execution/planning/research) |
-| 🌙 **Light / Dark Theme** | Light/dark theme toggle, all charts auto-adapt |
+| 🎯 **Line-Level AI Attribution** | Not "AI helped with this commit" — "This line was written by AI." Hook-based step tracking, precise down to every line |
+| 🌐 **Fifteen-Tool Unified** | Claude Code / Codex / Copilot and 12 more — all data auto-aggregated, one-click switch, cross-tool comparison |
+| 📝 **One-Click Publishable Report** | Detailed / Brief reports in seconds; Markdown / Lark / DingTalk formats, copy-paste ready, each section with insights |
+| 🤖 **AI Smart Report** | Calls one of local Claude Code / Codex / OpenCode to produce AI analysis (highlights, insights, risks, recommendations) from your stats and work report; supports Default and leadership-oriented "Workhorse" styles |
+| 💰 **Precise Cost Estimation** | 600+ model pricing library (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback; unknown models counted at $0 — real numbers only, no guessing |
+| 📂 **Per-Project Reports** | Multiple projects in parallel, each gets an independent report (commits + AI interaction + hotspot files) |
+| 📅 **Sprint Cycle Alignment** | Beyond daily/weekly/monthly — custom start/end dates to fit your iteration rhythm |
+| 🔍 **Drill-Down & Trend Insights** | Click any chart to reach session/commit; peak days, active streaks, 5-category tool usage at a glance |
+| 📦 **Zero-Config Out of the Box** | Auto-detects tool directories and derives project paths on first run — install and go |
+| 🌙 **Light / Dark Theme** | Dark mode default, all charts auto-adapt |
 
 ---
 
@@ -155,7 +158,7 @@ npx lumencode@latest serve
 
 - **Detailed** — Full data + insights + numbered sections, ideal for weekly/monthly reports
 - **Brief** — 3-5 sentence core summary, ideal for daily reports or group chat
-- **Smart Report** — Calls the local OpenCode CLI from the page to generate AI analysis with data summary, work highlights, key insights, risks, and recommendations
+- **Smart Report** — Calls one of the local Claude Code / Codex / OpenCode agents from the page to generate AI analysis with data summary, work highlights, key insights, risks, and recommendations
 - **Style Selection** — Choose Default style, or "Workhorse" for a leadership-reporting tone before generation
 - **Persistence & Freshness Hints** — Smart reports are saved by period, project, report level, and style; stale source data prompts regeneration
 - **Multi-Platform Format** — Standard Markdown / Lark / DingTalk, one-click toggle
@@ -295,27 +298,11 @@ Once configured, ask your AI assistant directly, e.g. "How much did AI coding co
 
 ## Configuration
 
-v0.4.0+ supports 15 AI coding tools (Claude Code / Codex / OpenCode / Gemini CLI / Qwen Code / Goose / Amp / Hermes / OpenClaw / Kimi / Codebuff / Droid / Pi Agent / Kilo / GitHub Copilot CLI). **Auto-detects** installed tools' log directories and project paths on first run.
-
-For customization, open the **Settings** page from the left sidebar rail. Settings are organized into cards: Data Sources, Repositories, Cost & Billing, Attribution & Tracking, Scenario Keywords, and Appearance.
+**First run auto-detects** installed tools' log directories and project paths. For customization, open the **Settings** page from the left sidebar rail. Settings are organized into cards: Data Sources, Repositories, Cost & Billing, Attribution & Tracking, Scenario Keywords, and Appearance.
 
 | Setting | Description |
 |---------|-------------|
-| Claude Log Directory | Claude Code data directory (contains `projects/`), defaults to `~/.claude` |
-| Codex Log Directory | Codex data directory (contains `sessions/`), auto-detected |
-| OpenCode Log Directory | OpenCode data directory, auto-detected |
-| Gemini Log Directory | Gemini CLI data directory, auto-detected |
-| Qwen Log Directory | Qwen Code data directory, auto-detected |
-| Goose Log Directory | Goose data directory, auto-detected |
-| Amp Log Directory | Amp data directory, auto-detected |
-| Hermes Log Directory | Hermes Agent data directory, auto-detected |
-| OpenClaw Log Directory | OpenClaw data directory, auto-detected |
-| Kimi Log Directory | Kimi CLI data directory, auto-detected |
-| Codebuff Log Directory | Codebuff data directory, auto-detected |
-| Droid Log Directory | Droid data directory, auto-detected |
-| Pi Agent Log Directory | Pi Agent data directory, auto-detected |
-| Kilo Log Directory | Kilo data directory, auto-detected |
-| Copilot Log Directory | GitHub Copilot CLI data directory, auto-detected |
+| Each tool's log directory | Data directories for the 15 tools, auto-detected by default per the table above; overridable in Settings or `config.json` |
 | Enabled Tools | Specify which tools to enable, defaults to all detected |
 | Local Project Paths | Git repo paths for code commit stats and AI attribution |
 | Excluded Projects | Project names to exclude |
@@ -324,11 +311,29 @@ For customization, open the **Settings** page from the left sidebar rail. Settin
 | Step Tracking | Toggle step-level recording for line attribution (see [Line-Level AI Attribution](#line-level-ai-attribution-optional)) |
 | AI Attribution Params | Expert thresholds/weights for attribution scoring — read-only preview in UI; edit `config.json` directly to change |
 
+### Line-Level AI Attribution (Optional)
+
+Line-level attribution uses AI coding tool hooks to record file-edit steps, refining AI contribution from commit/file level down to line level. Claude Code uses `PostToolBatch`, Codex uses `PostToolUse`, OpenCode uses a project-level plugin. The feature is opt-in: without an initialized database, the hook silently skips and normal usage is unaffected.
+
+```bash
+# Run in the Git project root you want to track
+node index.js hooks status
+node index.js hooks enable       # Interactive tool selection, steps init, auto config backup
+```
+
+Enabling only modifies the current project's local config (`.claude/settings.local.json`, `.codex/config.toml`, `.opencode/plugins/lumencode-step-tracker.js`) — global config and other projects are untouched. To disable:
+
+```bash
+node index.js hooks disable
+```
+
+Data is written to the current project's `.ccusage/steps.db` (includes file snapshots for attribution), already ignored in this repo's `.gitignore`; if you enable it in another repo, also ignore `.ccusage/`.
+
 ### Model Pricing Data
 
 - **Local table** — 590 models pre-synced from [Portkey-AI/models](https://github.com/Portkey-AI/models) with vendor canonical names
 - **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
-- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`
+- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`; local + fallback covers 600+ models
 - **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
 
 ---
@@ -340,8 +345,9 @@ For customization, open the **Settings** page from the left sidebar rail. Settin
 | Browser shows "No Data" | First run will guide you through config; if skipped, open the Settings page (left sidebar) |
 | Log directory not found on Windows | Default path is `C:\Users\<username>\.claude`, ensure `projects/` subdirectory exists |
 | Port 4567 in use | Set env variable: `set LUMENCODE_PORT=8080 && lumencode serve` |
-| Git stats not found | v0.2.0+ auto-derives project path from session `cwd`. Manual override available in settings |
+| Git stats not found | Project path is auto-derived from session `cwd`; if still unrecognized, set it manually in Settings |
 | Cost showing $0 | Model not in pricing table — try with network connection to let API fallback resolve, or add an `aliasOf` entry in `data/pricing.json` overrides |
+| Smart report unavailable | Smart reports require one of local Claude Code / Codex / OpenCode — ensure the corresponding command is in your PATH |
 
 ---
 
