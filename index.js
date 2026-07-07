@@ -12,7 +12,11 @@ import { registerAllParsers } from './lib/parsers/register.js';
 import { initPricing, preloadUnknownPricing } from './lib/pricing-loader.js';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
+import { createRequire } from 'module';
 import { enableHooks, disableHooks, getHooksStatus, HOOK_TOOLS, initStepTracking } from './lib/hooks-manager.js';
+
+// 版本号取自 package.json，cwd 无关
+const { version: APP_VERSION } = createRequire(import.meta.url)('./package.json');
 
 // 注册所有解析器
 registerAllParsers();
@@ -432,6 +436,11 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
   return { usageStats, gitStats, reposConfigured, sessions: slimSessions, start, end, trendData, prevStats, billingBlocks, toolBreakdown: mergedBreakdown, projectDetails, _diagnostics: diagnostics };
 }
 
+if (command === '--version' || command === '-V') {
+  console.log(APP_VERSION);
+  process.exit(0);
+}
+
 if (!command || command === 'help' || command === '--help') {
   console.log(`
 用法: lumencode <命令> [周期] [日期] [选项]
@@ -441,6 +450,7 @@ if (!command || command === 'help' || command === '--help') {
   serve    启动 Web 服务（默认端口 4567）
   init     初始化配置文件
   help     显示帮助信息
+  -V, --version  显示版本号
 
 周期:
   daily    日报（默认）
