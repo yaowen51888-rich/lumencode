@@ -278,3 +278,119 @@ test('StepTracker - commit 内容错配时降级比例法', async () => {
   assert.equal(res.aiLines, 2);
   tracker.close();
 });
+
+// ── P0 fuzzy 内容对齐：drift 时行映射投影 ──
+
+test('StepTracker - fuzzy: 高相似 drift 命中行映射投影', async () => {
+  const trackerDbPath = join(tempDir, 'fz-hi.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'fzhi.js');
+  writeFileSync(f, 'a\nb\nc\nd\ne\n');
+  await tracker.recordStep({ sessionId: 's-fz', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz' });
+
+  // commit 改第3行 c→X：行 1,2,4,5 映射到 step（AI），行 3 replace 未映射（human），coverage 4/5=0.8
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-fz', commitMs: Date.now(),
+    files: [{ path: 'fzhi.js', added: 5, deleted: 0, binary: false, commitContent: 'a\nb\nX\nd\ne\n', addedLines: [1, 2, 3, 4, 5] }],
+  });
+  assert.equal(res.fuzzyFiles, 1);
+  assert.equal(res.aiLines, 4);
+  assert.equal(res.humanLines, 1);
+  tracker.close();
+});
+
+test('StepTracker - fuzzy: 低相似 drift 回比例法', async () => {
+  const trackerDbPath = join(tempDir, 'fz-lo.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'fzlo.js');
+  writeFileSync(f, 'a\nb\nc\n');
+  await tracker.recordStep({ sessionId: 's-fz2', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz2' });
+
+  // commit 完全重写：无 equal，coverage 0 → 回比例（aiRatio=1，added=3 → aiLines=3）
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-fz2', commitMs: Date.now(),
+    files: [{ path: 'fzlo.js', added: 3, deleted: 0, binary: false, commitContent: 'x\ny\nz\n', addedLines: [1, 2, 3] }],
+  });
+  assert.equal(res.fuzzyFiles, 0);
+  assert.equal(res.degradedDrift, 1);
+  assert.equal(res.aiLines, 3);
+  tracker.close();
+});
+
+test('StepTracker - fuzzy: 覆盖率恰达阈值 0.6 仍命中', async () => {
+  const trackerDbPath = join(tempDir, 'fz-edge.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'fzedge.js');
+  writeFileSync(f, 'a\nb\nc\nd\ne\n');
+  await tracker.recordStep({ sessionId: 's-fz3', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz3' });
+
+  // commit 改第 4,5 行：行 1,2,3 映射（AI），4,5 replace（human），coverage 3/5=0.6 命中阈值
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-fz3', commitMs: Date.now(),
+    files: [{ path: 'fzedge.js', added: 5, deleted: 0, binary: false, commitContent: 'a\nb\nc\nX\nY\n', addedLines: [1, 2, 3, 4, 5] }],
+  });
+  assert.equal(res.fuzzyFiles, 1);
+  assert.equal(res.aiLines, 3);
+  assert.equal(res.humanLines, 2);
+  tracker.close();
+});
+
+test('StepTracker - fuzzy: 未映射 insert 行计 human', async () => {
+  const trackerDbPath = join(tempDir, 'fz-ins.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'fzins.js');
+  writeFileSync(f, 'a\nb\nc\nd\ne\n');
+  await tracker.recordStep({ sessionId: 's-fz4', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz4' });
+
+  // commit 末尾 insert new：行 1-5 映射（AI），行 6 insert 未映射（human），coverage 5/6
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-fz4', commitMs: Date.now(),
+    files: [{ path: 'fzins.js', added: 6, deleted: 0, binary: false, commitContent: 'a\nb\nc\nd\ne\nnew\n', addedLines: [1, 2, 3, 4, 5, 6] }],
+  });
+  assert.equal(res.fuzzyFiles, 1);
+  assert.equal(res.aiLines, 5);
+  assert.equal(res.humanLines, 1);
+  tracker.close();
+});
+
+test('StepTracker - fuzzy: addedLines 缺失回比例法', async () => {
+  const trackerDbPath = join(tempDir, 'fz-noadded.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'fzna.js');
+  writeFileSync(f, 'a\nb\nc\n');
+  await tracker.recordStep({ sessionId: 's-fz5', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz5' });
+
+  // drift 但 addedLines 缺：coverage 0 → 回比例（aiRatio=1，added=3 → aiLines=3），不走 fuzzy
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-fz5', commitMs: Date.now(),
+    files: [{ path: 'fzna.js', added: 3, deleted: 0, binary: false, commitContent: 'a\nb\nX\n', addedLines: [] }],
+  });
+  assert.equal(res.fuzzyFiles, 0);
+  assert.equal(res.degradedDrift, 1);
+  assert.equal(res.aiLines, 3);
+  tracker.close();
+});
+
+test('StepTracker - CRLF step vs LF commit 归一后仍 aligned', async () => {
+  const trackerDbPath = join(tempDir, 'crlf.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'crlf.js');
+  writeFileSync(f, 'a\r\nb\r\nc\r\n'); // 文件 CRLF，recordStep 存 CRLF 快照
+  await tracker.recordStep({ sessionId: 's-crlf', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-crlf' });
+
+  // git show 出 LF；换行符归一后内容相等 → aligned 命中（非 drift）
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-crlf', commitMs: Date.now(),
+    files: [{ path: 'crlf.js', added: 3, deleted: 0, binary: false, commitContent: 'a\nb\nc\n', addedLines: [1, 2, 3] }],
+  });
+  assert.equal(res.alignedFiles, 1);
+  assert.equal(res.degradedFiles, 0);
+  assert.equal(res.aiLines, 3);
+  tracker.close();
+});
