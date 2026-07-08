@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats } from '../lib/git.js';
+import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats, parseAddedLines } from '../lib/git.js';
 import { resolveAttributionOptions } from '../lib/git-attribution-options.js';
 import { StepTracker } from '../lib/step-tracker.js';
 
@@ -723,4 +723,34 @@ test('finalizeGitStats - merge commit stays human despite strong session + file 
   assert.equal(merged.commitList[0].attributionType, 'human_merge');
   assert.equal(merged.commitList[0].aiConfidence, 'none');
   assert.equal(merged.commitList[0].isAI, false);
+});
+
+// ── P0 档②：unified diff hunk 解析（逐行投影的 added 行号来源）──
+
+test('parseAddedLines - 单 hunk 提取新增行号', () => {
+  const diff = [
+    'diff --git a/f b/f',
+    'index 123..456 100644',
+    '--- a/f',
+    '+++ b/f',
+    '@@ -1,3 +1,5 @@',
+    ' ctx1',
+    '+new1',
+    '+new2',
+    ' ctx2',
+    ' ctx3',
+  ].join('\n');
+  assert.deepEqual(parseAddedLines(diff), [2, 3]);
+});
+
+test('parseAddedLines - 多 hunk 且删除行不占 new 行号', () => {
+  const diff = [
+    '@@ -1,2 +1,1 @@',
+    '-old',
+    ' keep',
+    '@@ -5,1 +6,2 @@',
+    ' keep2',
+    '+ins',
+  ].join('\n');
+  assert.deepEqual(parseAddedLines(diff), [7]);
 });

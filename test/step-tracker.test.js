@@ -202,3 +202,79 @@ test('StepTracker - Bash without file targets does not advance session head', as
   assert.equal(tracker.db.getSessionHead('sess-bash-empty'), firstHash);
   tracker.close();
 });
+
+// ── P0 行级归因：时间对齐 + 逐行投影 ──
+
+test('StepDatabase - getStepFilesForPath 时间过滤 beforeTs', async () => {
+  const db = new StepDatabase();
+  const p = join(tempDir, 'ts-filter.db');
+  await db.open(p);
+  db.insertStep({ id: 'early', parentId: null, sessionId: 's', ts: 100, toolName: 'Write', toolUseId: 't1' });
+  db.insertStep({ id: 'late', parentId: null, sessionId: 's', ts: 300, toolName: 'Write', toolUseId: 't2' });
+  db.upsertStepFile('early', 'tsf.js', { lines: ['early'] });
+  db.upsertStepFile('late', 'tsf.js', { lines: ['late'] });
+
+  const r = db.getStepFilesForPath('tsf.js', 5, 200); // beforeTs=200 → 仅 early
+  assert.equal(r.length, 1);
+  assert.equal(r[0].step_id, 'early');
+
+  const all = db.getStepFilesForPath('tsf.js', 5); // 无 beforeTs → 两个，DESC
+  assert.equal(all.length, 2);
+  assert.equal(all[0].step_id, 'late');
+  db.close();
+});
+
+test('StepTracker - 时间对齐：commitMs 排除未来 step', async () => {
+  const trackerDbPath = join(tempDir, 'ts-align.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'tsalign.js');
+  writeFileSync(f, 'old\n');
+  await tracker.recordStep({ sessionId: 'sA', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 'tA1', timestamp: 100 });
+  writeFileSync(f, 'old\nnew\n');
+  await tracker.recordStep({ sessionId: 'sB', toolName: 'Edit', toolInput: { file_path: f }, toolUseId: 'tB1', timestamp: 300 });
+
+  // commit 发生在 t=200，只能看到 t≤200 的 step（session A），不该被 session B（t=300）污染
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 'sA', commitMs: 200,
+    files: [{ path: 'tsalign.js', added: 1, deleted: 0, binary: false }],
+  });
+  assert.ok(res, '应返回结果');
+  assert.equal(res.aiLines, 1); // t=200 时仅 session A 的 step（'old\n' 1 行全 AI）
+  tracker.close();
+});
+
+test('StepTracker - 逐行投影：commit 内容对齐时精确归属 added', async () => {
+  const trackerDbPath = join(tempDir, 'proj-align.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'align.js');
+  writeFileSync(f, 'a\nb\nc\n'); // 3 行
+  await tracker.recordStep({ sessionId: 's-align', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-align' });
+
+  // commit 紧跟 step、文件未变 → 逐行投影，3 个 added 行全属 AI
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-align', commitMs: Date.now(),
+    files: [{ path: 'align.js', added: 3, deleted: 0, binary: false, commitContent: 'a\nb\nc\n', addedLines: [1, 2, 3] }],
+  });
+  assert.equal(res.aiLines, 3);
+  assert.equal(res.humanLines, 0);
+  tracker.close();
+});
+
+test('StepTracker - commit 内容错配时降级比例法', async () => {
+  const trackerDbPath = join(tempDir, 'proj-degrade.db');
+  const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
+  await tracker.open();
+  const f = join(tempDir, 'degrade.js');
+  writeFileSync(f, 'a\nb\nc\n'); // 3 行
+  await tracker.recordStep({ sessionId: 's-deg', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-deg' });
+
+  // commitContent ≠ step 内容 → 降级；文件全 AI（aiRatio=1），added=2 → aiLines=2
+  const res = tracker.getLineAttributionForCommit({
+    sessionId: 's-deg', commitMs: Date.now(),
+    files: [{ path: 'degrade.js', added: 2, deleted: 0, binary: false, commitContent: 'totally\ndifferent\n', addedLines: [1] }],
+  });
+  assert.equal(res.aiLines, 2);
+  tracker.close();
+});
