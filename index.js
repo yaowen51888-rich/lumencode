@@ -362,7 +362,10 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
       cacheRead: s.cacheRead || 0,
       cacheCreate: s.cacheCreate || 0,
       count: s.count || 0,
-      sessionCount: base.sessionCount || 0,
+      // sessionCount 取当日过滤后的 statsTB（computeUsageStats 产出），
+      // 而非 parsed 全量 base.sessionCount——否则历史用过但本周期无活动的工具
+      //（如 codex）会误显 active 进度条
+      sessionCount: s.sessionCount ?? 0,
     };
   }
   for (const [name, data] of Object.entries(statsTB)) {

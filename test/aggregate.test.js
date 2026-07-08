@@ -163,6 +163,24 @@ test('computeUsageStats - basic counting', () => {
   assert.strictEqual(result.projects.projB.requests, 2);
 });
 
+test('computeUsageStats - per-tool sessionCount scoped to input records', () => {
+  // 模拟日期过滤后的记录子集：claude 2 session、codex 1 session（2 record 同 session）、subagent 不计
+  const records = [
+    { ...makeRecord('2026-05-16', 'assistant', 'claude-sonnet-4-6', 's1', 'projA'), tool: 'claude' },
+    { ...makeRecord('2026-05-16', 'assistant', 'claude-sonnet-4-6', 's2', 'projA'), tool: 'claude' },
+    { ...makeRecord('2026-05-16', 'assistant', 'gpt-5', 's3', 'projB'), tool: 'codex' },
+    { ...makeRecord('2026-05-16', 'assistant', 'gpt-5', 's3', 'projB'), tool: 'codex' },
+    { ...makeRecord('2026-05-16', 'assistant', 'gpt-5', 's4', 'projB'), tool: 'codex', metadata: { isSubagent: true } },
+  ];
+
+  const result = computeUsageStats(records, []);
+
+  assert.strictEqual(result.toolBreakdown.claude.sessionCount, 2);
+  assert.strictEqual(result.toolBreakdown.codex.sessionCount, 1); // s3 去重；s4 subagent 排除
+  // Set 已收口，不可泄漏到序列化
+  assert.strictEqual(result.toolBreakdown.codex.sessionIds, undefined);
+});
+
 test('computeUsageStats - empty records', () => {
   const records = [];
   const result = computeUsageStats(records, []);
