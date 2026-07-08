@@ -1,6 +1,6 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { buildCommitNarrative, buildAIContributionDetail, generateWorkReport, generateBriefReport, generateFeishuCard } from '../lib/report.js';
+import { buildCommitNarrative, buildAIContributionDetail, generateWorkReport, generateBriefReport, generateFeishuCard, workReportFooter } from '../lib/report.js';
 
 function mkCommit(over = {}) {
   return {
@@ -355,4 +355,17 @@ test('generateWorkReport - shows unknown attribution reasons when present', () =
 
   const report = generateWorkReport(usageStats, gitStats, 'daily', '2026-05-20', '2026-05-20');
   assert.ok(report.includes('no_session_match'));
+});
+
+test('workReportFooter - 默认带 install 命令与 github 链接', () => {
+  const f = workReportFooter();
+  assert.ok(f.includes('npm i -g lumencode'));
+  assert.ok(f.includes('github.com/yaowen51888-rich/lumencode'));
+  assert.ok(f.startsWith('\n'));
+});
+
+test('workReportFooter - platform=dingtalk 去掉 markdown 语法', () => {
+  const f = workReportFooter('dingtalk');
+  assert.ok(!f.includes('**'));
+  assert.ok(f.includes('npm i -g lumencode'));
 });

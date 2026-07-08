@@ -3,7 +3,7 @@ import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
 import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
 import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
-import { generateReport, generateWorkReport, generateBossReport } from './lib/report.js';
+import { generateReport, generateWorkReport, generateBossReport, workReportFooter } from './lib/report.js';
 import { startServer } from './lib/server.js';
 import { detectClaudeDir, deriveProjectPaths } from './lib/parser.js';
 import { identifyBillingBlocks } from './lib/blocks.js';
@@ -465,6 +465,7 @@ if (!command || command === 'help' || command === '--help') {
   --work       输出工作汇报版本（Markdown 格式）
   --boss       输出 Boss 报告（给领导看的版本，凸显工作成果）
   --brief      配合 --work 使用，输出简报（3-5 句话）
+  --no-brand   去掉 --work 报告末尾的 LumenCode 尾注
 
 示例:
   lumencode report daily 2026-05-15
@@ -524,6 +525,7 @@ if (command === 'serve') {
   const isWorkMode = args.includes('--work');
   const isBossMode = args.includes('--boss');
   const isBrief = args.includes('--brief');
+  const noBrand = args.includes('--no-brand');
   const { config, dateArg, effectiveIncludeProjects } = loadCliConfig();
 
   console.log('正在扫描 AI 编码助手日志...');
@@ -578,7 +580,11 @@ if (command === 'serve') {
     : isWorkMode
       ? generateWorkReport(usageStats, gitStats, period, start, end, prevStats, { level: isBrief ? 'brief' : 'detailed' })
       : generateReport(usageStats, gitStats, period, start, end);
-  console.log(report);
+  if (isWorkMode && !noBrand && config.branding?.workReport !== false) {
+    console.log(report + workReportFooter('default'));
+  } else {
+    console.log(report);
+  }
 }
 
 function fmtNum(n) {
