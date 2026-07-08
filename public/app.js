@@ -238,7 +238,8 @@ function appState() {
         !this.hooksStatus.claude?.enabled ||
         !this.hooksStatus.codex?.enabled ||
         !this.hooksStatus.opencode?.enabled ||
-        !this.hooksStatus.gemini?.enabled;
+        !this.hooksStatus.gemini?.enabled ||
+        (this.hooksStatus.projects || []).some(p => p.fileMissing);
     },
 
     get hooksStatusText() {
@@ -253,6 +254,8 @@ function appState() {
           `Gemini ${this.hooksStatus.gemini?.enabledCount || 0}/${total}`,
           `steps ${this.hooksStatus.stepsReadyCount || 0}/${total}`,
         ];
+        if (this.hooksStatus.fileMissingCount) parts.push(`文件缺失 ${this.hooksStatus.fileMissingCount}/${total}`);
+        if (this.hooksStatus.staleCount) parts.push(`近期无归因 ${this.hooksStatus.staleCount}/${total}`);
         return `设置内项目 hooks：${parts.join(' / ')}`;
       }
       const parts = [

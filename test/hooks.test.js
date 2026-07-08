@@ -6,10 +6,12 @@ import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import { StepTracker } from '../lib/step-tracker.js';
+import { StepDatabase } from '../lib/step-schema.js';
 import {
   disableHooks,
   enableHooks,
   getHooksStatus,
+  getHooksHealth,
   HOOK_TOOLS,
 } from '../lib/hooks-manager.js';
 
@@ -414,6 +416,96 @@ test('hooks CLI enable prompts for detected tools when no tool args are provided
     assert.equal(status.claude.enabled, true);
     assert.equal(status.codex.enabled, false);
     assert.equal(status.opencode.enabled, true);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('getHooksStatus flags claude fileMissing when hook command path does not exist', () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-missing-claude-'));
+  try {
+    mkdirSync(join(tempDir, '.claude'), { recursive: true });
+    writeFileSync(join(tempDir, '.claude', 'settings.local.json'), JSON.stringify({
+      hooks: { PostToolUse: [
+        { matcher: '', hooks: [{ type: 'command', command: 'node "Z:/nonexistent_lumencode_test/missing/post-tool-use.js"' }] },
+      ] },
+    }, null, 2));
+    const status = getHooksStatus(tempDir);
+    assert.equal(status.claude.enabled, true);
+    assert.equal(status.claude.legacyEnabled, true);
+    assert.equal(status.claude.fileMissing, true);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('getHooksStatus flags codex fileMissing when hook command path does not exist', () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-missing-codex-'));
+  try {
+    mkdirSync(join(tempDir, '.codex'), { recursive: true });
+    writeFileSync(join(tempDir, '.codex', 'config.toml'), `
+[features]
+hooks = true
+
+[[hooks.PostToolUse]]
+matcher = ""
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = 'node "Z:/nonexistent_lumencode_test/missing/codex-hook.js"'
+`);
+    const status = getHooksStatus(tempDir);
+    assert.equal(status.codex.enabled, true);
+    assert.equal(status.codex.fileMissing, true);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('getHooksHealth reports stale when last step older than threshold', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-stale-'));
+  try {
+    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const db = new StepDatabase();
+    await db.open(dbPath);
+    db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 100 * 24 * 60 * 60 * 1000, toolName: 'edit', toolUseId: 'u1' });
+    db.save();
+    db.close();
+    const health = await getHooksHealth(tempDir);
+    assert.ok(health.lastStepAt !== null);
+    assert.equal(health.stale, true);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('getHooksHealth not stale when last step recent', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-fresh-'));
+  try {
+    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const db = new StepDatabase();
+    await db.open(dbPath);
+    db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 60_000, toolName: 'edit', toolUseId: 'u1' });
+    db.save();
+    db.close();
+    const health = await getHooksHealth(tempDir);
+    assert.ok(health.lastStepAt !== null);
+    assert.equal(health.stale, false);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('getHooksHealth returns null lastStepAt and not stale when no steps', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hooks-empty-'));
+  try {
+    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const db = new StepDatabase();
+    await db.open(dbPath);
+    db.save();
+    db.close();
+    const health = await getHooksHealth(tempDir);
+    assert.equal(health.lastStepAt, null);
+    assert.equal(health.stale, false);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
