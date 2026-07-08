@@ -1081,22 +1081,37 @@
     <!-- ── Share Card Style Modal ── -->
     <div id="share-card-modal" class="modal-overlay" x-show="shareCardModalOpen" x-cloak>
       <div class="modal-backdrop" @click="closeShareCardModal()"></div>
-      <div class="modal-panel" style="max-width:460px;">
+      <div class="modal-panel" style="max-width:520px;">
         <div class="modal-header">
-          <h3 style="font-size:15px;font-weight:500;">选择分享卡风格</h3>
+          <h3 style="font-size:15px;font-weight:500;">分享卡</h3>
           <button class="rail-btn-icon" @click="closeShareCardModal()" style="color:var(--foreground);opacity:0.65;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
         <div class="modal-body" style="padding:16px 24px;">
-          <div class="smart-report-style-options">
-            <button class="smart-report-style-option" :class="shareCardStyle === 'aurora' ? 'active' : ''" @click="shareCardStyle='aurora'">
+          <div class="share-card-preview-wrap">
+            <canvas x-ref="cardPreview" id="shareCardPreview"></canvas>
+          </div>
+          <div class="share-card-section-label">风格</div>
+          <div class="smart-report-style-options share-card-options-2">
+            <button class="smart-report-style-option" :class="shareCardStyle === 'aurora' ? 'active' : ''" @click="shareCardStyle='aurora'; rerenderPreview()">
               <span class="smart-report-style-title">暗色发光</span>
-              <span class="smart-report-style-desc">匹配产品默认主题，极光渐变，dev 社区高传播。</span>
+              <span class="smart-report-style-desc">极光渐变，dev 社区高传播</span>
             </button>
-            <button class="smart-report-style-option" :class="shareCardStyle === 'clean' ? 'active' : ''" @click="shareCardStyle='clean'">
-              <span class="smart-report-style-title">干净风</span>
-              <span class="smart-report-style-desc">github-readme-stats 风格，浅/深随主题，极简。</span>
+            <button class="smart-report-style-option" :class="shareCardStyle === 'light' ? 'active' : ''" @click="shareCardStyle='light'; rerenderPreview()">
+              <span class="smart-report-style-title">浅色模式</span>
+              <span class="smart-report-style-desc">白底彩字，明快易读</span>
+            </button>
+          </div>
+          <div class="share-card-section-label">尺寸</div>
+          <div class="smart-report-style-options share-card-options-2">
+            <button class="smart-report-style-option" :class="shareCardOrientation === 'landscape' ? 'active' : ''" @click="shareCardOrientation='landscape'; rerenderPreview()">
+              <span class="smart-report-style-title">横图 1200×630</span>
+              <span class="smart-report-style-desc">OG / Twitter / 微博</span>
+            </button>
+            <button class="smart-report-style-option" :class="shareCardOrientation === 'portrait' ? 'active' : ''" @click="shareCardOrientation='portrait'; rerenderPreview()">
+              <span class="smart-report-style-title">竖图 1200×1600</span>
+              <span class="smart-report-style-desc">微信 / 小红书 3:4</span>
             </button>
           </div>
         </div>

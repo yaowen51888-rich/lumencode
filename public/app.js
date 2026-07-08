@@ -5,7 +5,7 @@ import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineAr
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
-import { renderShareCard } from './share-card.js';
+import { renderShareCard, drawShareCardTo } from './share-card.js';
 import { formatViewStateHash, parseViewStateHash } from './view-state.js';
 
 /* ── Alpine App Component ── */
@@ -166,6 +166,7 @@ function appState() {
     sourceBreakdown: [],
     shareCardModalOpen: false,
     shareCardStyle: 'aurora',
+    shareCardOrientation: 'landscape',
     shareCardLoading: false,
     aiContributionMeta: '- / - LINES',
     lineBlameEvidence: null,
@@ -1377,8 +1378,17 @@ function appState() {
     openShareCardModal() {
       if (!this.lastReportData) { showToast('暂无数据，无法生成分享卡'); return; }
       this.shareCardModalOpen = true;
+      this.$nextTick(() => this.rerenderPreview());
     },
     closeShareCardModal() { this.shareCardModalOpen = false; },
+    rerenderPreview() {
+      const cv = this.$refs.cardPreview;
+      if (!cv || !this.lastReportData) return;
+      drawShareCardTo(cv, this.lastReportData, this.period, {
+        style: this.shareCardStyle,
+        orientation: this.shareCardOrientation,
+      });
+    },
     async exportShareCard() {
       if (!this.lastReportData) return;
       this.shareCardLoading = true;
@@ -1386,12 +1396,13 @@ function appState() {
       try {
         const blob = await renderShareCard(this.lastReportData, this.period, {
           style: this.shareCardStyle,
-          theme: this.theme || 'dark',
+          orientation: this.shareCardOrientation,
         });
         url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `lumencode-card-${this.lastReportData.start}.png`;
+        const suffix = this.shareCardOrientation === 'portrait' ? 'vertical' : 'horizontal';
+        a.download = `lumencode-card-${this.lastReportData.start}-${suffix}.png`;
         a.click();
         this.shareCardModalOpen = false;
         showToast('分享卡已下载');

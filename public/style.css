@@ -1773,6 +1773,38 @@ input, textarea { font-family: inherit; color: inherit; }
   line-height: 1.6;
   opacity: 0.68;
 }
+
+/* ── Share Card: 预览区 + 两列选项 ── */
+.share-card-preview-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--ink-8);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  min-height: 180px;
+  max-height: 360px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+#shareCardPreview {
+  max-width: 100%;
+  max-height: 340px;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+.share-card-section-label {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.6;
+  margin: 4px 0 8px;
+}
+.share-card-options-2 {
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 14px;
+}
 @media (prefers-reduced-motion: reduce) {
   .smart-report-progress-bar {
     transition: none;
