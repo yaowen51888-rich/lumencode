@@ -681,6 +681,34 @@ input, textarea { font-family: inherit; color: inherit; }
   color: var(--foreground);
 }
 .btn-outline:hover { border-color: var(--foreground); background: var(--ink-8); }
+/* 分享卡 CTA：aurora 渐变 + 扫光，增长入口需醒目 */
+.btn-aurora {
+  position: relative;
+  background: linear-gradient(135deg, #7480e8, #5ec2dc 55%, #5ec2a8);
+  color: #0b0f14;
+  font-weight: 600;
+  border: none;
+  overflow: hidden;
+  box-shadow: 0 4px 14px -6px rgba(94,194,220,0.55);
+}
+.btn-aurora::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: btn-aurora-sweep 2.8s ease-in-out infinite;
+}
+.btn-aurora:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px -6px rgba(94,194,220,0.85);
+}
+@keyframes btn-aurora-sweep {
+  0%, 55% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-aurora::before { animation: none; }
+}
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-ghost {
   padding: 6px 10px;
