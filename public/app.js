@@ -5,6 +5,7 @@ import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineAr
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
+import { renderShareCard } from './share-card.js';
 import { formatViewStateHash, parseViewStateHash } from './view-state.js';
 
 /* ── Alpine App Component ── */
@@ -163,6 +164,9 @@ function appState() {
     sourceCodexPct: 0,
     sourceOpencodePct: 0,
     sourceBreakdown: [],
+    shareCardModalOpen: false,
+    shareCardStyle: 'aurora',
+    shareCardLoading: false,
     aiContributionMeta: '- / - LINES',
     lineBlameEvidence: null,
     lineBlamePrecision: '',
@@ -1370,6 +1374,34 @@ function appState() {
     exportJSON() { if (this.lastReportData) exportJSON(this.lastReportData, this.period); },
     exportHTML() { if (this.lastReportData) exportHTML(this.lastReportData, this.period); },
     printReport() { if (this.lastReportData) printReport(this.lastReportData, this.period); },
+    openShareCardModal() {
+      if (!this.lastReportData) { showToast('暂无数据，无法生成分享卡'); return; }
+      this.shareCardModalOpen = true;
+    },
+    closeShareCardModal() { this.shareCardModalOpen = false; },
+    async exportShareCard() {
+      if (!this.lastReportData) return;
+      this.shareCardLoading = true;
+      let url;
+      try {
+        const blob = await renderShareCard(this.lastReportData, this.period, {
+          style: this.shareCardStyle,
+          theme: this.theme || 'dark',
+        });
+        url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lumencode-card-${this.lastReportData.start}.png`;
+        a.click();
+        this.shareCardModalOpen = false;
+        showToast('分享卡已下载');
+      } catch (e) {
+        showToast('生成分享卡失败: ' + e.message);
+      } finally {
+        if (url) URL.revokeObjectURL(url);
+        this.shareCardLoading = false;
+      }
+    },
   };
 }
 

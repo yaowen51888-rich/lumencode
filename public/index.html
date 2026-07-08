@@ -180,6 +180,10 @@
               <button class="btn btn-outline" @click="exportCSV()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button class="btn btn-outline" @click="exportJSON()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> JSON</button>
               <button class="btn btn-outline" @click="exportHTML()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> HTML</button>
+              <button class="btn btn-outline" @click="openShareCardModal()" title="生成分享卡 PNG">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                分享卡
+              </button>
               <button class="btn btn-primary" @click="openReport()">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 工作汇报 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1070,6 +1074,37 @@
         <div class="modal-footer" style="gap:8px;">
           <button class="btn btn-outline" @click="closeExportModal()">取消</button>
           <button class="btn btn-primary" @click="confirmExport()" x-text="exportModalAction === 'copy' ? '复制' : '下载'"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Share Card Style Modal ── -->
+    <div id="share-card-modal" class="modal-overlay" x-show="shareCardModalOpen" x-cloak>
+      <div class="modal-backdrop" @click="closeShareCardModal()"></div>
+      <div class="modal-panel" style="max-width:460px;">
+        <div class="modal-header">
+          <h3 style="font-size:15px;font-weight:500;">选择分享卡风格</h3>
+          <button class="rail-btn-icon" @click="closeShareCardModal()" style="color:var(--foreground);opacity:0.65;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:16px 24px;">
+          <div class="smart-report-style-options">
+            <button class="smart-report-style-option" :class="shareCardStyle === 'aurora' ? 'active' : ''" @click="shareCardStyle='aurora'">
+              <span class="smart-report-style-title">暗色发光</span>
+              <span class="smart-report-style-desc">匹配产品默认主题，极光渐变，dev 社区高传播。</span>
+            </button>
+            <button class="smart-report-style-option" :class="shareCardStyle === 'clean' ? 'active' : ''" @click="shareCardStyle='clean'">
+              <span class="smart-report-style-title">干净风</span>
+              <span class="smart-report-style-desc">github-readme-stats 风格，浅/深随主题，极简。</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer" style="gap:8px;">
+          <button class="btn btn-outline" @click="closeShareCardModal()">取消</button>
+          <button class="btn btn-primary" @click="exportShareCard()" :disabled="shareCardLoading">
+            <span x-text="shareCardLoading ? '生成中...' : '下载 PNG'"></span>
+          </button>
         </div>
       </div>
     </div>
