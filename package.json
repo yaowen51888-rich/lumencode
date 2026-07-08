@@ -1,7 +1,7 @@
 {
   "name": "lumencode",
   "version": "1.4.0",
-  "description": "LumenCode — AI 编码助手使用报告工具，从 JSONL 日志和 Git 仓库提取 AI 贡献度、效率与使用指标，支持 Web 可视化和命令行两种模式",
+  "description": "LumenCode — AI 编码助手使用分析与周报工具：15 工具统一、行级 AI 归因、600+ 模型成本估算、一键周报，Web/CLI/MCP 三模式",
   "type": "module",
   "bin": {
     "lumencode": "index.js",
@@ -20,14 +20,22 @@
   "keywords": [
     "lumencode",
     "ai-coding",
-    "usage-analytics",
+    "ai-coding-analytics",
     "claude-code",
     "codex",
     "opencode",
-    "git-insights",
+    "gemini-cli",
+    "copilot",
+    "ai-usage",
+    "token-usage",
+    "ai-cost",
+    "ai-attribution",
     "weekly-report",
+    "usage-analytics",
+    "git-insights",
     "cli",
-    "visualization"
+    "visualization",
+    "mcp"
   ],
   "repository": {
     "type": "git",
