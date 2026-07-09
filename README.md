@@ -36,7 +36,7 @@
 | Scenario | Solved by LumenCode |
 |----------|--------------------------|
 | **Precise AI Contribution** | Not vague "AI helped a lot" — "3,180 out of 4,200 lines were AI-assisted." **Every line accounted for.** |
-| **Proving AI ROI** | Auto-generated weekly report: "This week AI assisted 12 commits, saved ~8 hours, cost $18.50." **Management gets it instantly.** |
+| **Proving AI ROI** | Auto-generated weekly report: "This week AI assisted 12 commits, 3,180 lines attributed to AI, cost $18.50." **Every number is traceable.** |
 | **Weekly reports in 3 seconds** | Pick period → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
 | **Per-project reporting** | Configure multiple projects, then select one to generate an independent report for each project lead |
 | **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
