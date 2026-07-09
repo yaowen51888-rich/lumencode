@@ -57,8 +57,6 @@ LumenCode 和 [`ccusage`](https://github.com/ccusage/ccusage) 读的是同一批
 | **可视化钻取** | — | ✅ 点图表 → 会话 / commit |
 | **支持工具** | 15 | 15（同一组） |
 | **成本 / 定价** | ✅ 离线 + 自定义覆盖 | ✅ **600+ 模型**内置（GLM / Kimi / Qwen / DeepSeek） |
-| **Claude 5 小时计费窗口** | ✅（`blocks`） | 规划中 |
-| **状态栏** | ✅（beta） | 规划中 |
 
 > ccusage 是一个优秀的高速 CLI，我们从中汲取灵感。LumenCode 读的是同一份 `~/.claude` 日志，两者并存零冲突。
 

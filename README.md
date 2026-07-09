@@ -57,8 +57,6 @@ Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same
 | **Drill-down dashboard** | — | ✅ click chart → session / commit |
 | **Tools supported** | 15 | 15 (same set) |
 | **Cost & pricing** | ✅ offline + custom overrides | ✅ **600+ models** bundled (GLM / Kimi / Qwen / DeepSeek) |
-| **Claude 5h billing windows** | ✅ (`blocks`) | roadmap |
-| **Status line** | ✅ (beta) | roadmap |
 
 > ccusage is a great, fast CLI — we draw inspiration from it. LumenCode reads the same `~/.claude` logs, so both run side by side with no conflict.
 
