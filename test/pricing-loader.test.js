@@ -8,6 +8,7 @@ import {
   resolveModelPricing,
   preloadUnknownPricing,
   getLoadedModelCount,
+  getFuzzyPricingMatches,
 } from '../lib/pricing-loader.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -116,6 +117,57 @@ test('resolveModelPricing - fuzzy match by family keyword', () => {
   assert.strictEqual(pricing.unknown, undefined);
   // 任意 sonnet 系列都应匹配（值可能来自 Portkey 或 override）
   assert.ok(pricing.input > 0);
+});
+
+// ── 版本感知 fuzzy 匹配 ──
+
+test('fuzzy - 版本号对齐：opus-4-8 变体不应匹配到 claude-3-opus 旧价', () => {
+  // 带前后缀的 4-8 变体没有精确条目，必须 fuzzy 到 claude-opus-4-8（$5/$25），
+  // 而不是表中更早插入的 claude-3-opus-20240229（$15/$75）
+  const pricing = resolveModelPricing('us.proxy.claude-opus-4-8-v9:9');
+  assert.strictEqual(pricing.input, 5);
+  assert.strictEqual(pricing.output, 25);
+});
+
+test('fuzzy - 变体隔离：o3 变体不应匹配 o3-pro / o3-mini', () => {
+  const base = resolveModelPricing('custom-o3-endpoint');
+  assert.strictEqual(base.input, 2, 'o3 应匹配基础版（$2），而非 pro（$20）或 mini');
+
+  const pro = resolveModelPricing('my-o3-pro-proxy');
+  assert.strictEqual(pro.input, 20, 'o3-pro 变体应匹配 o3-pro（$20）');
+});
+
+test('fuzzy - 版本与变体同时对齐：gpt-5.4 代理名 → gpt-5.4 基础版', () => {
+  // 应命中 gpt-5.4 基础版，而非 gpt-5.4-pro / -mini / -nano，
+  // 也不应被模型名中的 'proxy' 子串误判为 pro 变体
+  const pricing = resolveModelPricing('gpt-5.4-proxy-x');
+  assert.strictEqual(pricing.fuzzy, true);
+  assert.ok(/^gpt-5\.4(-\d|$)/.test(pricing.fuzzyKey), `应命中 gpt-5.4 基础版，实际 ${pricing.fuzzyKey}`);
+});
+
+test('fuzzy - 命中结果带 fuzzy 标记与实际计价 key；精确匹配不带', () => {
+  const fuzzy = resolveModelPricing('us.proxy.claude-opus-4-8-v9:9');
+  assert.strictEqual(fuzzy.fuzzy, true);
+  assert.ok(typeof fuzzy.fuzzyKey === 'string' && fuzzy.fuzzyKey.includes('opus'));
+
+  const exact = resolveModelPricing('claude-opus-4-6');
+  assert.strictEqual(exact.fuzzy, undefined, '精确匹配不应带 fuzzy 标记');
+});
+
+test('fuzzy - 命中登记到 getFuzzyPricingMatches，initPricing 后清空', () => {
+  resolveModelPricing('us.proxy.claude-opus-4-8-v9:9');
+  const matches = getFuzzyPricingMatches();
+  assert.ok(matches['us.proxy.claude-opus-4-8-v9:9'], 'fuzzy 命中应登记 model → key');
+
+  initPricing();
+  assert.deepStrictEqual(getFuzzyPricingMatches(), {}, 'initPricing 后登记表应清空');
+});
+
+test('fuzzy - 标记不污染表内共享定价对象', () => {
+  resolveModelPricing('us.proxy.claude-opus-4-8-v9:9');
+  // 直接精确取同一家族条目，不应被前一次 fuzzy 解析写入 fuzzy 字段
+  const exact = resolveModelPricing('claude-opus-4-8');
+  assert.strictEqual(exact.fuzzy, undefined);
 });
 
 test('resolveModelPricing - unknown model returns unknown', () => {
