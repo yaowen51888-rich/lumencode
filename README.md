@@ -6,6 +6,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/v/lumencode.svg?style=flat-square&color=cb3837" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
+  <a href="https://github.com/yaowen51888-rich/lumencode"><img src="https://img.shields.io/github/stars/yaowen51888-rich/lumencode.svg?style=flat-square&color=yellow" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
@@ -40,6 +41,24 @@
 | **Per-project reporting** | Configure multiple projects, then select one to generate an independent report for each project lead |
 | **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
 | **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
+
+---
+
+## How does it compare to `ccusage`?
+
+If you've used [`ccusage`](https://github.com/ryoppippi/ccusage), here's where LumenCode goes further — same one-command simplicity, broader coverage, deeper attribution.
+
+| | **ccusage** | **LumenCode** |
+|---|:---:|:---:|
+| **Tools supported** | Claude Code only | **15 tools** (Claude Code, Codex, Copilot, Gemini, Qwen, OpenCode…) |
+| **Line-level AI attribution** | ❌ | ✅ "This line was written by AI" |
+| **Per-project & sprint-cycle reports** | limited | ✅ any date range, per-project |
+| **One-click publishable report** | report only | ✅ Detailed / Brief · Markdown / Lark / DingTalk |
+| **Cost estimation** | Claude models | ✅ **600+ models** (GLM / Kimi / Qwen / DeepSeek) |
+| **MCP server** | — | ✅ 7 tools, query from Claude Code / Cursor |
+| **Web UI** | ✅ | ✅ Light / Dark |
+
+> Already on `ccusage`? LumenCode reads the same `~/.claude` logs — run both side by side, no conflict.
 
 ---
 

@@ -6,6 +6,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/v/lumencode.svg?style=flat-square&color=cb3837" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
+  <a href="https://github.com/yaowen51888-rich/lumencode"><img src="https://img.shields.io/github/stars/yaowen51888-rich/lumencode.svg?style=flat-square&color=yellow" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
@@ -40,6 +41,24 @@
 | **按项目汇报** | 多项目并行时，选择单个项目生成独立汇报，向不同负责人对齐 |
 | **对齐 Sprint 周期** | 自定义任意起止日期，不再被日/周/月固定周期限制 |
 | **追踪 AI 成本** | 600+ 模型内置定价（含 GLM/Kimi/Qwen/DeepSeek），自动算出等效 API 花销 |
+
+---
+
+## 和 `ccusage` 有什么区别？
+
+用过 [`ccusage`](https://github.com/ryoppippi/ccusage)？LumenCode 在同样的"一条命令"体验上走得更远——覆盖更广、归因更深。
+
+| | **ccusage** | **LumenCode** |
+|---|:---:|:---:|
+| **支持工具** | 仅 Claude Code | **15 款**（Claude Code / Codex / Copilot / Gemini / Qwen / OpenCode…） |
+| **行级 AI 归因** | ❌ | ✅ "这一行是 AI 写的" |
+| **按项目 / 迭代周期汇报** | 有限 | ✅ 任意日期区间，按项目独立 |
+| **一键可发布周报** | 仅报告 | ✅ 详报 / 简报 · Markdown / 飞书 / 钉钉 |
+| **成本估算** | Claude 模型 | ✅ **600+ 模型**（GLM / Kimi / Qwen / DeepSeek） |
+| **MCP Server** | — | ✅ 7 个工具，Claude Code / Cursor 里直接问 |
+| **Web UI** | ✅ | ✅ 浅色 / 深色 |
+
+> 已经在用 `ccusage`？LumenCode 读的是同一份 `~/.claude` 日志，两个并存零冲突，随时切换。
 
 ---
 
