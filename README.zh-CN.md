@@ -46,19 +46,21 @@
 
 ## 和 `ccusage` 有什么区别？
 
-用过 [`ccusage`](https://github.com/ryoppippi/ccusage)？LumenCode 在同样的"一条命令"体验上走得更远——覆盖更广、归因更深。
+LumenCode 和 [`ccusage`](https://github.com/ccusage/ccusage) 读的是同一批本地日志、支持同一组 15 款 agent CLI。差别在"拿到数据能做什么"——LumenCode 在此之上多了 Web UI、MCP 服务、行级 AI 归因。
 
 | | **ccusage** | **LumenCode** |
 |---|:---:|:---:|
-| **支持工具** | 仅 Claude Code | **15 款**（Claude Code / Codex / Copilot / Gemini / Qwen / OpenCode…） |
-| **行级 AI 归因** | ❌ | ✅ "这一行是 AI 写的" |
-| **按项目 / 迭代周期汇报** | 有限 | ✅ 任意日期区间，按项目独立 |
-| **一键可发布周报** | 仅报告 | ✅ 详报 / 简报 · Markdown / 飞书 / 钉钉 |
-| **成本估算** | Claude 模型 | ✅ **600+ 模型**（GLM / Kimi / Qwen / DeepSeek） |
-| **MCP Server** | — | ✅ 7 个工具，Claude Code / Cursor 里直接问 |
-| **Web UI** | ✅ | ✅ 浅色 / 深色 |
+| **形态** | CLI | **CLI + Web UI + MCP** |
+| **行级 AI 归因** | — | ✅ "这一行是 AI 写的" |
+| **可发布周报** | 终端 / JSON | **Markdown / 飞书 / 钉钉** · 详报 / 简报 |
+| **AI 智能周报** | — | ✅ 调本地 agent 出分析 |
+| **可视化钻取** | — | ✅ 点图表 → 会话 / commit |
+| **支持工具** | 15 | 15（同一组） |
+| **成本 / 定价** | ✅ 离线 + 自定义覆盖 | ✅ **600+ 模型**内置（GLM / Kimi / Qwen / DeepSeek） |
+| **Claude 5 小时计费窗口** | ✅（`blocks`） | 规划中 |
+| **状态栏** | ✅（beta） | 规划中 |
 
-> 已经在用 `ccusage`？LumenCode 读的是同一份 `~/.claude` 日志，两个并存零冲突，随时切换。
+> ccusage 是一个优秀的高速 CLI，我们从中汲取灵感。LumenCode 读的是同一份 `~/.claude` 日志，两者并存零冲突。
 
 ---
 

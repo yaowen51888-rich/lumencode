@@ -46,19 +46,21 @@
 
 ## How does it compare to `ccusage`?
 
-If you've used [`ccusage`](https://github.com/ryoppippi/ccusage), here's where LumenCode goes further — same one-command simplicity, broader coverage, deeper attribution.
+Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same local logs from the same 15 agent CLIs. The difference is *what you can do with the data* — LumenCode adds a Web UI, an MCP server, and line-level AI attribution on top.
 
 | | **ccusage** | **LumenCode** |
 |---|:---:|:---:|
-| **Tools supported** | Claude Code only | **15 tools** (Claude Code, Codex, Copilot, Gemini, Qwen, OpenCode…) |
-| **Line-level AI attribution** | ❌ | ✅ "This line was written by AI" |
-| **Per-project & sprint-cycle reports** | limited | ✅ any date range, per-project |
-| **One-click publishable report** | report only | ✅ Detailed / Brief · Markdown / Lark / DingTalk |
-| **Cost estimation** | Claude models | ✅ **600+ models** (GLM / Kimi / Qwen / DeepSeek) |
-| **MCP server** | — | ✅ 7 tools, query from Claude Code / Cursor |
-| **Web UI** | ✅ | ✅ Light / Dark |
+| **Interface** | CLI | **CLI + Web UI + MCP** |
+| **Line-level AI attribution** | — | ✅ "this line was written by AI" |
+| **Publishable report** | terminal / JSON | **Markdown / Lark / DingTalk** · Detailed / Brief |
+| **AI-generated smart report** | — | ✅ calls local agent for insights |
+| **Drill-down dashboard** | — | ✅ click chart → session / commit |
+| **Tools supported** | 15 | 15 (same set) |
+| **Cost & pricing** | ✅ offline + custom overrides | ✅ **600+ models** bundled (GLM / Kimi / Qwen / DeepSeek) |
+| **Claude 5h billing windows** | ✅ (`blocks`) | roadmap |
+| **Status line** | ✅ (beta) | roadmap |
 
-> Already on `ccusage`? LumenCode reads the same `~/.claude` logs — run both side by side, no conflict.
+> ccusage is a great, fast CLI — we draw inspiration from it. LumenCode reads the same `~/.claude` logs, so both run side by side with no conflict.
 
 ---
 
