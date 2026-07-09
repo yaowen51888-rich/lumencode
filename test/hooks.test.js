@@ -464,7 +464,7 @@ command = 'node "Z:/nonexistent_lumencode_test/missing/codex-hook.js"'
 test('getHooksHealth reports stale when last step older than threshold', async () => {
   const tempDir = mkdtempSync(join(tmpdir(), 'hooks-stale-'));
   try {
-    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const dbPath = join(tempDir, '.lumencode', 'steps.db');
     const db = new StepDatabase();
     await db.open(dbPath);
     db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 100 * 24 * 60 * 60 * 1000, toolName: 'edit', toolUseId: 'u1' });
@@ -481,7 +481,7 @@ test('getHooksHealth reports stale when last step older than threshold', async (
 test('getHooksHealth not stale when last step recent', async () => {
   const tempDir = mkdtempSync(join(tmpdir(), 'hooks-fresh-'));
   try {
-    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const dbPath = join(tempDir, '.lumencode', 'steps.db');
     const db = new StepDatabase();
     await db.open(dbPath);
     db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 60_000, toolName: 'edit', toolUseId: 'u1' });
@@ -498,7 +498,7 @@ test('getHooksHealth not stale when last step recent', async () => {
 test('getHooksHealth returns null lastStepAt and not stale when no steps', async () => {
   const tempDir = mkdtempSync(join(tmpdir(), 'hooks-empty-'));
   try {
-    const dbPath = join(tempDir, '.ccusage', 'steps.db');
+    const dbPath = join(tempDir, '.lumencode', 'steps.db');
     const db = new StepDatabase();
     await db.open(dbPath);
     db.save();
@@ -510,3 +510,4 @@ test('getHooksHealth returns null lastStepAt and not stale when no steps', async
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
+

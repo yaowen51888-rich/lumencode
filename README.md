@@ -346,7 +346,7 @@ Enabling only modifies the current project's local config (`.claude/settings.loc
 node index.js hooks disable
 ```
 
-Data is written to the current project's `.ccusage/steps.db` (includes file snapshots for attribution), already ignored in this repo's `.gitignore`; if you enable it in another repo, also ignore `.ccusage/`.
+Data is written to `.lumencode/steps.db` in the current project. Existing `.ccusage/steps.db` files from older versions are copied to the new path on first use and kept as rollback-safe legacy backups.
 
 ### Model Pricing Data
 

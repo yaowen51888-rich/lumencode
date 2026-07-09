@@ -1,0 +1,25 @@
+import { writeFileSync } from 'fs';
+import { join } from 'path';
+import { StepTracker } from '../../lib/step-tracker.js';
+
+const [projectRoot, workerId, countRaw] = process.argv.slice(2);
+const count = Number(countRaw || 0);
+
+for (let i = 0; i < count; i++) {
+  const filePath = join(projectRoot, `file-${workerId}.js`);
+  writeFileSync(filePath, `export const value${i} = ${i};\n`, 'utf8');
+
+  const tracker = new StepTracker(projectRoot);
+  await tracker.open({ lockTimeoutMs: 10_000 });
+  try {
+    await tracker.recordStep({
+      sessionId: `session-${workerId}`,
+      toolName: 'Write',
+      toolInput: { file_path: filePath },
+      toolUseId: `${workerId}-${i}`,
+      timestamp: Date.now() + i,
+    });
+  } finally {
+    tracker.close();
+  }
+}

@@ -346,7 +346,7 @@ node index.js hooks enable       # 交互式选择工具、初始化 steps 并�
 node index.js hooks disable
 ```
 
-数据写入当前项目的 `.ccusage/steps.db`（含归因用的文件快照），已在本项目 `.gitignore` 中默认忽略；在其它仓库启用时也建议忽略 `.ccusage/`。
+数据写入当前项目的 `.lumencode/steps.db`（含归因用的文件快照）。旧版本的 `.ccusage/steps.db` 会在首次使用时复制迁移到新路径；旧文件保留为回滚备份。
 
 ### 模型定价数据
 

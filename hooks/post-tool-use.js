@@ -2,7 +2,7 @@
 /**
  * Claude Code PostToolUse hook for step tracking.
  * Reads JSON payload from stdin, records the tool call as a step.
- * Silently no-ops if .ccusage/steps.db doesn't exist.
+ * Silently no-ops if the Step Database is not initialized.
  */
 import { ORIGINS, recordToolUse } from '../lib/capture-recorder.js';
 

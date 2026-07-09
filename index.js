@@ -135,7 +135,7 @@ async function confirmHooksEnable(tools, status, rl) {
   console.log('操作类型: 修改当前项目的本地 AI 工具配置文件。');
   console.log(`影响范围: ${tools.includes(HOOK_TOOLS.CLAUDE) ? '.claude/settings.local.json ' : ''}${tools.includes(HOOK_TOOLS.CODEX) ? '.codex/config.toml' : ''}`);
   console.log('用途: 记录 PostToolUse 事件，用于行级 AI 归因。');
-  console.log(`steps 数据库: ${status.stepsInitialized ? '已初始化' : '将初始化 .ccusage/steps.db'}`);
+  console.log(`steps 数据库: ${status.stepsInitialized ? '已初始化' : '将初始化 .lumencode/steps.db'}`);
   console.log('风险: 只启用当前项目 hooks，不修改全局配置或其它项目。');
 
   const answer = await rl.ask('请输入“确认”继续: ');
@@ -146,7 +146,7 @@ async function handleHooksCommand() {
   const subcommand = args[1] || 'status';
   if (subcommand === 'init') {
     const stats = await initStepTracking(process.cwd());
-    console.log(`Step tracking initialized at .ccusage/steps.db`);
+    console.log(`Step tracking initialized at .lumencode/steps.db`);
     console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
     return;
   }
@@ -171,7 +171,7 @@ async function handleHooksCommand() {
         return;
       }
       const stats = await initStepTracking(process.cwd());
-      console.log(`Step tracking initialized at .ccusage/steps.db`);
+      console.log(`Step tracking initialized at .lumencode/steps.db`);
       console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
       const results = enableHooks(process.cwd(), tools, { backup: true });
       printHookResults(results, '已开启');
@@ -595,3 +595,4 @@ function fmtNum(n) {
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return String(n);
 }
+

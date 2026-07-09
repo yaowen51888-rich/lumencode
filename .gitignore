@@ -18,6 +18,7 @@ Thumbs.db
 *.log
 
 # Local step tracking database (stores file snapshots)
+.lumencode/
 .ccusage/
 docs/
 .playwright-mcp/
@@ -35,3 +36,4 @@ smart-reports/
 
 # Pricing cache — auto-generated at runtime
 data/pricing-cache.json
+.lumencode/

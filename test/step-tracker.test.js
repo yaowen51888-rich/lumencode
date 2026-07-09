@@ -1,7 +1,7 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
 import { tmpdir } from 'os';
 import { StepDatabase } from '../lib/step-schema.js';
 import { StepTracker } from '../lib/step-tracker.js';
@@ -77,6 +77,43 @@ test('StepDatabase - getStepCount / getSessionCount', async () => {
 });
 
 // ── StepTracker tests ──
+test('StepTracker migrates legacy default database by copy', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'lumencode-step-migrate-'));
+  const legacyPath = join(root, '.ccusage', 'steps.db');
+  mkdirSync(dirname(legacyPath), { recursive: true });
+
+  const legacy = new StepDatabase();
+  await legacy.open(legacyPath);
+  legacy.insertStep({
+    id: 'legacy-step',
+    sessionId: 'legacy-session',
+    origin: 'claude_code',
+    ts: 1,
+    toolName: 'Write',
+    toolUseId: 'tool-1',
+  });
+  legacy.save();
+  legacy.close();
+
+  const tracker = new StepTracker(root);
+  await tracker.open();
+  assert.equal(tracker.dbPath, join(root, '.lumencode', 'steps.db'));
+  assert.equal(tracker.db.getStepCount(), 1);
+  tracker.close();
+  assert.equal(existsSync(legacyPath), true);
+});
+
+test('StepTracker treats old default dbPath option as product-owned default', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'lumencode-step-old-default-'));
+  const tracker = new StepTracker(root, { dbPath: '.ccusage/steps.db' });
+  assert.equal(tracker.dbPath, join(root, '.lumencode', 'steps.db'));
+});
+
+test('StepTracker keeps custom dbPath unchanged', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'lumencode-step-custom-'));
+  const tracker = new StepTracker(root, { dbPath: 'custom/steps.db' });
+  assert.equal(tracker.dbPath, join(root, 'custom', 'steps.db'));
+});
 
 test('StepTracker - isAvailable returns false for empty DB', async () => {
   const trackerDbPath = join(tempDir, 'empty-tracker.db');
@@ -394,3 +431,4 @@ test('StepTracker - CRLF step vs LF commit 归一后仍 aligned', async () => {
   assert.equal(res.aiLines, 3);
   tracker.close();
 });
+

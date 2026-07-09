@@ -6,5 +6,6 @@
 import { initStepTracking } from '../lib/hooks-manager.js';
 
 const stats = await initStepTracking(process.cwd());
-console.log(`Step tracking initialized at .ccusage/steps.db`);
+console.log(`Step tracking initialized at .lumencode/steps.db`);
 console.log(`  Steps: ${stats.stepCount}, Sessions: ${stats.sessionCount}`);
+

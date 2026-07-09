@@ -1684,7 +1684,7 @@ function collectStepTracking() {
     .split(',').map(s => s.trim()).filter(Boolean);
   return {
     enabled: document.getElementById('cfgStepEnabled')?.checked !== false,
-    dbPath: document.getElementById('cfgStepDbPath')?.value.trim() || '.ccusage/steps.db',
+    dbPath: document.getElementById('cfgStepDbPath')?.value.trim() || '.lumencode/steps.db',
     maxFileSize: Number(document.getElementById('cfgStepMaxSize')?.value) || 10485760,
     ignorePatterns: ign,
   };

@@ -63,7 +63,7 @@
   },
   "stepTracking": {
     "enabled": true,
-    "dbPath": ".ccusage/steps.db",
+    "dbPath": ".lumencode/steps.db",
     "maxFileSize": 10485760,
     "ignorePatterns": ["node_modules/", ".git/", "dist/", "build/", ".next/", ".cache/"]
   },
@@ -77,3 +77,4 @@
     "refactoring": ["重构", "refactor", "重写", "rewrite", "清理代码", "clean up", "简化", "simplify", "提取", "extract"]
   }
 }
+

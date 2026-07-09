@@ -45,11 +45,11 @@ test('server exposes hooks status and enables hooks from web API', async () => {
     assert.equal(enabled.status.claude.enabled, true);
     assert.equal(enabled.status.codex.enabled, true);
     assert.equal(enabled.status.opencode.enabled, true);
-    assert.ok(existsSync(join(repoDir, '.ccusage', 'steps.db')));
+    assert.ok(existsSync(join(repoDir, '.lumencode', 'steps.db')));
     assert.ok(existsSync(join(repoDir, '.claude', 'settings.local.json')));
     assert.ok(existsSync(join(repoDir, '.codex', 'config.toml')));
     assert.ok(existsSync(join(repoDir, '.opencode', 'plugins', 'lumencode-step-tracker.js')));
-    assert.equal(existsSync(join(launchDir, '.ccusage', 'steps.db')), false);
+    assert.equal(existsSync(join(launchDir, '.lumencode', 'steps.db')), false);
     assert.equal(existsSync(join(launchDir, '.claude', 'settings.local.json')), false);
     assert.equal(existsSync(join(launchDir, '.codex', 'config.toml')), false);
     assert.equal(existsSync(join(launchDir, '.opencode', 'plugins', 'lumencode-step-tracker.js')), false);
@@ -87,7 +87,7 @@ test('server hooks API requires configured repos instead of using launch directo
 
     assert.equal(res.status, 400);
     assert.match(body.error, /项目路径/);
-    assert.equal(existsSync(join(tempDir, '.ccusage', 'steps.db')), false);
+    assert.equal(existsSync(join(tempDir, '.lumencode', 'steps.db')), false);
     assert.equal(existsSync(join(tempDir, '.claude', 'settings.local.json')), false);
     assert.equal(existsSync(join(tempDir, '.codex', 'config.toml')), false);
     assert.equal(existsSync(join(tempDir, '.opencode', 'plugins', 'lumencode-step-tracker.js')), false);
@@ -139,7 +139,7 @@ test('adding new project via /api/config inherits enabled hooks', async () => {
 
     // repo2 应自动继承 claude hook + steps.db
     assert.ok(existsSync(join(repo2, '.claude', 'settings.local.json')));
-    assert.ok(existsSync(join(repo2, '.ccusage', 'steps.db')));
+    assert.ok(existsSync(join(repo2, '.lumencode', 'steps.db')));
 
     const status = await fetch(`http://127.0.0.1:${port}/api/hooks`).then(res => res.json());
     assert.equal(status.projectCount, 2);
@@ -187,7 +187,7 @@ test('adding new project does not inherit hooks when none enabled', async () => 
     }).then(res => res.json());
 
     assert.equal(existsSync(join(repo2, '.claude', 'settings.local.json')), false);
-    assert.equal(existsSync(join(repo2, '.ccusage', 'steps.db')), false);
+    assert.equal(existsSync(join(repo2, '.lumencode', 'steps.db')), false);
   } finally {
     await new Promise(resolve => server.close(resolve));
     process.chdir(oldCwd);
@@ -198,3 +198,4 @@ test('adding new project does not inherit hooks when none enabled', async () => 
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
+
