@@ -396,3 +396,22 @@ test('ClaudeParser - record.project 归一到 Git 仓库根目录', async () => 
     cleanupTestDir();
   }
 });
+
+test('_convertToUsageRecord - 项目 rename 后旧 cwd 失效时回退 Claude 目录名', () => {
+  const p = new ClaudeParser();
+  // 旧 cwd 指向已被 rename/move 的路径（磁盘不存在）→ 不应采用，回退 projectDir
+  const r1 = p._convertToUsageRecord(
+    { cwd: 'D:/__renamed_away__', timestamp: '2026-07-08T10:00:00Z', sessionId: 's-old' },
+    'lumencode', 's-old',
+  );
+  strictEqual(r1.project, 'lumencode', '旧 cwd 失效时应回退目录名而非残留旧路径');
+
+  // 现存 cwd → 正常解析为 git 根（真实路径），不走回退
+  const r2 = p._convertToUsageRecord(
+    { cwd: process.cwd(), timestamp: '2026-07-10T10:00:00Z', sessionId: 's-new' },
+    'lumencode', 's-new',
+  );
+  if (!r2.project.includes('lumencode') || r2.project === 'lumencode') {
+    throw new Error(`现存 cwd 应解析为 git 根，实际: ${r2.project}`);
+  }
+});
