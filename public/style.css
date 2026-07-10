@@ -2067,3 +2067,46 @@ input, textarea { font-family: inherit; color: inherit; }
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
 }
+
+/* #6 首屏横幅：有活动但未开启行级归因 */
+.tracking-banner {
+  padding: 12px 48px;
+  background: color-mix(in srgb, var(--accent, #4a52a8) 10%, var(--card));
+  border-bottom: 1px solid var(--border);
+}
+.tracking-banner-inner {
+  display: flex; align-items: center; gap: 14px;
+  max-width: 1200px; margin: 0 auto;
+}
+.tracking-banner-icon { font-size: 18px; }
+.tracking-banner-text { font-size: 14px; color: var(--foreground); flex: 1; }
+.tracking-banner-text strong { color: var(--accent, #4a52a8); }
+.tracking-banner-btn {
+  flex: none; padding: 7px 16px; font-size: 13px; font-weight: 500;
+  color: #fff; background: var(--accent, #4a52a8); border: none;
+  border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s;
+}
+.tracking-banner-btn:hover { opacity: 0.88; }
+
+/* #6 项目级归因列表 */
+.tracking-list { display: flex; flex-direction: column; gap: 2px; }
+.tracking-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 9px 10px; border-radius: 8px;
+}
+.tracking-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
+.tracking-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tracking-name { font-size: 13px; font-weight: 500; color: var(--foreground); }
+.tracking-path {
+  font-size: 11px; font-family: var(--font-mono, monospace);
+  color: var(--foreground); opacity: 0.5; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.tracking-meta { display: flex; align-items: center; gap: 12px; flex: none; }
+.tracking-badge {
+  font-size: 11px; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--border); white-space: nowrap;
+}
+.tracking-badge.badge-on { color: var(--forest, #3d7558); border-color: color-mix(in srgb, var(--forest, #3d7558) 40%, transparent); }
+.tracking-badge.badge-partial { color: var(--ochre, #9a7836); border-color: color-mix(in srgb, var(--ochre, #9a7836) 40%, transparent); }
+.tracking-badge.badge-off { color: var(--foreground); opacity: 0.5; }

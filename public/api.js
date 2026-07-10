@@ -117,11 +117,19 @@ export async function fetchHooksStatus() {
   return res.json();
 }
 
-export async function updateHooks(action, tools = ['claude', 'codex', 'opencode', 'gemini']) {
+export async function fetchProjectTracking() {
+  const res = await fetch(API.PROJECT_TRACKING);
+  if (!res.ok) throw new Error('获取项目归因状态失败');
+  return res.json();
+}
+
+export async function updateHooks(action, tools = ['claude', 'codex', 'opencode', 'gemini'], projectRoots = null) {
+  const payload = { action, tools: tools.join(',') };
+  if (Array.isArray(projectRoots) && projectRoots.length) payload.projectRoots = projectRoots;
   const res = await fetch(API.HOOKS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, tools: tools.join(',') }),
+    body: JSON.stringify(payload),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || '更新 hooks 失败');

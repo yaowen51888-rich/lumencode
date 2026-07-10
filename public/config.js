@@ -7,6 +7,7 @@ export const API = {
   SESSIONS: '/api/sessions',
   STEP_STATS: '/api/step-stats',
   HOOKS: '/api/hooks',
+  PROJECT_TRACKING: '/api/projects/tracking',
   SMART_REPORT_TOOLS: '/api/smart-report/tools',
   SMART_REPORT: '/api/smart-report',
 };

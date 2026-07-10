@@ -1,6 +1,6 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, TOOL_META, toolDisplayName } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, fetchProjectTracking, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
@@ -175,6 +175,8 @@ function appState() {
     stepStatusLabel: '',
     hooksStatus: null,
     hooksBusy: false,
+    projectTracking: null,
+    projectTrackingBusy: false,
     gitOutputCells: [
       { l: '提交', en: 'COMMITS', v: '-', c: '' },
       { l: '变更文件', en: 'FILES', v: '-', c: '' },
@@ -268,7 +270,15 @@ function appState() {
       return parts.join(' / ');
     },
 
-    /* ── init ── */
+    // #6：近 7 天有 AI 活动、但未开启行级归因的项目（首屏横幅 + 设置卡批处理依据）
+    get untrackedActiveProjects() {
+      const projects = this.projectTracking?.projects || [];
+      return projects.filter(p => p.active && !p.anyEnabled);
+    },
+
+    get trackedProjects() {
+      return this.projectTracking?.projects || [];
+    },
     async init() {
       this.initSourcePaletteKb();
       this.loadStateFromHash();
@@ -283,6 +293,7 @@ function appState() {
       await this.loadSmartReportTools();
       await this.loadHooksStatus();
       await this.loadStepStats();
+      this.loadProjectTracking();
       // 首次加载时先获取全量数据填充侧边栏，再按当前工具加载
       if (this.activeTool !== 'all') {
         try {
@@ -359,6 +370,59 @@ function appState() {
         console.warn('loadHooksStatus failed:', e);
         this.hooksStatus = null;
       }
+    },
+
+    async loadProjectTracking() {
+      try {
+        this.projectTracking = await fetchProjectTracking();
+      } catch (e) {
+        console.warn('loadProjectTracking failed:', e);
+        this.projectTracking = null;
+      }
+    },
+
+    // 逐项目开关（#6）：定向单项目启用/禁用全部支持工具
+    async toggleProjectTracking(project) {
+      if (this.projectTrackingBusy) return;
+      const enable = !project.anyEnabled;
+      this.projectTrackingBusy = true;
+      try {
+        await updateHooks(enable ? 'enable' : 'disable', ['claude', 'codex', 'opencode', 'gemini'], [project.path]);
+        await this.loadProjectTracking();
+        await this.loadHooksStatus();
+        await this.loadStepStats();
+        showToast(enable ? `已开启 ${project.name} 行级归因` : `已关闭 ${project.name} 行级归因`);
+      } catch (err) {
+        showToast((enable ? '开启' : '关闭') + '失败: ' + err.message);
+      } finally {
+        this.projectTrackingBusy = false;
+      }
+    },
+
+    async enableAllUntracked() {
+      if (this.projectTrackingBusy) return;
+      const paths = this.untrackedActiveProjects.map(p => p.path);
+      if (paths.length === 0) return;
+      this.projectTrackingBusy = true;
+      try {
+        await updateHooks('enable', ['claude', 'codex', 'opencode', 'gemini'], paths);
+        await this.loadProjectTracking();
+        await this.loadHooksStatus();
+        await this.loadStepStats();
+        showToast(`已开启 ${paths.length} 个项目的行级归因`);
+      } catch (err) {
+        showToast('批量开启失败: ' + err.message);
+      } finally {
+        this.projectTrackingBusy = false;
+      }
+    },
+
+    goToTrackingSettings() {
+      this.setView('settings');
+      this.$nextTick(() => {
+        const el = document.getElementById('trackingCard');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     },
 
     showHooksConfirmModal() {

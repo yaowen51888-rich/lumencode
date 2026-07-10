@@ -147,6 +147,16 @@
 
     <!-- ── Main ── -->
     <main class="main-content">
+      <!-- #6 首屏横幅：有近期 AI 活动但未开启行级归因的项目 -->
+      <div class="tracking-banner" x-show="untrackedActiveProjects.length && view !== 'settings'" x-cloak>
+        <div class="tracking-banner-inner">
+          <span class="tracking-banner-icon" aria-hidden="true">⚡</span>
+          <span class="tracking-banner-text">
+            <strong x-text="untrackedActiveProjects.length"></strong> 个项目近 7 天有 AI 活动，未开启行级归因
+          </span>
+          <button class="tracking-banner-btn" @click="goToTrackingSettings()">管理归因 →</button>
+        </div>
+      </div>
       <!-- ===== LEDGER VIEW ===== -->
       <div x-show="view === 'ledger'" style="display:block;">
         <div style="padding: 32px 48px;position:relative;isolation:isolate;">
@@ -925,7 +935,7 @@
             </section>
 
             <!-- 归因与追踪 -->
-            <section class="card cfg-card">
+            <section class="card cfg-card" id="trackingCard">
               <div class="cfg-card-body">
                 <div class="cfg-section-title">归因与追踪</div>
                 <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;">
@@ -963,6 +973,37 @@
                 <div id="cfgAttributionSection" class="cfg-advanced-body" style="display:none;">
                   <p class="form-hint" style="margin-bottom:8px;">阈值/权重等专家参数请直接编辑 <code>config.json</code>。当前值：</p>
                   <pre id="cfgAttributionPreview" class="cfg-json-preview"></pre>
+                </div>
+
+                <!-- 逐项目行级归因开关（#6）：列出近期有活动的项目，逐项启用 -->
+                <div class="form-group" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                    <label class="form-label" style="margin:0;">项目级行级归因</label>
+                    <button class="path-add-btn" x-show="untrackedActiveProjects.length" @click="enableAllUntracked()" :disabled="projectTrackingBusy">
+                      全部开启未开启的 <span x-text="untrackedActiveProjects.length"></span> 个
+                    </button>
+                  </div>
+                  <p class="form-hint" style="margin-top:0;margin-bottom:10px;">逐项目开启后，会写入各项目 <code>.claude</code> / <code>.codex</code> 等配置记录工具步骤</p>
+                  <p class="form-hint" x-show="!trackedProjects.length" style="margin:0;">暂无近期（30 天内）有 AI 活动的项目</p>
+                  <div class="tracking-list">
+                    <template x-for="p in trackedProjects" :key="p.path">
+                      <div class="tracking-row">
+                        <div class="tracking-info">
+                          <span class="tracking-name" x-text="p.name"></span>
+                          <span class="tracking-path" x-text="p.path"></span>
+                        </div>
+                        <div class="tracking-meta">
+                          <span class="tracking-badge"
+                            :class="p.anyEnabled ? (p.partial ? 'badge-partial' : 'badge-on') : 'badge-off'"
+                            x-text="p.anyEnabled ? (p.partial ? '部分' : '已开启') : '未开启'"></span>
+                          <label class="cfg-switch">
+                            <input type="checkbox" :checked="p.anyEnabled" :disabled="projectTrackingBusy" @change="toggleProjectTracking(p)">
+                            <span class="cfg-switch-track"><span class="cfg-switch-thumb"></span></span>
+                          </label>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </section>

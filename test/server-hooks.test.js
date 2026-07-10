@@ -199,3 +199,113 @@ test('adding new project does not inherit hooks when none enabled', async () => 
   }
 });
 
+// ── #6：逐项目定向启用（不依赖 config.repos）──
+
+test('POST /api/hooks targets a single projectRoot without requiring config repos', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'server-hooks-target-'));
+  const launchDir = join(tempDir, 'launch');
+  const repoDir = join(tempDir, 'repo');
+  const oldCwd = process.cwd();
+  const oldPort = process.env.LUMENCODE_PORT;
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  mkdirSync(launchDir, { recursive: true });
+  mkdirSync(repoDir, { recursive: true });
+  process.chdir(launchDir);
+  process.env.LUMENCODE_PORT = '0';
+  process.env.LUMENCODE_NO_OPEN = '1';
+
+  // config.repos 为空：验证 projectRoot 定向不依赖配置项目
+  const server = startServer({}, null, async () => null, join(tempDir, 'config.json'));
+  try {
+    await onceListening(server);
+    const { port } = server.address();
+
+    const enabled = await fetch(`http://127.0.0.1:${port}/api/hooks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'enable', tools: 'claude', projectRoot: repoDir }),
+    }).then(res => res.json());
+
+    assert.equal(enabled.success, true);
+    assert.ok(existsSync(join(repoDir, '.claude', 'settings.local.json')));
+    assert.ok(existsSync(join(repoDir, '.lumencode', 'steps.db')));
+    // launch 目录不受影响
+    assert.equal(existsSync(join(launchDir, '.claude', 'settings.local.json')), false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    process.chdir(oldCwd);
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('POST /api/hooks targets multiple projectRoots (batch)', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'server-hooks-batch-'));
+  const launchDir = join(tempDir, 'launch');
+  const repo1 = join(tempDir, 'repo1');
+  const repo2 = join(tempDir, 'repo2');
+  const oldCwd = process.cwd();
+  const oldPort = process.env.LUMENCODE_PORT;
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  mkdirSync(launchDir, { recursive: true });
+  mkdirSync(repo1, { recursive: true });
+  mkdirSync(repo2, { recursive: true });
+  process.chdir(launchDir);
+  process.env.LUMENCODE_PORT = '0';
+  process.env.LUMENCODE_NO_OPEN = '1';
+
+  const server = startServer({}, null, async () => null, join(tempDir, 'config.json'));
+  try {
+    await onceListening(server);
+    const { port } = server.address();
+
+    const enabled = await fetch(`http://127.0.0.1:${port}/api/hooks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'enable', tools: 'claude', projectRoots: [repo1, repo2] }),
+    }).then(res => res.json());
+
+    assert.equal(enabled.success, true);
+    assert.ok(existsSync(join(repo1, '.claude', 'settings.local.json')));
+    assert.ok(existsSync(join(repo2, '.claude', 'settings.local.json')));
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    process.chdir(oldCwd);
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('GET /api/projects/tracking returns project list shape', async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'server-hooks-tracking-'));
+  const oldCwd = process.cwd();
+  const oldPort = process.env.LUMENCODE_PORT;
+  const oldNoOpen = process.env.LUMENCODE_NO_OPEN;
+  process.chdir(tempDir);
+  process.env.LUMENCODE_PORT = '0';
+  process.env.LUMENCODE_NO_OPEN = '1';
+
+  const server = startServer({}, null, async () => null, join(tempDir, 'config.json'));
+  try {
+    await onceListening(server);
+    const { port } = server.address();
+
+    // 无解析记录时返回空项目列表（不 500）
+    const data = await fetch(`http://127.0.0.1:${port}/api/projects/tracking`).then(res => res.json());
+    assert.ok(Array.isArray(data.projects));
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    process.chdir(oldCwd);
+    if (oldPort === undefined) delete process.env.LUMENCODE_PORT;
+    else process.env.LUMENCODE_PORT = oldPort;
+    if (oldNoOpen === undefined) delete process.env.LUMENCODE_NO_OPEN;
+    else process.env.LUMENCODE_NO_OPEN = oldNoOpen;
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
