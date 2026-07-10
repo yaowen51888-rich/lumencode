@@ -1,0 +1,10 @@
+{
+  "name": "mixed-ai-human-unknown-lines",
+  "cases": [
+    {
+      "id": "mixed-file",
+      "expected": ["ai", "ai", "human", "unknown", "ai"],
+      "actual": ["ai", "human", "human", "unknown", "ai"]
+    }
+  ]
+}
