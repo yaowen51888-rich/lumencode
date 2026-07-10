@@ -326,14 +326,16 @@ test('StepTracker - fuzzy: 高相似 drift 命中行映射投影', async () => {
   writeFileSync(f, 'a\nb\nc\nd\ne\n');
   await tracker.recordStep({ sessionId: 's-fz', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz' });
 
-  // commit 改第3行 c→X：行 1,2,4,5 映射到 step（AI），行 3 replace 未映射（human），coverage 4/5=0.8
+  // commit 改第3行 c→X：行 1,2,4,5 映射到 step（AI），行 3 replace 未映射（unknown），coverage 4/5=0.8
   const res = tracker.getLineAttributionForCommit({
     sessionId: 's-fz', commitMs: Date.now(),
     files: [{ path: 'fzhi.js', added: 5, deleted: 0, binary: false, commitContent: 'a\nb\nX\nd\ne\n', addedLines: [1, 2, 3, 4, 5] }],
   });
   assert.equal(res.fuzzyFiles, 1);
   assert.equal(res.aiLines, 4);
-  assert.equal(res.humanLines, 1);
+  assert.equal(res.humanLines, 0);
+  assert.equal(res.unknownLines, 1);
+  assert.equal(res.lineCoverage, 4 / 5);
   tracker.close();
 });
 
@@ -364,18 +366,20 @@ test('StepTracker - fuzzy: 覆盖率恰达阈值 0.6 仍命中', async () => {
   writeFileSync(f, 'a\nb\nc\nd\ne\n');
   await tracker.recordStep({ sessionId: 's-fz3', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz3' });
 
-  // commit 改第 4,5 行：行 1,2,3 映射（AI），4,5 replace（human），coverage 3/5=0.6 命中阈值
+  // commit 改第 4,5 行：行 1,2,3 映射（AI），4,5 replace（unknown），coverage 3/5=0.6 命中阈值
   const res = tracker.getLineAttributionForCommit({
     sessionId: 's-fz3', commitMs: Date.now(),
     files: [{ path: 'fzedge.js', added: 5, deleted: 0, binary: false, commitContent: 'a\nb\nc\nX\nY\n', addedLines: [1, 2, 3, 4, 5] }],
   });
   assert.equal(res.fuzzyFiles, 1);
   assert.equal(res.aiLines, 3);
-  assert.equal(res.humanLines, 2);
+  assert.equal(res.humanLines, 0);
+  assert.equal(res.unknownLines, 2);
+  assert.equal(res.lineCoverage, 3 / 5);
   tracker.close();
 });
 
-test('StepTracker - fuzzy: 未映射 insert 行计 human', async () => {
+test('StepTracker - fuzzy: 未映射 insert 行计 unknown', async () => {
   const trackerDbPath = join(tempDir, 'fz-ins.db');
   const tracker = new StepTracker(tempDir, { dbPath: trackerDbPath });
   await tracker.open();
@@ -383,14 +387,16 @@ test('StepTracker - fuzzy: 未映射 insert 行计 human', async () => {
   writeFileSync(f, 'a\nb\nc\nd\ne\n');
   await tracker.recordStep({ sessionId: 's-fz4', toolName: 'Write', toolInput: { file_path: f }, toolUseId: 't-fz4' });
 
-  // commit 末尾 insert new：行 1-5 映射（AI），行 6 insert 未映射（human），coverage 5/6
+  // commit 末尾 insert new：行 1-5 映射（AI），行 6 insert 未映射（unknown），coverage 5/6
   const res = tracker.getLineAttributionForCommit({
     sessionId: 's-fz4', commitMs: Date.now(),
     files: [{ path: 'fzins.js', added: 6, deleted: 0, binary: false, commitContent: 'a\nb\nc\nd\ne\nnew\n', addedLines: [1, 2, 3, 4, 5, 6] }],
   });
   assert.equal(res.fuzzyFiles, 1);
   assert.equal(res.aiLines, 5);
-  assert.equal(res.humanLines, 1);
+  assert.equal(res.humanLines, 0);
+  assert.equal(res.unknownLines, 1);
+  assert.equal(res.lineCoverage, 5 / 6);
   tracker.close();
 });
 

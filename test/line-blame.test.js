@@ -1,6 +1,11 @@
 import test from 'node:test';
 import { strict as assert } from 'node:assert';
-import { lineDiff, computeBlame, buildInitialBlameMap } from '../lib/line-blame.js';
+import {
+  lineDiff,
+  computeBlame,
+  buildInitialBlameMap,
+  projectStepBlameToCommit,
+} from '../lib/line-blame.js';
 
 // ── lineDiff tests ──
 
@@ -53,6 +58,12 @@ test('computeBlame - no change preserves old attribution', () => {
   const result = computeBlame('A\nB\nC', 'A\nB\nC', oldBlame, 'step2');
   assert.equal(result.lines.length, 3);
   assert.deepEqual(result.lines, ['old1', 'old2', 'old3']);
+});
+
+test('computeBlame - missing old blame entries become unknown instead of current step', () => {
+  const oldBlame = { lines: ['old1'] };
+  const result = computeBlame('A\nB', 'A\nB', oldBlame, 'step2');
+  assert.deepEqual(result.lines, ['old1', '@unknown']);
 });
 
 test('computeBlame - edit middle line updates only that line', () => {
@@ -118,4 +129,19 @@ test('buildInitialBlameMap - empty content', () => {
 test('buildInitialBlameMap - null content', () => {
   const result = buildInitialBlameMap(null, 'step0');
   assert.equal(result.lines.length, 0);
+});
+
+test('projectStepBlameToCommit - unmapped added lines are unknown', () => {
+  const result = projectStepBlameToCommit(
+    'a\nb\n',
+    'a\nb\nnew\n',
+    { lines: ['step1', 'step1'] },
+    [1, 2, 3],
+    new Set(['step1'])
+  );
+
+  assert.equal(result.aiAdded, 2);
+  assert.equal(result.humanAdded, 0);
+  assert.equal(result.unknownAdded, 1);
+  assert.equal(result.coverage, 2 / 3);
 });

@@ -179,6 +179,41 @@ test('finalizeGitStats - resolves origin-prefixed step sessions from raw log ses
   }
 });
 
+test('finalizeGitStats - rolls up line attribution quality from step blame', async () => {
+  const merged = {
+    commits: 1, filesChanged: 1, linesAdded: 6, linesDeleted: 0,
+    commitsByDate: {}, linesByDate: {}, fileHotspots: [],
+    commitList: [
+      mkCommit({
+        hash: 'hQuality',
+        lineBlame: {
+          source: 'step_blame',
+          aiLines: 5,
+          humanLines: 0,
+          unknownLines: 1,
+          aiDeletedLines: 0,
+          humanDeletedLines: 0,
+          unknownDeletedLines: 0,
+          totalLines: 6,
+          mappedAddedLines: 5,
+          mappableAddedLines: 6,
+          lineCoverage: 5 / 6,
+          fileBreakdown: {},
+        },
+      }),
+    ],
+  };
+
+  await finalizeGitStats(merged, [], { stepTracking: { enabled: false } });
+
+  assert.equal(merged.attributionQuality.totalLineBlameCommits, 1);
+  assert.equal(merged.attributionQuality.mappedAddedLines, 5);
+  assert.equal(merged.attributionQuality.mappableAddedLines, 6);
+  assert.equal(merged.attributionQuality.unknownLines, 1);
+  assert.equal(merged.attributionQuality.lineCoverage, 5 / 6);
+  assert.equal(merged.attributionQuality.confidence, 'medium');
+});
+
 test('finalizeGitStats - honors disabled step tracking option', async () => {
   const tempRoot = mkdtempSync(join(tmpdir(), 'git-step-disabled-'));
   try {

@@ -357,6 +357,30 @@ test('generateWorkReport - shows unknown attribution reasons when present', () =
   assert.ok(report.includes('no_session_match'));
 });
 
+test('generateWorkReport - shows line attribution coverage quality', () => {
+  const usageStats = {
+    requestCount: 1, totalTokens: 100, sessionCount: 1,
+    inputTokens: 50, outputTokens: 50, cacheRead: 0, cacheCreate: 0,
+    activeDays: 1, userMessageCount: 1, subagentTokens: 0,
+    projects: {}, scenarios: {}, models: {}, tools: {},
+  };
+  const gitStats = {
+    commits: 1, filesChanged: 1, linesAdded: 6, linesDeleted: 0,
+    attributionQuality: {
+      totalLineBlameCommits: 1,
+      mappedAddedLines: 5,
+      mappableAddedLines: 6,
+      lineCoverage: 5 / 6,
+      unknownLines: 1,
+      confidence: 'medium',
+    },
+  };
+
+  const report = generateWorkReport(usageStats, gitStats, 'daily', '2026-05-20', '2026-05-20');
+  assert.ok(report.includes('行级映射覆盖率 83%'));
+  assert.ok(report.includes('未知 1 行'));
+});
+
 test('workReportFooter - 默认带 install 命令与 github 链接', () => {
   const f = workReportFooter();
   assert.ok(f.includes('npm i -g lumencode'));

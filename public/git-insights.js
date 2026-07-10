@@ -52,11 +52,18 @@ export function renderLineBlameEvidence(commitList) {
   const totalAiLines = blamed.reduce((s, c) => s + (c.lineBlame.aiLines || 0), 0);
   const totalLines = blamed.reduce((s, c) => s + (c.lineBlame.totalLines || 0), 0);
   const totalAiDeleted = blamed.reduce((s, c) => s + (c.lineBlame.aiDeletedLines || 0), 0);
+  const mappedAddedLines = blamed.reduce((s, c) => s + (c.lineBlame.mappedAddedLines || 0), 0);
+  const mappableAddedLines = blamed.reduce((s, c) => s + (c.lineBlame.mappableAddedLines || 0), 0);
+  const unknownLines = blamed.reduce((s, c) => s + (c.lineBlame.unknownLines || 0), 0);
   return {
     commitCount: blamed.length,
     aiLines: totalAiLines,
     totalLines,
     aiDeletedLines: totalAiDeleted,
+    unknownLines,
+    mappedAddedLines,
+    mappableAddedLines,
+    lineCoverage: mappableAddedLines > 0 ? mappedAddedLines / mappableAddedLines : 0,
     precision: totalLines > 0 ? Math.round((totalAiLines / totalLines) * 100) : 0,
   };
 }
