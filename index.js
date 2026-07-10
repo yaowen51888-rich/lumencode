@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { loadConfig, initConfig, getConfigPath } from './lib/config.js';
-import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions } from './lib/aggregate.js';
+import { collectAllRecords, computeUsageStats, filterRecordsByPeriod, normalizeProjectPath, computeTrendData, computePrevPeriodRange, groupBySessions, buildAttributionContextSessions } from './lib/aggregate.js';
 import { getGitStatsForMultipleReposAsync, invalidateGitCache, finalizeGitStats, computeCommitTypes, computeFileHotspots } from './lib/git.js';
 import { invalidateFileCache } from './lib/cache.js';
 import { generateReport, generateWorkReport, generateBossReport, workReportFooter } from './lib/report.js';
@@ -313,6 +313,12 @@ async function buildReportData(period, dateArg, config, effectiveIncludeProjects
     gs = await finalizeGitStats(gs, sessions, {
       attribution: config.aiAttribution,
       stepTracking: config.stepTracking,
+      attributionSessions: buildAttributionContextSessions(toolRecords, {
+        start,
+        backDays: config.aiAttribution?.windows?.crossDayWindowDays,
+        projectBases: coveredBases,
+      }),
+      excludeFilePatterns: config.excludeFilePatterns,
     });
     if (gs.commitList) {
       const windowStart = start;
@@ -566,6 +572,12 @@ if (command === 'serve') {
     gitStats = await finalizeGitStats(gitStats, sessions, {
       attribution: config.aiAttribution,
       stepTracking: config.stepTracking,
+      attributionSessions: buildAttributionContextSessions(records, {
+        start,
+        backDays: config.aiAttribution?.windows?.crossDayWindowDays,
+        projectBases: new Set(filtered.map(r => (r.project || '').replace(/\\/g, '/').replace(/\/$/, '').split('/').pop()).filter(Boolean)),
+      }),
+      excludeFilePatterns: config.excludeFilePatterns,
     });
   }
 

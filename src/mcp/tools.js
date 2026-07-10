@@ -12,6 +12,7 @@ import {
   computePrevPeriodRange,
   groupBySessions,
   normalizeProjectPath,
+  buildAttributionContextSessions,
 } from '../../lib/aggregate.js';
 import {
   getGitStatsForMultipleReposAsync,
@@ -203,6 +204,11 @@ export async function handleDailyReport(args, ctx) {
       gitStats = await finalizeGitStats(gitStats, sessions, {
         attribution: config.aiAttribution,
         stepTracking: config.stepTracking,
+        attributionSessions: buildAttributionContextSessions(filtered, {
+          start,
+          backDays: config.aiAttribution?.windows?.crossDayWindowDays,
+        }),
+        excludeFilePatterns: config.excludeFilePatterns,
       });
     }
   } catch { /* git 不可用时降级 */ }
@@ -239,6 +245,11 @@ export async function handleWorkReport(args, ctx) {
       gitStats = await finalizeGitStats(gitStats, sessions, {
         attribution: config.aiAttribution,
         stepTracking: config.stepTracking,
+        attributionSessions: buildAttributionContextSessions(filtered, {
+          start,
+          backDays: config.aiAttribution?.windows?.crossDayWindowDays,
+        }),
+        excludeFilePatterns: config.excludeFilePatterns,
       });
     }
   } catch { /* git 不可用时降级 */ }
@@ -353,6 +364,11 @@ export async function handleAiContribution(args, ctx) {
     gitStats = await finalizeGitStats(gitStats, sessions, {
       attribution: config.aiAttribution,
       stepTracking: config.stepTracking,
+      attributionSessions: buildAttributionContextSessions(records, {
+        start,
+        backDays: config.aiAttribution?.windows?.crossDayWindowDays,
+      }),
+      excludeFilePatterns: config.excludeFilePatterns,
     });
 
     // 窗口过滤

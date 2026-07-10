@@ -12,6 +12,7 @@ import {
   enableHooks,
   getHooksStatus,
   getHooksHealth,
+  migrateStaleHooks,
   HOOK_TOOLS,
 } from '../lib/hooks-manager.js';
 
@@ -511,3 +512,43 @@ test('getHooksHealth returns null lastStepAt and not stale when no steps', async
   }
 });
 
+
+test('migrateStaleHooks repoints stale hook path and clears fileMissing', () => {
+  const tempDir = mkdtempSync(join(tmpdir(), 'hook-migrate-'));
+  try {
+    // 1) 用当前 hookRoot 装好 claude hook
+    enableHooks(tempDir, [HOOK_TOOLS.CLAUDE]);
+    let status = getHooksStatus(tempDir);
+    assert.equal(status.claude.enabled, true);
+    assert.equal(status.claude.fileMissing, false);
+
+    // 2) 模拟包迁移：把命令指向不存在的旧 hooks 目录 → fileMissing
+    const settingsPath = status.claude.configPath;
+    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    const entry = settings.hooks?.PostToolUse?.find(e => Array.isArray(e.hooks));
+    assert.ok(entry, '应存在 PostToolUse hook 条目');
+    entry.hooks[0].command = 'node "D:/__stale_pkg__/hooks/post-tool-use.js"';
+    writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    status = getHooksStatus(tempDir);
+    assert.equal(status.claude.fileMissing, true, '改指向不存在路径后应 fileMissing');
+
+    // 3) migrate 应 disable+enable，重写为当前 hookRoot
+    const r = migrateStaleHooks(tempDir);
+    assert.equal(r.migrated, true);
+    assert.deepEqual(r.tools, [HOOK_TOOLS.CLAUDE]);
+
+    status = getHooksStatus(tempDir);
+    assert.equal(status.claude.enabled, true);
+    assert.equal(status.claude.fileMissing, false, '迁移后 fileMissing 应回到 false');
+
+    const after = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    const cmd = after.hooks.PostToolUse.find(e => Array.isArray(e.hooks)).hooks[0].command;
+    assert.ok(/hooks[\\/]post-tool-use\.js/.test(cmd), '命令应指向真实 hooks 目录');
+    assert.ok(!cmd.includes('__stale_pkg__'), '不应残留旧路径');
+
+    // 4) 幂等：无 fileMissing 时不再迁移
+    assert.deepEqual(migrateStaleHooks(tempDir), { migrated: false, tools: [] });
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});

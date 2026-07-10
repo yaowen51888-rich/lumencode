@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats, parseAddedLines } from '../lib/git.js';
+import { attributeCommitsToSessions, attachCommitsToSessions, finalizeGitStats, parseAddedLines, computeAIContribution } from '../lib/git.js';
 import { resolveAttributionOptions } from '../lib/git-attribution-options.js';
 import { StepTracker } from '../lib/step-tracker.js';
 
@@ -788,4 +788,100 @@ test('parseAddedLines - 多 hunk 且删除行不占 new 行号', () => {
     '+ins',
   ].join('\n');
   assert.deepEqual(parseAddedLines(diff), [7]);
+});
+
+// 跨天归因回溯：报告期 session 为空（如日报只载本日），但提交由前一日撰写会话产出。
+// 无 attributionSessions → commit 无匹配（判 NONE，稀释 AI%）；
+// 传 attributionSessions（前 N 天上下文）→ matcher 阶段 3 跨天匹配命中。
+test('finalizeGitStats - attributionSessions rescues cross-day commit when period has no session', async () => {
+  // Day1 撰写会话（报告期外），Day2 提交
+  const day1 = mkSession({
+    id: 's-day1',
+    startTime: '2026-05-14T18:00:00',
+    endTime: '2026-05-14T20:00:00',
+  });
+  const commit = mkCommit({ hash: 'h-cross', date: '2026-05-15T01:00:00', files: [{ path: 'a.js' }] });
+
+  // 不传上下文：严格周期 sessions=[] → 无匹配（matcher 空池提前返回，sessionId 保持未设置）
+  const mergedA = { commitList: [commit] };
+  await finalize(mergedA, [], { stepTracking: { enabled: false }, attribution: { windows: { crossDayWindowDays: 3 } } });
+  assert.ok(!mergedA.commitList[0].sessionId);
+
+  // 传上下文：跨天匹配命中 Day1 会话
+  const commitB = mkCommit({ hash: 'h-cross', date: '2026-05-15T01:00:00', files: [{ path: 'a.js' }] });
+  const mergedB = { commitList: [commitB] };
+  await finalize(mergedB, [], {
+    stepTracking: { enabled: false },
+    attribution: { windows: { crossDayWindowDays: 3 } },
+    attributionSessions: [day1],
+  });
+  assert.equal(mergedB.commitList[0].sessionId, 's-day1');
+});
+
+// 上下文 session 仅参与匹配，不污染展示池：attachCommitsToSessions 只挂严格周期 session
+test('finalizeGitStats - attributionSessions not attached to display sessions', async () => {
+  const day1 = mkSession({
+    id: 's-day1',
+    startTime: '2026-05-14T18:00:00',
+    endTime: '2026-05-14T20:00:00',
+  });
+  const inPeriod = mkSession({
+    id: 's-in',
+    startTime: '2026-05-15T09:00:00',
+    endTime: '2026-05-15T11:00:00',
+  });
+  const commit = mkCommit({ hash: 'h-cross', date: '2026-05-15T01:00:00', files: [{ path: 'a.js' }] });
+  const merged = { commitList: [commit] };
+  await finalize(merged, [inPeriod], {
+    stepTracking: { enabled: false },
+    attribution: { windows: { crossDayWindowDays: 3 } },
+    attributionSessions: [day1],
+  });
+  // 命中上下文 Day1 会话（凌晨提交不在 inPeriod 弱窗内）
+  assert.equal(merged.commitList[0].sessionId, 's-day1');
+  // 展示池只有严格周期 session；上下文会话不出现
+  assert.equal(inPeriod.commits.length, 0);
+});
+
+// vendor/生成文件排除：整包粘贴的第三方库计入行分母压制 AI%。
+// finalizeGitStats 预算 effective 行数（排除 vendor），computeAIContribution 分母用 effective。
+test('finalizeGitStats - excludes vendor/generated files from effective line count', async () => {
+  const commit = mkCommit({
+    hash: 'h-vendor',
+    date: '2026-05-14T10:00:00',
+    linesAdded: 1000,
+    linesDeleted: 0,
+    files: [
+      { path: 'public/vendor/qrcode-generator.js', added: 900, deleted: 0 },
+      { path: 'pnpm-lock.yaml', added: 50, deleted: 0 },
+      { path: 'src/app.js', added: 50, deleted: 0 },
+    ],
+  });
+  const merged = { commitList: [commit] };
+  await finalize(merged, [], { stepTracking: { enabled: false } });
+  // 仅 src/app.js 计入 effective（vendor + lockfile 排除）
+  assert.equal(merged.commitList[0].effectiveLinesAdded, 50);
+  assert.equal(merged.commitList[0].effectiveFiles.length, 1);
+  assert.equal(merged.commitList[0].effectiveFiles[0].path, 'src/app.js');
+  // 原始 linesAdded 不变（展示真实提交体积）
+  assert.equal(merged.commitList[0].linesAdded, 1000);
+});
+
+// computeAIContribution 分母读 effective（缺省回退 raw）：AI 行数 / effective 行数
+test('computeAIContribution - denominator uses effectiveLinesAdded when present', () => {
+  const commit = mkCommit({
+    hash: 'h-eff',
+    date: '2026-05-14T10:00:00',
+    linesAdded: 1000,
+    linesDeleted: 0,
+    effectiveLinesAdded: 100,
+    effectiveLinesDeleted: 0,
+    effectiveFiles: [{ path: 'a.js', added: 100, deleted: 0 }],
+    aiConfidence: 'high',
+    attributedTool: 'claude',
+    lineBlame: { aiLines: 50, aiDeletedLines: 0, fileBreakdown: {} },
+  });
+  const r = computeAIContribution([commit], null, {});
+  // 分母用 effective 100 → 50/100 = 0.5（若用 raw 1000 则 0.05）
+  assert.equal(r.aiLineRatio, 0.5);
 });
