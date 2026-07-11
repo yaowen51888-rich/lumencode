@@ -40,3 +40,4 @@ data/pricing-cache.json
 
 # 临时任务/计划文稿，不入库
 TASKS.md
+doc/plans/
