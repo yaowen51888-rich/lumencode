@@ -37,3 +37,6 @@ smart-reports/
 # Pricing cache — auto-generated at runtime
 data/pricing-cache.json
 .lumencode/
+
+# 临时任务/计划文稿，不入库
+TASKS.md
