@@ -6,12 +6,12 @@ import { parseGitLogOutput } from '../lib/git.js';
 // 用例1：标准多 commit，3 文件去重 → filesChanged = 5（lib/a, lib/b, test/a, doc/c, lib/c）
 test('parseGitLogOutput - 标准多 commit', () => {
   const output = [
-    '§§§abc111|2026-05-14T10:00:00|me@x|feat: add a',
+    '§§§abc111|2026-05-14T10:00:00+08:00|me@x|feat: add a',
     '40\t10\tlib/a.js',
     '10\t0\ttest/a.test.js',
-    '§§§abc222|2026-05-13T09:00:00|me@x|fix: tweak b',
+    '§§§abc222|2026-05-13T09:00:00+08:00|me@x|fix: tweak b',
     '20\t0\tlib/b.js',
-    '§§§abc333|2026-05-12T08:00:00|me@x|refactor: split',
+    '§§§abc333|2026-05-12T08:00:00+08:00|me@x|refactor: split',
     '15\t10\tlib/a.js',
     '5\t5\tdoc/c.md',
     '10\t0\tlib/c.js',
