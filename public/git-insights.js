@@ -68,6 +68,26 @@ export function renderLineBlameEvidence(commitList) {
   };
 }
 
+export function renderAuditCommitList(commits = []) {
+  if (commits.length === 0) return '<div class="drill-empty">当前周期无可审计提交</div>';
+  return `<div class="audit-commit-list">${commits.map(commit => {
+    const blame = commit.lineBlame || {};
+    const coverage = Math.round((blame.lineCoverage || 0) * 100);
+    const method = blame.alignedFiles ? 'aligned' : blame.fuzzyFiles ? 'fuzzy' : blame.degradedFiles ? 'fallback' : 'unavailable';
+    return `<button class="audit-commit" data-audit-hash="${esc(commit.hash || '')}" data-audit-project="${esc(commit.project || commit.repo || '')}"><span><strong>${esc(commit.subject || commit.hash || 'commit')}</strong><small>${esc((commit.date || '').slice(0, 10))} · ${esc(method)}</small></span><span class="font-mono">+${fmt(blame.aiLines || 0)} / −${fmt(blame.aiDeletedLines || 0)} · ${coverage}%</span></button>`;
+  }).join('')}</div>`;
+}
+
+export function renderAuditEvidence(evidence = {}) {
+  if (!evidence.files?.length) return '<div class="drill-empty">该提交无可预览文件</div>';
+  return `<div class="audit-files">${evidence.files.map(file => `<section class="audit-file"><header><strong>${esc(file.path)}</strong><span>${esc(file.method)} · ${Math.round((file.coverage || 0) * 100)}%</span></header>${file.binary ? '<div class="drill-empty">二进制文件不可预览</div>' : `<div class="audit-lines">${file.lines.map(line => {
+    const metadata = [line.tool, line.sessionId, line.stepId, line.confidence, line.reason].filter(Boolean).map(esc).join(' · ');
+    const sign = line.type === 'deleted' ? '−' : '+';
+    const number = line.newLine ?? line.oldLine ?? '';
+    return `<details class="audit-line audit-line-${line.classification}"><summary><span class="audit-sign">${sign}</span><span class="audit-number">${number}</span><code>${esc(line.content || '')}</code><span class="audit-class">${esc(line.classification)}</span></summary>${metadata ? `<div class="audit-meta">${metadata}</div>` : ''}</details>`;
+  }).join('')}</div>`}</section>`).join('')}</div>`;
+}
+
 const COMMIT_TYPE_COLORS = {
   feat: '#8ab8a0', fix: '#c49090', refactor: '#a090c0', docs: '#90a8c8',
   test: '#c8b880', chore: '#a8a8a8', perf: '#c890b0', style: '#80b8b8',

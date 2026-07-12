@@ -1,5 +1,6 @@
 // API 路径
 export const API = {
+  AUDIT_EVIDENCE: '/api/audit-evidence',
   TOOLS: '/api/tools',
   REPORT: '/api/report',
   CONFIG: '/api/config',

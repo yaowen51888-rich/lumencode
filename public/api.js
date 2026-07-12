@@ -102,6 +102,13 @@ export async function fetchDetails(params) {
   return cachedFetch(`${API.DETAILS}?${qs}`);
 }
 
+export async function fetchAuditEvidence(params) {
+  const res = await fetch(`${API.AUDIT_EVIDENCE}?${new URLSearchParams(params).toString()}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '获取审计证据失败');
+  return data;
+}
+
 export async function fetchSessions(params) {
   const qs = new URLSearchParams(params).toString();
   return cachedFetch(`${API.SESSIONS}?${qs}`);

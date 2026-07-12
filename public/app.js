@@ -1,8 +1,8 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, TOOL_META, toolDisplayName } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchSessions, fetchStepStats, fetchHooksStatus, fetchProjectTracking, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchAuditEvidence, fetchSessions, fetchStepStats, fetchHooksStatus, fetchProjectTracking, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
-import { renderGitInsights, renderLineBlameEvidence } from './git-insights.js';
+import { renderGitInsights, renderLineBlameEvidence, renderAuditCommitList, renderAuditEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
 import { exportCSV, printReport, exportJSON, exportHTML } from './export.js';
 import { renderShareCard, drawShareCardTo } from './share-card.js';
@@ -1019,6 +1019,32 @@ function appState() {
       ];
     },
 
+    openAuditEvidence() {
+      const commits = this.lastReportData?.gitStats?.commitList || [];
+      const modal = document.getElementById(ID.DRILL_MODAL);
+      const title = document.getElementById(ID.DRILL_TITLE);
+      const body = document.getElementById(ID.DRILL_BODY);
+      if (title) title.textContent = 'AI 贡献审计证据';
+      if (body) body.innerHTML = renderAuditCommitList(commits);
+      if (modal) modal.style.display = 'flex';
+      body?.querySelectorAll('[data-audit-hash]').forEach(button => {
+        button.addEventListener('click', () => this.openCommitAudit(button.dataset.auditHash, button.dataset.auditProject));
+      });
+    },
+
+    async openCommitAudit(commitHash, project) {
+      const body = document.getElementById(ID.DRILL_BODY);
+      if (body) body.innerHTML = '<div class="drill-empty">加载证据...</div>';
+      const params = { period: this.period, date: this.currentDate, project, commit: commitHash };
+      if (this.period === 'custom') { params.start = this.customStart; params.end = this.customEnd; }
+      try {
+        const evidence = await fetchAuditEvidence(params);
+        if (body) body.innerHTML = renderAuditEvidence(evidence);
+      } catch (error) {
+        if (body) body.innerHTML = `<div class="drill-empty">${esc(error.message)}</div>`;
+      }
+    },
+
     renderCharts(data) {
       const { usageStats, gitStats, trendData, costBreakdown } = data;
       if (!usageStats || usageStats.requestCount <= 0) {
@@ -1814,6 +1840,7 @@ window.openSettings = async () => {
     fillStepTracking(cfg.stepTracking);
     showAttributionPreview(cfg.aiAttribution);
     syncAppearanceRadios();
+    setTimeout(() => window._resetSettingsDirty?.());
   } catch (err) {
     showToast('加载配置失败: ' + err.message);
   }
@@ -1849,11 +1876,45 @@ window.saveSettings = async () => {
   try {
     await saveConfig(payload);
     if (hint) { hint.textContent = '配置已保存'; hint.className = 'cfg-save-ok'; }
+    window._resetSettingsDirty?.();
     setTimeout(() => window.location.reload(), 1200);
   } catch (err) {
     if (hint) { hint.textContent = '保存失败: ' + err.message; hint.className = 'cfg-save-err'; }
   }
 };
+
+function initSettingsDirtyTracking() {
+  const view = document.querySelector('.settings-view');
+  const bar = document.querySelector('.settings-save-bar');
+  const button = document.getElementById('settingsSaveBtn');
+  const hint = document.getElementById('cfgSaveHint');
+  if (!view || !bar || !button || !hint) return;
+  const dynamicIds = ['cfgReposTags', 'cfgExcludeTags', 'cfgKeywordsEditor', 'cfgEnabledTools'];
+  let cleanSnapshot = '';
+  const snapshot = () => JSON.stringify({
+    fields: [...view.querySelectorAll('input, textarea, select')].map(element => [element.id || element.name, element.type === 'checkbox' || element.type === 'radio' ? element.checked : element.value]),
+    dynamic: dynamicIds.map(id => document.getElementById(id)?.innerHTML || ''),
+  });
+  const update = () => {
+    const dirty = cleanSnapshot !== '' && snapshot() !== cleanSnapshot;
+    bar.classList.toggle('is-dirty', dirty);
+    button.disabled = !dirty;
+    if (dirty) { hint.textContent = '有未保存的修改'; hint.className = ''; }
+    else if (!hint.classList.contains('cfg-save-ok') && !hint.classList.contains('cfg-save-err')) hint.textContent = '未保存的配置不会生效';
+  };
+  window._resetSettingsDirty = () => { cleanSnapshot = snapshot(); bar.classList.remove('is-dirty'); button.disabled = true; };
+  view.addEventListener('input', update);
+  view.addEventListener('change', update);
+  view.addEventListener('click', () => setTimeout(update));
+  const observer = new MutationObserver(update);
+  dynamicIds.forEach(id => {
+    const container = document.getElementById(id);
+    if (container) observer.observe(container, { childList: true, subtree: true });
+  });
+  setTimeout(() => { cleanSnapshot = snapshot(); update(); });
+}
+
+initSettingsDirtyTracking();
 
 /* ── Drill-down global handler ── */
 window._drillHandler = async (type, key, label) => {

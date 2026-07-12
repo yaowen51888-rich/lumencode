@@ -1290,6 +1290,27 @@ input, textarea { font-family: inherit; color: inherit; }
 .modal-body { padding: 24px; overflow-y: auto; }
 .modal-footer { padding: 16px 24px 24px; display: flex; justify-content: flex-end; }
 
+.audit-commit-list { display: grid; gap: 8px; }
+.audit-evidence-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 1px solid color-mix(in srgb, var(--forest) 55%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--forest) 10%, transparent); color: var(--foreground); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; cursor: pointer; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+.audit-evidence-btn:hover { background: color-mix(in srgb, var(--forest) 20%, transparent); border-color: var(--forest); transform: translateY(-1px); }
+.audit-evidence-btn:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+.audit-commit { width: 100%; display: flex; justify-content: space-between; gap: 16px; padding: 12px; border: 1px solid var(--border); background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.audit-commit span:first-child { display: grid; gap: 4px; }
+.audit-commit small { opacity: 0.55; }
+.audit-files { display: grid; gap: 18px; }
+.audit-file { border: 1px solid var(--border); }
+.audit-file > header { display: flex; justify-content: space-between; padding: 10px 12px; background: var(--ink-06); }
+.audit-lines { font-family: var(--font-mono); font-size: 12px; overflow-x: auto; }
+.audit-line { border-top: 1px solid var(--border); }
+.audit-line summary { display: grid; grid-template-columns: 18px 44px minmax(320px,1fr) 70px; gap: 8px; padding: 6px 10px; cursor: pointer; }
+.audit-line code { white-space: pre; }
+.audit-line-ai { background: color-mix(in srgb, var(--forest) 14%, transparent); }
+.audit-line-human { background: color-mix(in srgb, var(--ochre) 12%, transparent); }
+.audit-line-unknown { background: var(--ink-06); }
+.audit-class { text-transform: uppercase; opacity: 0.65; text-align: right; }
+.audit-meta { padding: 6px 80px; opacity: 0.7; border-top: 1px dashed var(--border); }
+#drillModal:has(.audit-files) .modal-panel, #drillModal:has(.audit-commit-list) .modal-panel { max-width: 1100px; }
+
 /* ── Welcome Page ── */
 .welcome-page {
   position: fixed;
@@ -2059,14 +2080,27 @@ input, textarea { font-family: inherit; color: inherit; }
 }
 
 /* sticky 保存条 */
+.settings-view { min-height: 100vh; }
+.settings-page-shell { min-height: 100vh; padding: 32px 48px 0; position: relative; isolation: isolate; }
 .settings-save-bar {
-  position: sticky; bottom: 0; z-index: 5;
+  position: sticky; bottom: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px;
-  margin-top: 20px; padding: 14px 20px;
-  background: color-mix(in srgb, var(--background) 88%, transparent);
+  margin: 20px -48px 0; padding: 14px 48px;
+  background: color-mix(in srgb, var(--background) 94%, var(--forest) 6%);
   backdrop-filter: blur(8px);
-  border-top: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--forest) 35%, var(--border));
+  border-left: none; border-right: none; border-bottom: none; border-radius: 0;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
 }
+.settings-save-message { display: grid; gap: 3px; margin-right: auto; }
+.settings-save-message strong { font-size: 13px; color: var(--foreground); }
+.settings-save-message span { font-size: 11px; opacity: 0.6; }
+.settings-save-btn { padding: 10px 18px; border: none; background: linear-gradient(135deg, var(--forest), #69c9ad); color: #07130f; font-weight: 700; box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--forest) 80%, transparent); cursor: pointer; }
+.settings-save-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 9px 24px -8px color-mix(in srgb, var(--forest) 90%, transparent); }
+.settings-save-btn:focus-visible { outline: 2px solid var(--forest); outline-offset: 3px; }
+.settings-save-btn:disabled { background: var(--ink-18); color: var(--foreground); box-shadow: none; transform: none; opacity: 0.45; }
+.settings-save-bar.is-dirty .settings-save-message strong { color: var(--forest); }
+.settings-save-bar.is-dirty .settings-save-message strong::before { content: "● "; }
 
 /* #6 首屏横幅：有活动但未开启行级归因 */
 .tracking-banner {

@@ -260,6 +260,10 @@
               <span class="section-head-meta font-mono" style="font-size:10px;opacity:0.55" x-text="aiContributionMeta"></span>
               <span x-show="stepStatusLabel && !lineBlameEvidence" class="font-mono" style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--ink-12);color:var(--foreground);letter-spacing:0.08em;opacity:0.7" x-text="stepStatusLabel"></span>
               <span x-show="lineBlameEvidence" class="font-mono" style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--forest);color:var(--background);letter-spacing:0.08em;opacity:0.85">LINE-BLAME</span>
+              <button x-show="lastReportData?.gitStats?.commitList?.length" class="audit-evidence-btn" @click="openAuditEvidence()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <span>查看证据</span>
+              </button>
             </div>
 
             <div class="ai-hero-grid">
@@ -847,8 +851,8 @@
       </div>
 
       <!-- ===== SETTINGS VIEW ===== -->
-      <div x-show="view === 'settings'" style="display:none;">
-        <div style="padding: 32px 48px;position:relative;isolation:isolate;">
+      <div x-show="view === 'settings'" class="settings-view" style="display:none;">
+        <div class="settings-page-shell">
           <div class="logo-watermark" aria-hidden="true">
             <svg width="260" height="260"><use href="#lumencode-logo"/></svg>
           </div>
@@ -1063,9 +1067,15 @@
             </section>
           </div>
 
-          <div class="settings-save-bar" style="position:relative;z-index:1;">
-            <span id="cfgSaveHint" style="font-size:12px;margin-right:auto;"></span>
-            <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+          <div class="settings-save-bar">
+            <div class="settings-save-message">
+              <strong>修改后需要保存</strong>
+              <span id="cfgSaveHint">未保存的配置不会生效</span>
+            </div>
+            <button id="settingsSaveBtn" class="btn settings-save-btn" onclick="saveSettings()" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+              <span>保存设置</span>
+            </button>
           </div>
         </div>
       </div>
