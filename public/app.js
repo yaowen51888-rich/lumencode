@@ -497,6 +497,10 @@ function appState() {
     closeSourcePalette() { this.sourcePaletteOpen = false; },
     setSource(name) { this.closeSourcePalette(); this.setTool(name); },
     setView(v) {
+      // 设置有未保存修改时，切到其他页前确认（#settings-leave-guard）
+      if (this.view === 'settings' && v !== 'settings' && window._isSettingsDirty && window._isSettingsDirty()) {
+        if (!confirm('设置有未保存的修改，确定离开吗？')) return;
+      }
       if (v === 'settings') { this.view = 'settings'; this.saveStateToHash(); window.openSettings(); return; }
       v === 'report' ? this.openReport() : this.showLedger();
     },
@@ -1889,6 +1893,7 @@ function initSettingsDirtyTracking() {
   const button = document.getElementById('settingsSaveBtn');
   const hint = document.getElementById('cfgSaveHint');
   if (!view || !bar || !button || !hint) return;
+  let dirty = false;
   const dynamicIds = ['cfgReposTags', 'cfgExcludeTags', 'cfgKeywordsEditor', 'cfgEnabledTools'];
   let cleanSnapshot = '';
   const snapshot = () => JSON.stringify({
@@ -1896,13 +1901,16 @@ function initSettingsDirtyTracking() {
     dynamic: dynamicIds.map(id => document.getElementById(id)?.innerHTML || ''),
   });
   const update = () => {
-    const dirty = cleanSnapshot !== '' && snapshot() !== cleanSnapshot;
+    dirty = cleanSnapshot !== '' && snapshot() !== cleanSnapshot;
     bar.classList.toggle('is-dirty', dirty);
     button.disabled = !dirty;
     if (dirty) { hint.textContent = '有未保存的修改'; hint.className = ''; }
     else if (!hint.classList.contains('cfg-save-ok') && !hint.classList.contains('cfg-save-err')) hint.textContent = '未保存的配置不会生效';
   };
-  window._resetSettingsDirty = () => { cleanSnapshot = snapshot(); bar.classList.remove('is-dirty'); button.disabled = true; };
+  window._resetSettingsDirty = () => { cleanSnapshot = snapshot(); dirty = false; bar.classList.remove('is-dirty'); button.disabled = true; };
+  window._isSettingsDirty = () => dirty;
+  // 未保存修改时，关闭/刷新页面提醒
+  window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   view.addEventListener('input', update);
   view.addEventListener('change', update);
   view.addEventListener('click', () => setTimeout(update));
