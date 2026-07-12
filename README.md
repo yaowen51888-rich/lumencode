@@ -8,7 +8,7 @@
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
   <a href="https://github.com/yaowen51888-rich/lumencode"><img src="https://img.shields.io/github/stars/yaowen51888-rich/lumencode.svg?style=flat-square&color=yellow" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
 
 <p align="center">
@@ -65,8 +65,7 @@ Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same
 ## Requirements
 
 - Node.js >= 20.0.0
-- Native SQLite dependency: better-sqlite3 (installed by npm install)
-pm install)
+- Native SQLite dependency (`better-sqlite3`, auto-built during `npm install`)
 - At least one of the [supported tools](#supported-tools--data-directories) installed with existing session logs
 
 ---
@@ -123,14 +122,16 @@ npx lumencode@latest serve
 
 | Highlight | Description |
 |-----------|-------------|
-| 🎯 **Line-Level AI Attribution** | Not "AI helped with this commit" — "This line was written by AI." Hook-based step tracking, precise down to every line |
+| 🎯 **Line-Level AI Attribution** | Not "AI helped with this commit" — "This line was written by AI." Hook-based step tracking + step evidence, precise down to every line |
+| 🔎 **Attribution Evidence Drill-Down** | Drill into any commit for per-line evidence: matched lines, source tool / session / step, confidence — every number traceable to the source |
 | 🌐 **Fifteen-Tool Unified** | Claude Code / Codex / Copilot and 12 more — all data auto-aggregated, one-click switch, cross-tool comparison |
+| 🩺 **Data Health Transparency** | `doctor` runs a one-shot health check on each tool's log parsing (success rate, last success, errors) — catch data issues early |
 | 📝 **One-Click Publishable Report** | Detailed / Brief reports in seconds; Markdown / Lark / DingTalk formats, copy-paste ready, each section with insights |
-| 🤖 **AI Smart Report** | Calls one of local Claude Code / Codex / OpenCode to produce AI analysis (highlights, insights, risks, recommendations) from your stats and work report; supports Default and leadership-oriented "Workhorse" styles |
+| 🤖 **AI Smart Report** | Calls one of local Claude Code / Codex / OpenCode for AI analysis (highlights, insights, risks, recommendations); supports Default and leadership-oriented "Workhorse" styles |
 | 💰 **Precise Cost Estimation** | 600+ model pricing library (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback; unknown models counted at $0 — real numbers only, no guessing |
 | 📂 **Per-Project Reports** | Multiple projects in parallel, each gets an independent report (commits + AI interaction + hotspot files) |
 | 📅 **Sprint Cycle Alignment** | Beyond daily/weekly/monthly — custom start/end dates to fit your iteration rhythm |
-| 🔍 **Drill-Down & Trend Insights** | Click any chart to reach session/commit; peak days, active streaks, 5-category tool usage at a glance |
+| 🔍 **Trend Insights** | Peak days, active streaks, 5-category tool usage at a glance; click any chart to drill into session / commit |
 | 📦 **Zero-Config Out of the Box** | Auto-detects tool directories and derives project paths on first run — install and go |
 | 🌙 **Light / Dark Theme** | Dark mode default, all charts auto-adapt |
 
@@ -222,7 +223,9 @@ lumencode <command> [period] [date] [options]
 |---------|-------------|
 | `serve` | Start Web server (default port 4567) |
 | `report` | Generate CLI report (default command) |
+| `doctor` | Check parsing health of each tool's logs |
 | `init` | Initialize config file |
+| `hooks` | Enable/disable line-level attribution hooks (see [Line-Level AI Attribution](#line-level-ai-attribution-optional)) |
 | `mcp` | Start MCP Server for Claude Code / Cursor etc. (see [MCP Server](#mcp-server)) |
 
 | Period | Description |
@@ -334,7 +337,7 @@ Once configured, ask your AI assistant directly, e.g. "How much did AI coding co
 
 ### Line-Level AI Attribution (Optional)
 
-Line-level attribution uses AI coding tool hooks to record file-edit steps, refining AI contribution from commit/file level down to line level. Claude Code uses `PostToolBatch`, Codex uses `PostToolUse`, OpenCode uses a project-level plugin. The feature is opt-in: without an initialized database, the hook silently skips and normal usage is unaffected.
+Line-level attribution uses AI coding tool hooks to record file-edit steps, refining AI contribution from commit/file level down to line level. Claude Code uses `PostToolBatch`, Codex uses `PostToolUse`, OpenCode uses a project-level plugin. The feature is opt-in: without an initialized database, the hook silently skips and normal usage is unaffected. In the Web UI, every attributed commit drills down to line-level evidence — which lines were matched, and which tool / session / step they came from.
 
 ```bash
 # Run in the Git project root you want to track

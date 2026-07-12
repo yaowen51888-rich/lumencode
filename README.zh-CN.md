@@ -8,7 +8,7 @@
   <a href="https://www.npmjs.com/package/lumencode"><img src="https://img.shields.io/npm/dm/lumencode.svg?style=flat-square&color=cb3837" alt="npm downloads"></a>
   <a href="https://github.com/yaowen51888-rich/lumencode"><img src="https://img.shields.io/github/stars/yaowen51888-rich/lumencode.svg?style=flat-square&color=yellow" alt="GitHub stars"></a>
   <a href="LICENSE"><img src="https://img.shields.io/npm/l/lumencode.svg?style=flat-square&color=blue" alt="license"></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="Node.js"></a>
 </p>
 
 <p align="center">
@@ -65,8 +65,7 @@ LumenCode 和 [`ccusage`](https://github.com/ccusage/ccusage) 读的是同一批
 ## 环境要求
 
 - Node.js >= 20.0.0
-- Native SQLite dependency: better-sqlite3 (installed by npm install)
-pm install)
+- 原生 SQLite 依赖（`better-sqlite3`，`npm install` 时自动编译）
 - 已安装[支持的工具](#支持的工具与数据目录)中至少一个，并产生过会话日志
 
 ---
@@ -123,14 +122,16 @@ npx lumencode@latest serve
 
 | 亮点 | 说明 |
 |------|------|
-| 🎯 **行级 AI 归因** | 不是"AI 帮了这个提交"，而是"这行代码是 AI 写的"——hook 步骤追踪，精确到每一行 |
-| 🌐 **十五工具统一** | Claude Code / Codex / Copilot 等 15 款工具数据全自动汇总，一键切换、跨工具对比 |
+| 🎯 **行级 AI 归因** | 不止"AI 帮了这个提交"，而是"这行代码是 AI 写的"——hook 步骤追踪 + step 证据，精确到每一行 |
+| 🔎 **归因证据下钻** | 每个提交可下钻查看逐行归因证据：命中的行、来源工具 / 会话 / 步骤、置信度——每个数字都能追溯到底 |
+| 🌐 **十五工具统一** | Claude Code / Codex / Copilot 等 15 款工具日志自动汇总，一键切换、跨工具对比 |
+| 🩺 **数据健康透明** | `doctor` 一键体检各工具日志解析状态（成功率、最近成功、异常），数据问题早发现 |
 | 📝 **一键可发布周报** | 详报 / 简报秒生成，Markdown / 飞书 / 钉钉三格式，复制即粘贴，每板块附洞察解读 |
-| 🤖 **AI 智能报告** | 调用本地 Claude Code / Codex / OpenCode 之一，基于统计与工作汇报生成含亮点、洞察、风险、建议的 AI 分析报告，支持默认与面向领导的「牛马」风格 |
-| 💰 **精确成本估算** | 600+ 模型定价库（含 GLM/Kimi/Qwen/DeepSeek）+ Portkey API 兜底，未知模型按 $0 计费——只报真实，不乱猜 |
+| 🤖 **AI 智能报告** | 调本地 Claude Code / Codex / OpenCode 之一，产出含亮点、洞察、风险、建议的分析报告，可选面向领导的「管理汇报」风格 |
+| 💰 **精确成本估算** | 600+ 模型定价库（含 GLM/Kimi/Qwen/DeepSeek）+ Portkey API 兜底，未知模型按 $0 计——只报真实，不乱猜 |
 | 📂 **按项目独立汇报** | 多项目并行，各自生成独立汇报（commits + AI 交互量 + 热点文件），向不同负责人对齐 |
 | 📅 **Sprint 周期对齐** | 日 / 周 / 月之外，自定义任意起止日期，贴合迭代节奏 |
-| 🔍 **下钻与趋势洞察** | 图表点击下钻到会话 / 提交；峰值日、连续活跃、工具使用五类分布一目了然 |
+| 🔍 **趋势洞察** | 峰值日、连续活跃天数、工具使用五类分布一目了然，图表点击下钻到会话 / 提交 |
 | 📦 **零配置开箱即用** | 首次运行自动检测工具目录、推导项目路径，装完即用 |
 | 🌙 **亮 / 暗主题** | 暗色默认，全图表自适配 |
 
@@ -180,7 +181,7 @@ npx lumencode@latest serve
 - **详报** —— 完整数据 + 洞察解读 + 板块编号，适合周报、月报
 - **简报** —— 3-5 句话核心摘要，适合日报或群消息
 - **智能报告** —— 页面内调用本地 Claude Code / Codex / OpenCode 之一生成 AI 分析，含数据摘要、工作亮点、关键洞察、风险与建议
-- **风格选择** —— 生成前可选默认风格，或「牛马」风格输出更适合向领导汇报的表达倾向
+- **风格选择** —— 生成前可选默认风格，或「管理汇报」风格输出更适合向领导汇报的表达倾向
 - **持久化与更新提醒** —— 智能报告按周期、项目、报告层级和风格保存；统计数据变化后提示重新生成
 - **多平台格式** —— 标准 Markdown / 飞书 / 钉钉，一键切换
 - **按项目生成** —— 右侧面板选择项目，生成该项目的独立汇报
@@ -222,7 +223,9 @@ lumencode <命令> [周期] [日期] [选项]
 |------|------|
 | `serve` | 启动 Web 服务（默认端口 4567） |
 | `report` | 生成命令行报告（默认命令） |
+| `doctor` | 检查各工具日志的解析健康状态 |
 | `init` | 初始化配置文件 |
+| `hooks` | 开启/关闭行级归因 hook（详见[行级 AI 归因](#行级-ai-归因可选增强)） |
 | `mcp` | 启动 MCP Server，供 Claude Code / Cursor 等调用（详见 [MCP Server](#mcp-server)） |
 
 | 周期 | 说明 |
@@ -334,7 +337,7 @@ Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自�
 
 ### 行级 AI 归因（可选增强）
 
-行级归因通过 AI 编程工具 hook 记录文件编辑步骤，把 AI 贡献从提交级 / 文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：未初始化数据库时 hook 会静默跳过，不影响正常使用。
+行级归因通过 AI 编程工具 hook 记录文件编辑步骤，把 AI 贡献从提交级 / 文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：未初始化数据库时 hook 会静默跳过，不影响正常使用。在 Web 端，每个被归因的提交可下钻查看行级证据——具体命中的行，以及它们来自哪个工具 / 会话 / 步骤。
 
 ```bash
 # 在需要统计的 Git 项目根目录执行
