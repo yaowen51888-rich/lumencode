@@ -55,10 +55,11 @@
     "README.md"
   ],
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^11.10.0",
     "diff-match-patch": "^1.0.5",
     "qrcode-generator": "^2.0.4",
     "sql.js": "^1.14.1",

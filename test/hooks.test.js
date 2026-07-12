@@ -469,7 +469,6 @@ test('getHooksHealth reports stale when last step older than threshold', async (
     const db = new StepDatabase();
     await db.open(dbPath);
     db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 100 * 24 * 60 * 60 * 1000, toolName: 'edit', toolUseId: 'u1' });
-    db.save();
     db.close();
     const health = await getHooksHealth(tempDir);
     assert.ok(health.lastStepAt !== null);
@@ -486,7 +485,6 @@ test('getHooksHealth not stale when last step recent', async () => {
     const db = new StepDatabase();
     await db.open(dbPath);
     db.insertStep({ id: 's1', sessionId: 'sess1', origin: 'claude_code', ts: Date.now() - 60_000, toolName: 'edit', toolUseId: 'u1' });
-    db.save();
     db.close();
     const health = await getHooksHealth(tempDir);
     assert.ok(health.lastStepAt !== null);
@@ -502,7 +500,6 @@ test('getHooksHealth returns null lastStepAt and not stale when no steps', async
     const dbPath = join(tempDir, '.lumencode', 'steps.db');
     const db = new StepDatabase();
     await db.open(dbPath);
-    db.save();
     db.close();
     const health = await getHooksHealth(tempDir);
     assert.equal(health.lastStepAt, null);

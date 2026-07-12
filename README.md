@@ -64,7 +64,9 @@ Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same
 
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 20.0.0
+- Native SQLite dependency: better-sqlite3 (installed by npm install)
+pm install)
 - At least one of the [supported tools](#supported-tools--data-directories) installed with existing session logs
 
 ---

@@ -10,7 +10,7 @@ for (let i = 0; i < count; i++) {
   writeFileSync(filePath, `export const value${i} = ${i};\n`, 'utf8');
 
   const tracker = new StepTracker(projectRoot);
-  await tracker.open({ lockTimeoutMs: 10_000 });
+  await tracker.open();
   try {
     await tracker.recordStep({
       sessionId: `session-${workerId}`,

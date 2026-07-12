@@ -64,7 +64,9 @@ LumenCode 和 [`ccusage`](https://github.com/ccusage/ccusage) 读的是同一批
 
 ## 环境要求
 
-- Node.js >= 18.0.0
+- Node.js >= 20.0.0
+- Native SQLite dependency: better-sqlite3 (installed by npm install)
+pm install)
 - 已安装[支持的工具](#支持的工具与数据目录)中至少一个，并产生过会话日志
 
 ---

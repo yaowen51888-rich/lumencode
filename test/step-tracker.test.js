@@ -23,7 +23,6 @@ test.after(() => {
 test('StepDatabase - open creates new DB', async () => {
   const db = new StepDatabase();
   await db.open(dbPath);
-  db.save();
   db.close();
   assert.ok(existsSync(dbPath));
 });
@@ -35,7 +34,6 @@ test('StepDatabase - insertStep and getStepsBySession', async () => {
     id: 'step1', parentId: null, sessionId: 'sess1',
     ts: Date.now(), toolName: 'Write', toolUseId: 'tu1',
   });
-  db.save();
   const steps = db.getStepsBySession('sess1');
   assert.equal(steps.length, 1);
   assert.equal(steps[0].id, 'step1');
@@ -92,7 +90,6 @@ test('StepTracker migrates legacy default database by copy', async () => {
     toolName: 'Write',
     toolUseId: 'tool-1',
   });
-  legacy.save();
   legacy.close();
 
   const tracker = new StepTracker(root);
@@ -438,3 +435,22 @@ test('StepTracker - CRLF step vs LF commit 归一后仍 aligned', async () => {
   tracker.close();
 });
 
+
+test('StepTracker rolls back step files and step metadata when session update fails', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'lumencode-step-rollback-'));
+  writeFileSync(join(root, 'app.js'), 'const value = 1;\n');
+  const tracker = new StepTracker(root);
+  await tracker.open();
+  const original = tracker.db.upsertSession.bind(tracker.db);
+  tracker.db.upsertSession = () => { throw new Error('forced session failure'); };
+  await assert.rejects(() => tracker.recordStep({
+    sessionId: 'session',
+    toolName: 'Write',
+    toolUseId: 'tool',
+    toolInput: { file_path: join(root, 'app.js') },
+  }), /forced session failure/);
+  tracker.db.upsertSession = original;
+  assert.equal(tracker.db.getStepCount(), 0);
+  assert.equal(tracker.db.db.prepare('SELECT COUNT(*) AS cnt FROM step_files').get().cnt, 0);
+  tracker.close();
+});
