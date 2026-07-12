@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="doc/banner-en.png" alt="LumenCode" width="100%">
+  <img src="doc/banner-zh.png" alt="LumenCode" width="100%">
 </div>
 
 
@@ -12,15 +12,15 @@
 </p>
 
 <p align="center">
-  <b>AI Coding Assistant Analytics</b> — One command to see exactly how much code AI wrote for you
+  <b>AI 编码助手使用分析</b> —— 一行命令，看清 AI 到底帮你写了多少代码
 </p>
 
 <p align="center">
-  15-Tool Unified · Line-Level AI Attribution · 600+ Model Cost Estimation · One-Click Weekly Report
+  15 工具统一 · 行级 AI 归因 · 600+ 模型成本估算 · 一键可发布周报
 </p>
 
 <p align="center">
-  <a href="README.zh-CN.md">中文版</a> · <a href="#cli-usage">CLI</a> · <a href="#mcp-server">MCP</a> · <a href="#faq">FAQ</a> · <a href="#whats-new">Changelog</a>
+  <a href="README.en.md">English</a> · <a href="#命令用法">命令</a> · <a href="#mcp-server">MCP</a> · <a href="#常见问题">FAQ</a> · <a href="#最近更新">更新日志</a>
 </p>
 <div align="center">
   <img src="doc/数据分析页面.png" alt="LumenCode Dashboard" width="800">
@@ -29,53 +29,53 @@
 ---
 
 
-## What problem does it solve?
+## 它解决什么问题？
 
-> "How much code did AI write?" "Are these AI subscriptions worth it?" — Stop calculating manually. One command does it all.
+> 「AI 帮你写了多少代码？」「订阅这些工具值不值？」—— 与其手算，一条命令搞定。
 
-| Scenario | Solved by LumenCode |
-|----------|--------------------------|
-| **Precise AI Contribution** | Not vague “AI helped a lot” — report AI-added and AI-deleted lines separately; contribution uses total changed lines (added + deleted). **Every line accounted for.** |
-| **Proving AI ROI** | Auto-generated weekly report: “This week AI assisted 12 commits, added 3,180 lines, deleted 420 lines, cost $18.50.” **Every number is traceable.** |
-| **Weekly reports in 3 seconds** | Pick period → click "Work Summary → Copy" → paste into Lark/DingTalk. **Done in 3 seconds.** |
-| **Per-project reporting** | Configure multiple projects, then select one to generate an independent report for each project lead |
-| **Sprint cycle alignment** | Beyond daily/weekly/monthly — pick any start/end date, no longer limited to fixed periods |
-| **Tracking AI costs** | Built-in **600+ model pricing** (incl. GLM, Kimi, Qwen, DeepSeek), auto-calculates equivalent API cost |
+| 场景 | 用 LumenCode 解决 |
+|------|----------------------|
+| **精确量化 AI 贡献** | 不是模糊的“大概写了不少”，而是分别展示「AI 新增 3,180 行、删除 420 行」；贡献率按新增与删除组成的变更行数计算。**每一行都有数可查。** |
+| **证明 AI ROI** | 周报自动生成：「本周 AI 辅助 12 个提交，新增 3,180 行、删除 420 行，花费 $18.5」。**每个数字都有出处。** |
+| **3 秒写周报** | 选周期 → 点「工作汇报 → 复制」→ 粘贴飞书/钉钉。**3 秒搞定。** |
+| **按项目汇报** | 多项目并行时，选择单个项目生成独立汇报，向不同负责人对齐 |
+| **对齐 Sprint 周期** | 自定义任意起止日期，不再被日/周/月固定周期限制 |
+| **追踪 AI 成本** | 600+ 模型内置定价（含 GLM/Kimi/Qwen/DeepSeek），自动算出等效 API 花销 |
 
 ---
 
-## How does it compare to `ccusage`?
+## 和 `ccusage` 有什么区别？
 
-Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same local logs from the same 15 agent CLIs. The difference is *what you can do with the data* — LumenCode adds a Web UI, an MCP server, and line-level AI attribution on top.
+LumenCode 和 [`ccusage`](https://github.com/ccusage/ccusage) 读的是同一批本地日志、支持同一组 15 款 agent CLI。差别在"拿到数据能做什么"——LumenCode 在此之上多了 Web UI、MCP 服务、行级 AI 归因。
 
 | | **ccusage** | **LumenCode** |
 |---|:---:|:---:|
-| **Interface** | CLI | **CLI + Web UI + MCP** |
-| **Line-level AI attribution** | — | ✅ "this line was written by AI" |
-| **Publishable report** | terminal / JSON | **Markdown / Lark / DingTalk** · Detailed / Brief |
-| **AI-generated smart report** | — | ✅ calls local agent for insights |
-| **Drill-down dashboard** | — | ✅ click chart → session / commit |
-| **Tools supported** | 15 | 15 (same set) |
-| **Cost & pricing** | ✅ offline + custom overrides | ✅ **600+ models** bundled (GLM / Kimi / Qwen / DeepSeek) |
+| **形态** | CLI | **CLI + Web UI + MCP** |
+| **行级 AI 归因** | — | ✅ "这一行是 AI 写的" |
+| **可发布周报** | 终端 / JSON | **Markdown / 飞书 / 钉钉** · 详报 / 简报 |
+| **AI 智能周报** | — | ✅ 调本地 agent 出分析 |
+| **可视化钻取** | — | ✅ 点图表 → 会话 / commit |
+| **支持工具** | 15 | 15（同一组） |
+| **成本 / 定价** | ✅ 离线 + 自定义覆盖 | ✅ **600+ 模型**内置（GLM / Kimi / Qwen / DeepSeek） |
 
-> ccusage is a great, fast CLI — we draw inspiration from it. LumenCode reads the same `~/.claude` logs, so both run side by side with no conflict.
+> ccusage 是一个优秀的高速 CLI，我们从中汲取灵感。LumenCode 读的是同一份 `~/.claude` 日志，两者并存零冲突。
 
 ---
 
-## Requirements
+## 环境要求
 
 - Node.js >= 20.0.0
-- Native SQLite dependency (`better-sqlite3`, auto-built during `npm install`)
-- At least one of the [supported tools](#supported-tools--data-directories) installed with existing session logs
+- 原生 SQLite 依赖（`better-sqlite3`，`npm install` 时自动编译）
+- 已安装[支持的工具](#支持的工具与数据目录)中至少一个，并产生过会话日志
 
 ---
 
-## Supported Tools & Data Directories
+## 支持的工具与数据目录
 
-15 AI coding tools, all ✅ Fully Supported (session-level / token-level / model-level statistics).
+15 款 AI 编码工具，全部 ✅ 完整支持（会话级 / Token 级 / 模型级统计）。
 
-| Tool | Default Log Directory | Env Var (Optional) |
-|------|---------------------|-------------------|
+| 工具 | 默认日志目录 | 环境变量（可选） |
+|------|-------------|-----------------|
 | **Claude Code** | `~/.claude` | `CLAUDE_DIR` |
 | **OpenAI Codex** | `~/.codex` | `CODEX_DIR` |
 | **OpenCode** | `~/.opencode` | `OPENCODE_DIR` |
@@ -92,168 +92,168 @@ Both LumenCode and [`ccusage`](https://github.com/ccusage/ccusage) read the same
 | **Kilo** | `~/.local/share/kilo` | `KILO_DATA_DIR` |
 | **GitHub Copilot CLI** | `~/.copilot/otel` | `COPILOT_OTEL_FILE_EXPORTER_PATH` / `COPILOT_DATA_DIR` |
 
-> Without env vars set, the default directory is auto-detected. Multiple accounts can be comma-separated.
+> 未列出环境变量时，按默认目录自动检测；多账号可用逗号分隔多个目录。
 
 ---
 
-## Get Started in 3 Seconds
+## 3 秒上手
 
 ```bash
-# Global install (pin to latest)
+# 全局安装（指定最新版本）
 npm install -g lumencode@latest
-lumencode serve            # Start Web server, auto-opens browser
+lumencode serve            # 启动 Web 服务，自动打开浏览器
 
-# Verify version (ensure ≥ 1.4.0)
+# 验证版本（确保 ≥ 1.4.0）
 lumencode --version
 
-# Or run without installing
+# 或零安装直接使用
 npx lumencode@latest serve
 ```
 
-> ⚠️ **Stuck on an old version?** Run `npm cache clean --force && npm install -g lumencode@latest` to flush the cache and reinstall.
+> ⚠️ **遇到旧版本？** 运行 `npm cache clean --force && npm install -g lumencode@latest` 强制刷新缓存后重装。
 
-**Zero-config out of the box** — First run auto-detects all 15 tools' log directories above and derives project paths from session metadata. No manual setup needed.
-
----
-
-## Highlights
-
-> Core: **line-level attribution × fifteen-tool unified × precise cost × one-click reports** — accounting for AI coding's ROI down to every line, every cent.
-
-| Highlight | Description |
-|-----------|-------------|
-| 🎯 **Line-Level AI Attribution** | Not "AI helped with this commit" — "This line was written by AI." Hook-based step tracking + step evidence, precise down to every line |
-| 🔎 **Attribution Evidence Drill-Down** | Drill into any commit for per-line evidence: matched lines, source tool / session / step, confidence — every number traceable to the source |
-| 🌐 **Fifteen-Tool Unified** | Claude Code / Codex / Copilot and 12 more — all data auto-aggregated, one-click switch, cross-tool comparison |
-| 🩺 **Data Health Transparency** | `doctor` runs a one-shot health check on each tool's log parsing (success rate, last success, errors) — catch data issues early |
-| 📝 **One-Click Publishable Report** | Detailed / Brief reports in seconds; Markdown / Lark / DingTalk formats, copy-paste ready, each section with insights |
-| 🤖 **AI Smart Report** | Calls one of local Claude Code / Codex / OpenCode for AI analysis (highlights, insights, risks, recommendations); supports Default and leadership-oriented "Workhorse" styles |
-| 💰 **Precise Cost Estimation** | 600+ model pricing library (incl. GLM/Kimi/Qwen/DeepSeek) + Portkey API fallback; unknown models counted at $0 — real numbers only, no guessing |
-| 📂 **Per-Project Reports** | Multiple projects in parallel, each gets an independent report (commits + AI interaction + hotspot files) |
-| 📅 **Sprint Cycle Alignment** | Beyond daily/weekly/monthly — custom start/end dates to fit your iteration rhythm |
-| 🔍 **Trend Insights** | Peak days, active streaks, 5-category tool usage at a glance; click any chart to drill into session / commit |
-| 📦 **Zero-Config Out of the Box** | Auto-detects tool directories and derives project paths on first run — install and go |
-| 🌙 **Light / Dark Theme** | Dark mode default, all charts auto-adapt |
+**零配置开箱即用** —— 首次运行自动检测上表全部 15 款工具的日志目录，从会话元数据推导项目路径，无需手动配置。
 
 ---
 
-## Screenshots
+## 产品亮点
 
-### Data Analysis Overview
+> 核心：**行级归因 × 十五工具统一 × 精确成本 × 一键周报**——把 AI 编码的投入产出算到每一行、每一分钱。
 
-> Switch tools from the left sidebar. Main area shows Token usage, cost, model distribution, and AI contribution attribution.
+| 亮点 | 说明 |
+|------|------|
+| 🎯 **行级 AI 归因** | 不止"AI 帮了这个提交"，而是"这行代码是 AI 写的"——hook 步骤追踪 + step 证据，精确到每一行 |
+| 🔎 **归因证据下钻** | 每个提交可下钻查看逐行归因证据：命中的行、来源工具 / 会话 / 步骤、置信度——每个数字都能追溯到底 |
+| 🌐 **十五工具统一** | Claude Code / Codex / Copilot 等 15 款工具日志自动汇总，一键切换、跨工具对比 |
+| 🩺 **数据健康透明** | `doctor` 一键体检各工具日志解析状态（成功率、最近成功、异常），数据问题早发现 |
+| 📝 **一键可发布周报** | 详报 / 简报秒生成，Markdown / 飞书 / 钉钉三格式，复制即粘贴，每板块附洞察解读 |
+| 🤖 **AI 智能报告** | 调本地 Claude Code / Codex / OpenCode 之一，产出含亮点、洞察、风险、建议的分析报告，可选面向领导的「管理汇报」风格 |
+| 💰 **精确成本估算** | 600+ 模型定价库（含 GLM/Kimi/Qwen/DeepSeek）+ Portkey API 兜底，未知模型按 $0 计——只报真实，不乱猜 |
+| 📂 **按项目独立汇报** | 多项目并行，各自生成独立汇报（commits + AI 交互量 + 热点文件），向不同负责人对齐 |
+| 📅 **Sprint 周期对齐** | 日 / 周 / 月之外，自定义任意起止日期，贴合迭代节奏 |
+| 🔍 **趋势洞察** | 峰值日、连续活跃天数、工具使用五类分布一目了然，图表点击下钻到会话 / 提交 |
+| 📦 **零配置开箱即用** | 首次运行自动检测工具目录、推导项目路径，装完即用 |
+| 🌙 **亮 / 暗主题** | 暗色默认，全图表自适配 |
+
+---
+
+## 产品截图
+
+### 数据分析总览
+
+> 左侧数据源面板一键切换工具，主区域汇总 Token 消耗、费用、模型分布、AI 贡献度归因。
 
 <table>
   <tr>
-    <td><img src="doc/数据分析页面.png" alt="Summary & Trends" width="400"></td>
-    <td><img src="doc/数据分析页面2.png" alt="Project & Hourly Distribution" width="400"></td>
+    <td><img src="doc/数据分析页面.png" alt="汇总面板与趋势图" width="400"></td>
+    <td><img src="doc/数据分析页面2.png" alt="项目分布与时段分布" width="400"></td>
   </tr>
   <tr>
-    <td align="center">Summary + Token Trends</td>
-    <td align="center">Project Distribution + Hourly Activity + Session List</td>
+    <td align="center">汇总指标 + Token 趋势</td>
+    <td align="center">项目分布 + 时段分布 + 会话列表</td>
   </tr>
 </table>
 
-![AI Contribution & Commit Analysis](doc/数据分析页面3.png)
+![AI 贡献度与提交分析](doc/数据分析页面3.png)
 
-### Multi-Tool Dimension
+### 多工具维度
 
-> Switch to "All Tools" view for cross-tool aggregate data and comparative analysis.
+> 切换到「全部工具」视图，查看跨工具的汇总数据与对比分析。
 
-![Multi-Tool Dimension](doc/多工具维度.png)
+![多工具维度](doc/多工具维度.png)
 
-### Project Distribution & Sessions
+### 项目分布 & 会话记录
 
-> Per-project Token, cost, and session count stats. Click to drill down into individual session details.
+> 按项目统计 Token、费用、会话数，点击下钻查看单条会话明细。
 
-![Project Distribution & Sessions](doc/项目分布-会话记录.png)
+![项目分布与会话记录](doc/项目分布-会话记录.png)
 
-### Scenario Analysis
+### 场景分析
 
-> Categorize by work type (coding / testing / debugging / docs / review / planning), with matched keyword examples.
+> 按工作类型分类（编码 / 测试 / 调试 / 文档 / 审查 / 规划），附匹配关键词示例。
 
-![Scenario Analysis](doc/工作类型分布_匹配示例.png)
+![场景分析](doc/工作类型分布_匹配示例.png)
 
-### Work Report · One-Click Publishable Weekly Report
+### 工作汇报 · 一键生成可直接发布的周报
 
-> Natural-language paragraph reports covering Token / cost / AI contribution / project highlights / code output, each section with insight commentary.
+> 自然语言段落式汇报，覆盖 Token / 费用 / AI 贡献度 / 项目亮点 / 代码产出，每个板块附洞察解读。
 
-- **Detailed** — Full data + insights + numbered sections, ideal for weekly/monthly reports
-- **Brief** — 3-5 sentence core summary, ideal for daily reports or group chat
-- **Smart Report** — Calls one of the local Claude Code / Codex / OpenCode agents from the page to generate AI analysis with data summary, work highlights, key insights, risks, and recommendations
-- **Style Selection** — Choose Default style, or "Workhorse" for a leadership-reporting tone before generation
-- **Persistence & Freshness Hints** — Smart reports are saved by period, project, report level, and style; stale source data prompts regeneration
-- **Multi-Platform Format** — Standard Markdown / Lark / DingTalk, one-click toggle
-- **Per-Project** — Select a project from the right panel to generate a project-specific report
+- **详报** —— 完整数据 + 洞察解读 + 板块编号，适合周报、月报
+- **简报** —— 3-5 句话核心摘要，适合日报或群消息
+- **智能报告** —— 页面内调用本地 Claude Code / Codex / OpenCode 之一生成 AI 分析，含数据摘要、工作亮点、关键洞察、风险与建议
+- **风格选择** —— 生成前可选默认风格，或「管理汇报」风格输出更适合向领导汇报的表达倾向
+- **持久化与更新提醒** —— 智能报告按周期、项目、报告层级和风格保存；统计数据变化后提示重新生成
+- **多平台格式** —— 标准 Markdown / 飞书 / 钉钉，一键切换
+- **按项目生成** —— 右侧面板选择项目，生成该项目的独立汇报
 
 <table>
   <tr>
-    <td><img src="doc/工作汇报_详报.png" alt="Work Report - Detailed" width="400"></td>
-    <td><img src="doc/工作汇报_简报.png" alt="Work Report - Brief" width="400"></td>
+    <td><img src="doc/工作汇报_详报.png" alt="工作汇报-详报" width="400"></td>
+    <td><img src="doc/工作汇报_简报.png" alt="工作汇报-简报" width="400"></td>
   </tr>
   <tr>
-    <td align="center"><b>Detailed</b></td>
-    <td align="center"><b>Brief</b></td>
+    <td align="center"><b>详报</b></td>
+    <td align="center"><b>简报</b></td>
   </tr>
 </table>
 
-### Light / Dark Theme
+### 亮色 / 暗色主题
 
-> All chart colors auto-adapt for comfortable long sessions.
+> 全图表配色自适配，长时间阅读不伤眼。
 
-![Light Mode](doc/浅色模式.png)
+![亮色模式](doc/浅色模式.png)
 
-> Dark mode is the default theme — the screenshots above were taken in dark mode.
+> 暗色模式为默认主题，上方截图均为暗色模式下的效果。
 
-### Settings
+### 设置页
 
-> Configure data sources (15 tool directories), enabled tools, cost mode, step-tracking attribution, scenario keywords, and appearance — all from the sidebar Settings page, organized into cards.
+> 在侧栏「设置」页面统一管理：15 个工具数据源目录、启用工具、成本计算口径、步骤追踪归因、场景关键词、外观偏好，按卡片分区。
 
-![Settings Page](doc/设置页面.png)
+![设置页](doc/设置页面.png)
 
 ---
 
-## CLI Usage
+## 命令用法
 
 ```bash
-lumencode <command> [period] [date] [options]
+lumencode <命令> [周期] [日期] [选项]
 ```
 
-| Command | Description |
-|---------|-------------|
-| `serve` | Start Web server (default port 4567) |
-| `report` | Generate CLI report (default command) |
-| `doctor` | Check parsing health of each tool's logs |
-| `init` | Initialize config file |
-| `hooks` | Enable/disable line-level attribution hooks (see [Line-Level AI Attribution](#line-level-ai-attribution-optional)) |
-| `mcp` | Start MCP Server for Claude Code / Cursor etc. (see [MCP Server](#mcp-server)) |
+| 命令 | 说明 |
+|------|------|
+| `serve` | 启动 Web 服务（默认端口 4567） |
+| `report` | 生成命令行报告（默认命令） |
+| `doctor` | 检查各工具日志的解析健康状态 |
+| `init` | 初始化配置文件 |
+| `hooks` | 开启/关闭行级归因 hook（详见[行级 AI 归因](#行级-ai-归因可选增强)） |
+| `mcp` | 启动 MCP Server，供 Claude Code / Cursor 等调用（详见 [MCP Server](#mcp-server)） |
 
-| Period | Description |
-|--------|-------------|
-| `daily` | Daily report (default) |
-| `weekly` | Weekly report (auto-calculates week range) |
-| `monthly` | Monthly report (auto-calculates month range) |
+| 周期 | 说明 |
+|------|------|
+| `daily` | 日报（默认） |
+| `weekly` | 周报（自动计算所在周） |
+| `monthly` | 月报（自动计算所在月） |
 
-### Examples
+### 常用示例
 
 ```bash
-# Web mode (recommended)
+# Web 模式（推荐）
 lumencode serve
 
-# CLI daily report
+# 命令行日报
 lumencode report daily
 lumencode report daily 2026-05-15
 
-# Weekly / Monthly
+# 周报 / 月报
 lumencode report weekly
 lumencode report monthly 2026-05-01
 
-# Specific projects only
+# 只统计指定项目
 lumencode report daily --projects D:/fzwork,E:/play/idea
 
-# One-click publishable work summary
-lumencode report daily --work          # Detailed
-lumencode report daily --work --brief  # Brief
+# 一键生成可发布的工作汇报
+lumencode report daily --work          # 详报
+lumencode report daily --work --brief  # 简报
 lumencode report weekly --work
 ```
 
@@ -261,29 +261,29 @@ lumencode report weekly --work
 
 ## MCP Server
 
-LumenCode ships with a built-in MCP Server that exposes its AI coding analytics as 7 tools, callable directly from **Claude Code / Cursor / Windsurf** and other MCP-compatible clients — query usage, generate weekly reports, and analyze code contribution right in the conversation, no need to switch to the Web UI.
+LumenCode 内置 MCP Server，把 AI 编码分析能力暴露为 7 个工具，可供 **Claude Code / Cursor / Windsurf** 等支持 MCP 的客户端直接调用——在对话里就能查用量、生成周报、分析代码贡献度，无需切换到 Web 界面。
 
-### Tools
+### 工具清单
 
-| Tool | Description |
-|------|-------------|
-| `usage_summary` | AI usage overview: token consumption, cost, session count, model distribution |
-| `daily_report` | Generate a usage report for a given date (Markdown) |
-| `work_report` | Work summary (weekly/monthly), supports normal / brief / boss styles |
-| `session_list` | List AI coding sessions within a time range |
-| `trend_analysis` | Usage trends: daily token, cost, and request volume |
-| `ai_contribution` | AI code contribution for a repo: contribution rate, commit attribution, hotspot files |
-| `cost_breakdown` | Cost breakdown: per-model / per-project spend and cache hit rate |
+| 工具 | 说明 |
+|------|------|
+| `usage_summary` | AI 用量概览：Token 消耗、成本、会话数、模型分布 |
+| `daily_report` | 生成指定日期的使用报告（Markdown） |
+| `work_report` | 工作汇报（周报/月报），支持 normal / brief / boss 三种风格 |
+| `session_list` | 列出指定时间范围内的 AI 编码会话 |
+| `trend_analysis` | 用量趋势：日级 Token、成本、请求量变化 |
+| `ai_contribution` | 指定仓库的 AI 代码贡献度：贡献率、commit 归因、热点文件 |
+| `cost_breakdown` | 成本分解：按模型 / 项目统计费用与缓存命中率 |
 
-### Configuration
+### 配置方式
 
-**Option 1: After global install (recommended)**
+**方式一：全局安装后（推荐）**
 
 ```bash
 npm install -g lumencode@latest
 ```
 
-Add to your client's MCP config (Claude Code `settings.json` shown):
+在客户端的 MCP 配置中添加（以 Claude Code 的 `settings.json` 为例）：
 
 ```json
 {
@@ -295,7 +295,7 @@ Add to your client's MCP config (Claude Code `settings.json` shown):
 }
 ```
 
-**Option 2: Source / dev mode**
+**方式二：源码 / 开发模式**
 
 ```json
 {
@@ -308,89 +308,89 @@ Add to your client's MCP config (Claude Code `settings.json` shown):
 }
 ```
 
-Cursor / Windsurf and other clients use the same `mcpServers` field — enter it via their respective settings. You can also run `npm run mcp` or `lumencode-mcp` directly in the foreground for debugging.
+Cursor / Windsurf 等客户端的配置字段名同为 `mcpServers`，按各自设置入口填入即可。也可用 `npm run mcp` 或 `lumencode-mcp` 直接前台启动调试。
 
-### Highlights
+### 特性
 
-- **Zero-config** — Auto-detects all supported tools' log directories and derives project paths from sessions
-- **stdio transport** — Standard MCP stdio protocol; scans and caches logs on first call, reuses thereafter
-- **Consistent results** — All tools share the same `lib/` stats and attribution implementations as the Web UI and CLI
+- **零配置**：自动检测所有支持工具的日志目录，从会话推导项目路径，无需手动指定
+- **stdio 传输**：标准 MCP stdio 协议；首次调用时扫描并缓存日志，后续复用
+- **结果一致**：所有工具与 Web 端 / CLI 共用 `lib/` 下的统计与归因实现
 
-Once configured, ask your AI assistant directly, e.g. "How much did AI coding cost me this week?", "Analyze AI contribution for the idea repo", or "Generate this week's work summary".
+配置完成后即可在 AI 助手中直接提问，例如「我这周 AI 编码花了多少成本？」「分析 idea 仓库的 AI 贡献度」「生成本周工作汇报」。
 
 ---
 
-## Configuration
+## 配置
 
-**First run auto-detects** installed tools' log directories and project paths. For customization, open the **Settings** page from the left sidebar rail. Settings are organized into cards: Data Sources, Repositories, Cost & Billing, Attribution & Tracking, Scenario Keywords, and Appearance.
+**首次运行自动检测**已安装工具的日志目录与项目路径。如需自定义，在左侧侧栏打开「设置」页面在线修改。设置按卡片分区：数据源、代码仓库、计费与成本、归因与追踪、场景分类、外观偏好。
 
-| Setting | Description |
-|---------|-------------|
-| Each tool's log directory | Data directories for the 15 tools, auto-detected by default per the table above; overridable in Settings or `config.json` |
-| Enabled Tools | Specify which tools to enable, defaults to all detected |
-| Local Project Paths | Git repo paths for code commit stats and AI attribution |
-| Excluded Projects | Project names to exclude |
-| Scenario Keywords | Work type classification keyword JSON |
-| Cost Mode | Cost calculation source: `auto` (prefer log cost, fall back to pricing) · `calculate` (always recompute from token pricing) · `display` (raw log values only) |
-| Step Tracking | Toggle step-level recording for line attribution (see [Line-Level AI Attribution](#line-level-ai-attribution-optional)) |
-| AI Attribution Params | Expert thresholds/weights for attribution scoring — read-only preview in UI; edit `config.json` directly to change |
+| 配置项 | 说明 |
+|--------|------|
+| 各工具日志目录 | 15 款工具的数据目录，默认按上表自动检测，可在设置页或 `config.json` 覆盖 |
+| 启用工具 | 指定启用哪些工具，默认全部已检测到的工具 |
+| 本地项目路径 | 关联的 Git 仓库路径，用于代码提交统计与 AI 贡献度归因 |
+| 排除项目 | 不希望统计的项目名称 |
+| 场景关键词 | 工作类型分类关键词 JSON |
+| 成本计算口径 | 成本来源：`auto`（优先用日志成本，缺失则按定价估算）· `calculate`（始终按 token 定价重算）· `display`（仅展示日志原值） |
+| 步骤追踪 | 行级归因的步骤记录开关，详见[行级 AI 归因](#行级-ai-归因可选增强) |
+| AI 归因参数 | 归因评分的阈值/权重等专家参数，UI 仅只读预览；如需修改请直接编辑 `config.json` |
 
-### Line-Level AI Attribution (Optional)
+### 行级 AI 归因（可选增强）
 
-Line-level attribution uses AI coding tool hooks to record file-edit steps, refining AI contribution from commit/file level down to line level. Claude Code uses `PostToolBatch`, Codex uses `PostToolUse`, OpenCode uses a project-level plugin. The feature is opt-in: without an initialized database, the hook silently skips and normal usage is unaffected. In the Web UI, every attributed commit drills down to line-level evidence — which lines were matched, and which tool / session / step they came from.
+行级归因通过 AI 编程工具 hook 记录文件编辑步骤，把 AI 贡献从提交级 / 文件级细化到行级。Claude Code 优先使用 `PostToolBatch`，Codex 使用 `PostToolUse`，OpenCode 使用项目级插件。该功能默认按需启用：未初始化数据库时 hook 会静默跳过，不影响正常使用。在 Web 端，每个被归因的提交可下钻查看行级证据——具体命中的行，以及它们来自哪个工具 / 会话 / 步骤。
 
 ```bash
-# Run in the Git project root you want to track
+# 在需要统计的 Git 项目根目录执行
 node index.js hooks status
-node index.js hooks enable       # Interactive tool selection, steps init, auto config backup
+node index.js hooks enable       # 交互式选择工具、初始化 steps 并自动备份配置
 ```
 
-Enabling only modifies the current project's local config (`.claude/settings.local.json`, `.codex/config.toml`, `.opencode/plugins/lumencode-step-tracker.js`) — global config and other projects are untouched. To disable:
+开启时只修改当前项目的本地配置（`.claude/settings.local.json`、`.codex/config.toml`、`.opencode/plugins/lumencode-step-tracker.js`），不影响全局配置或其它项目。关闭执行：
 
 ```bash
 node index.js hooks disable
 ```
 
-Data is written to `.lumencode/steps.db` in the current project. Existing `.ccusage/steps.db` files from older versions are copied to the new path on first use and kept as rollback-safe legacy backups.
+数据写入当前项目的 `.lumencode/steps.db`（含归因用的文件快照）。旧版本的 `.ccusage/steps.db` 会在首次使用时复制迁移到新路径；旧文件保留为回滚备份。
 
-### Model Pricing Data
+### 模型定价数据
 
-- **Local table** — 590 models pre-synced from [Portkey-AI/models](https://github.com/Portkey-AI/models) with vendor canonical names
-- **Alias mapping** — 28 authoritative overrides mapping aggregator aliases (`glm-5.1`, `kimi-for-coding`) to correct pricing
-- **API fallback** — Unknown models auto-queried via Portkey's free API, results cached to `data/pricing-cache.json`; local + fallback covers 600+ models
-- **Graceful degradation** — When API is unavailable, the model is counted at $0 (won't be guessed), other models unaffected
-
----
-
-## FAQ
-
-| Issue | Solution |
-|-------|----------|
-| Browser shows "No Data" | First run will guide you through config; if skipped, open the Settings page (left sidebar) |
-| Log directory not found on Windows | Default path is `C:\Users\<username>\.claude`, ensure `projects/` subdirectory exists |
-| Port 4567 in use | Set env variable: `set LUMENCODE_PORT=8080 && lumencode serve` |
-| Git stats not found | Project path is auto-derived from session `cwd`; if still unrecognized, set it manually in Settings |
-| Cost showing $0 | Model not in pricing table — try with network connection to let API fallback resolve, or add an `aliasOf` entry in `data/pricing.json` overrides |
-| Smart report unavailable | Smart reports require one of local Claude Code / Codex / OpenCode — ensure the corresponding command is in your PATH |
+- **本地表**：590 个来自 [Portkey-AI/models](https://github.com/Portkey-AI/models) 的厂商原命名定价
+- **别名映射**：28 条权威覆盖，把 `glm-5.1` / `kimi-for-coding` 等中转服务别名定向到正确定价
+- **API 兜底**：未命中的新模型自动调用 Portkey 免费 API，结果缓存到 `data/pricing-cache.json`，本地 + 兜底覆盖 600+ 模型
+- **失败降级**：API 不可用时该模型按 $0 计费，不影响其他模型与报告生成
 
 ---
 
-## What's New
+## 常见问题
 
-📖 [Full changelog → Releases](https://github.com/yaowen51888-rich/lumencode/releases)
-
----
-
-## Support This Project
-
-If this tool helps you:
-
-- **Star this repo** — Help others discover it
-- **File an issue** — Report bugs or request features
-- **Open a PR** — Contributions welcome for model pricing, scenario keywords, or new tool adapters
+| 问题 | 解决方案 |
+|------|----------|
+| 浏览器显示「暂无数据」 | 首次启动会引导配置；如已跳过，在左侧侧栏打开「设置」页面 |
+| Windows 下日志目录不存在 | 默认路径为 `C:\Users\<用户名>\.claude`，确认该目录下有 `projects/` 子目录 |
+| 端口 4567 被占用 | 设置环境变量：`set LUMENCODE_PORT=8080 && lumencode serve` |
+| 找不到 Git 统计数据 | 已自动从会话 `cwd` 推导项目路径，仍未识别时可在设置中手动指定 |
+| 费用显示 $0 | 该模型未在定价表中，可临时联网让 API 兜底，或在 `data/pricing.json` 的 `overrides` 中添加 `aliasOf` 别名 |
+| 智能报告不可用 | 智能报告需本地 Claude Code / Codex / OpenCode 之一可调用，请确认对应命令在终端 PATH 中 |
 
 ---
 
-## License
+## 最近更新
+
+📖 [完整更新日志 → Releases](https://github.com/yaowen51888-rich/lumencode/releases)
+
+---
+
+## 支持项目
+
+如果这个工具帮到你，不妨：
+
+- **给个 Star** —— 让更多人看到这个工具
+- **提 Issue** —— 报告 Bug 或建议新功能
+- **提 PR** —— 欢迎贡献模型定价、场景关键词、工具适配
+
+---
+
+## 许可证
 
 [MIT](LICENSE) © [zhangyaowen](https://github.com/yaowen51888-rich)

@@ -1,6 +1,6 @@
 {
   "name": "lumencode",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "LumenCode — AI 编码助手使用分析与周报工具：15 工具统一、行级 AI 归因、600+ 模型成本估算、一键周报，Web/CLI/MCP 三模式",
   "type": "module",
   "bin": {
