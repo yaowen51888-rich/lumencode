@@ -37,6 +37,18 @@ test('getProjectDisplayName - returns display basename from encoded Claude direc
   assert.strictEqual(getProjectDisplayName('...-remote-project'), 'project');
 });
 
+test('computeUsageStats - reports unpriced token coverage', () => {
+  const priced = makeRecord('2026-05-16', 'assistant', 'claude-sonnet-4-6', 'priced');
+  const unknown = makeRecord('2026-05-16', 'assistant', 'totally-unknown-model-xyz', 'unknown');
+  unknown.tokens = { input: 200, output: 100, cacheRead: 20, cacheCreate: 0 };
+
+  const stats = computeUsageStats([priced, unknown]);
+
+  assert.equal(stats.costMeta.unpricedTokens, 320);
+  assert.equal(stats.costMeta.unpricedRatio, 320 / 480);
+  assert.deepEqual(stats.costMeta.unknownModels, ['totally-unknown-model-xyz']);
+});
+
 test('filterRecordsByPeriod - daily filtering', () => {
   // 创建测试数据
   const records = [

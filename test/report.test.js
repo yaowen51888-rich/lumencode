@@ -114,6 +114,46 @@ test('generateWorkReport - without gitStats still works', () => {
   assert.ok(!report.includes('代码产出'));
 });
 
+test('generateWorkReport - separates AI added and deleted lines', () => {
+  const usageStats = {
+    requestCount: 1, totalTokens: 100, sessionCount: 1, estimatedCost: 0.1,
+    inputTokens: 50, outputTokens: 50, cacheRead: 0, cacheCreate: 0,
+    activeDays: 1, userMessageCount: 1, subagentTokens: 0,
+    projects: {}, scenarios: {}, models: {}, tools: {},
+  };
+  const gitStats = {
+    commits: 1, filesChanged: 1, linesAdded: 8, linesDeleted: 3,
+    aiContribution: {
+      aiCommits: 1, aiCommitRatio: 1, possibleAICommits: 0,
+      aiLinesAdded: 5, aiLinesDeleted: 2, aiLinesChanged: 7,
+      totalLinesChanged: 11, weightedAILineRatio: 7 / 11,
+    },
+  };
+
+  const report = generateWorkReport(usageStats, gitStats, 'daily', '2026-05-14', '2026-05-14');
+
+  assert.ok(report.includes('新增 +5 / 删除 -2'));
+});
+
+test('generateWorkReport - reports unpriced token count ratio and models', () => {
+  const usageStats = {
+    requestCount: 1, totalTokens: 480, sessionCount: 1, estimatedCost: 0,
+    inputTokens: 300, outputTokens: 180, cacheRead: 0, cacheCreate: 0,
+    activeDays: 1, userMessageCount: 1, subagentTokens: 0,
+    projects: {}, scenarios: {}, models: {}, tools: {},
+    costMeta: {
+      modelPricingStatus: { 'unknown-model': 'unknown' },
+      unknownModels: ['unknown-model'], unpricedTokens: 320, unpricedRatio: 2 / 3, hasActualCost: false,
+    },
+  };
+
+  const report = generateWorkReport(usageStats, null, 'daily', '2026-05-14', '2026-05-14');
+
+  assert.ok(report.includes('320 token（66.7%，1 个模型）未计价：unknown-model'));
+  assert.ok(report.includes('overrides'));
+  assert.ok(report.includes('aliasOf'));
+});
+
 // ── buildAIContributionDetail ──
 
 test('buildAIContributionDetail - categorizes by attributionType', () => {

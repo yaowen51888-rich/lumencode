@@ -457,6 +457,7 @@ if (!command || command === 'help' || command === '--help') {
 命令:
   report   生成使用报告（默认命令）
   serve    启动 Web 服务（默认端口 4567）
+  doctor   检查各工具日志解析健康状态
   init     初始化配置文件
   help     显示帮助信息
   -V, --version  显示版本号
@@ -528,6 +529,20 @@ if (command === 'hooks:install-codex') {
 if (command === 'serve') {
   const { config, effectiveIncludeProjects, configPath } = loadCliConfig();
   startServer(config, effectiveIncludeProjects, buildReportData, configPath);
+} else if (command === 'doctor') {
+  const { config, effectiveIncludeProjects } = loadCliConfig();
+  const { toolBreakdown } = await parseAllEnabledTools(config, {
+    excludeProjects: config.excludeProjects,
+    includeProjects: effectiveIncludeProjects,
+  });
+  console.log('数据健康:');
+  for (const [tool, health] of Object.entries(toolBreakdown)) {
+    const rate = health.successRate == null ? '-' : `${Math.round(health.successRate * 100)}%`;
+    console.log(`- ${tool}: ${health.status === 'error' ? '异常' : '正常'} · 文件 ${health.scannedFiles} · 记录 ${health.recordCount} · 成功率 ${rate}`);
+    if (health.lastSuccessAt) console.log(`  最近成功: ${health.lastSuccessAt}`);
+    if (health.error) console.log(`  错误: ${health.error}`);
+  }
+  process.exit(Object.values(toolBreakdown).some(item => item.status === 'error') ? 1 : 0);
 } else {
   // report command (default)
   const period = args[1] || 'daily';

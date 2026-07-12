@@ -372,7 +372,7 @@
             </div>
             <div class="coverage-grid">
               <template x-for="t in coverageTools" :key="t.name">
-                <button class="coverage-cell" :class="activeTool === t.name ? 'active' : ''" @click="setTool(t.name)" :title="t.displayName + ' · ' + t.sub">
+                <button class="coverage-cell" :class="activeTool === t.name ? 'active' : ''" @click="setTool(t.name)" :title="t.displayName + ' · ' + t.sub + (t.healthText ? ' · ' + t.healthText : '')">
                   <div class="coverage-cell-head">
                     <span class="source-mark" :style="'background:' + t.color"></span>
                     <span class="coverage-cell-name" x-text="t.displayName"></span>
@@ -383,12 +383,18 @@
                       <div class="coverage-bar-track"><div class="coverage-bar-fill" style="width:0%"></div></div>
                     </div>
                   </template>
-                  <template x-if="!t.idle">
+                  <template x-if="!t.idle && !t.error">
                     <div class="coverage-cell-active">
                       <span class="font-mono coverage-tokens" x-text="t.tokens"></span>
                       <div class="coverage-bar-track">
                         <div class="coverage-bar-fill" :style="'width:' + t.usagePct + '%;background:' + t.color"></div>
                       </div>
+                    </div>
+                  </template>
+                  <template x-if="t.error">
+                    <div class="coverage-cell-idle" :title="t.sub">
+                      <span class="coverage-idle-label" style="color:var(--rust)" x-text="t.error ? 'ERROR · ' + (t.healthText || '') : 'ERROR'"></span>
+                      <div class="coverage-bar-track"><div class="coverage-bar-fill" style="width:100%;background:var(--rust)"></div></div>
                     </div>
                   </template>
                 </button>

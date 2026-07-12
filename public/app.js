@@ -107,16 +107,20 @@ function appState() {
       const maxSess = Math.max(1, ...all.map(n => this.toolSessions[n] || 0));
       return all.map(name => {
         const sess = this.toolSessions[name] || 0;
-        const idle = sess === 0;
+        const health = this.toolHealth[name];
+        const error = health?.status === 'error';
+        const idle = sess === 0 && !error;
         return {
           name,
           displayName: toolDisplayName(name),
           color: TOOL_COLORS[name] || 'var(--rust)',
-          sub: TOOL_SUB_NAMES[name] || name.toUpperCase(),
+          sub: error ? health.error : (TOOL_SUB_NAMES[name] || name.toUpperCase()),
+          healthText: health ? `文件 ${health.scannedFiles ?? 0} · 记录 ${health.recordCount ?? 0}${health.successRate == null ? '' : ` · 成功率 ${Math.round(health.successRate * 100)}%`}${health.lastSuccessAt ? ` · 最近 ${health.lastSuccessAt}` : ''}` : '',
           tokens: this.toolTokens[name] || '',
           sessions: sess,
           usagePct: sess ? Math.round((sess / maxSess) * 100) : 0,
           idle,
+          error,
         };
       });
     },
@@ -222,6 +226,7 @@ function appState() {
     /* tool summary for rail */
     toolTokens: { all: '-' },
     toolSessions: { all: 0 },
+    toolHealth: {},
 
     /* report view data */
     reportKpis: [
@@ -851,7 +856,7 @@ function appState() {
       const targetPct = Math.round((ai.aiLinesChanged / totalLines) * 100) || Math.round((ai.aiLineRatio || 0) * 100);
       this.aiLinePct = targetPct;
       this._animatePct(targetPct);
-      this.aiContributionMeta = `${fmt(ai.aiLinesChanged || 0)} / ${fmt(totalLines)} LINES`;
+      this.aiContributionMeta = `+${fmt(ai.aiLinesAdded || 0)} / −${fmt(ai.aiLinesDeleted || 0)} AI LINES · ${fmt(totalLines)} CHANGED`;
 
       if (gitStats.attributionSummary) {
         const s = gitStats.attributionSummary;
@@ -888,7 +893,7 @@ function appState() {
         { l: '删除', en: '− REMOVED', v: '−' + fmt(gitStats.linesDeleted), c: 'var(--dest)' },
       ];
       this.attributionCells = [
-        { l: 'AI 改写', en: 'REWRITE', v: this.aiLinePct + '%', c: '' },
+        { l: 'AI 变更', en: 'CHANGED', v: this.aiLinePct + '%', c: '' },
         { l: 'AI 提交', en: 'COMMITS', v: `${ai.aiCommits}/${gitStats.commits}`, c: 'var(--forest)' },
         { l: '可能上限', en: 'MAX', v: (this.confirmedPct + this.inferredPct) + '%', c: '' },
         { l: '高·中置信', en: 'HI · MID', v: `${ai.highConfidenceCommits}/${ai.mediumConfidenceCommits}`, c: 'var(--ochre)' },
@@ -953,6 +958,7 @@ function appState() {
     },
 
     computeToolTokens(usageStats, toolBreakdown) {
+      this.toolHealth = toolBreakdown || {};
       if (!toolBreakdown || Object.keys(toolBreakdown).length === 0) {
         const total = usageStats.totalTokens || 0;
         this.toolTokens = { all: total >= 1_000_000 ? (total / 1_000_000).toFixed(2) + 'M' : fmtShort(total) };
@@ -980,13 +986,18 @@ function appState() {
       const ai = gitStats?.aiContribution;
       const aiPct = ai ? Math.round((ai.aiLinesChanged / (ai.totalLinesChanged || 1)) * 100) : 0;
       const weightedPct = ai ? Math.round((ai.weightedAILineRatio || 0) * 100) : 0;
+      const unpricedPct = Math.round((usageStats.costMeta?.unpricedRatio || 0) * 1000) / 10;
+      const unpricedModels = usageStats.costMeta?.unknownModels || [];
+      const unpricedNote = unpricedPct > 0
+        ? ` · ${fmt(usageStats.costMeta.unpricedTokens || 0)} token（${unpricedPct}% · ${unpricedModels.join('、')}）未计价`
+        : '';
       const days = Object.keys(usageStats.dailyStats || {}).length || 1;
-      let aiSubText = `${fmt(ai?.aiLinesChanged || 0)} 行严格可认定`;
+      let aiSubText = `AI 新增 +${fmt(ai?.aiLinesAdded || 0)} / 删除 −${fmt(ai?.aiLinesDeleted || 0)}`;
       if (ai?.possibleAICommits > 0) {
         aiSubText += `，${ai.possibleAICommits} 提交可能 AI 参与`;
       }
       this.reportKpis = [
-        { l: 'TOKENS', v: (usageStats.totalTokens / 1_000_000).toFixed(2) + 'M', s: `估算成本 $${cost.toFixed(2)}`, accent: false },
+        { l: 'TOKENS', v: (usageStats.totalTokens / 1_000_000).toFixed(2) + 'M', s: `估算成本 $${cost.toFixed(2)}${unpricedNote}`, accent: false },
         { l: 'COMMITS', v: String(gitStats?.commits || 0), s: `+${fmt(gitStats?.linesAdded || 0)} / −${fmt(gitStats?.linesDeleted || 0)} 行`, accent: false },
         { l: 'AI CONTRIBUTION', v: aiPct + '%', s: aiSubText, accent: true },
         { l: 'ACTIVE DAYS', v: days + ' / ' + (this.period === 'weekly' ? '7' : '31'), s: '连续 - 天最长', accent: false },

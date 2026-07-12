@@ -145,7 +145,7 @@ test('StepDatabase opens a real sql.js version-1 database', async () => {
 
 test('StepDatabase remains valid after a writer is killed', async () => {
   const root = mkdtempSync(join(tmpdir(), 'lumencode-step-kill-'));
-  const script = fileURLToPath(new URL('./fixtures/step-kill-writer.js', import.meta.url));
+  const script = fileURLToPath(new URL('./fixtures/step-kill-writer', import.meta.url));
   const child = spawn(process.execPath, [script, root], { stdio: ['ignore', 'pipe', 'pipe'] });
   await new Promise((resolve, reject) => {
     child.stdout.once('data', resolve);

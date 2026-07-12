@@ -65,3 +65,52 @@ test('canonicalizeProjectPaths basename 冲突时跳过归一（不误合并独�
   // 两个同名 repo → basename 冲突 → 不归一，保留原始 basename 值
   assert.ok(baseValues.includes('lumencode'), '冲突 basename 不归一，保留原 basename');
 });
+
+class FakeBrokenParser extends BaseParser {
+  getInfo() {
+    return { name: 'fake-broken-test', displayName: 'FakeBroken', defaultDir: '/tmp', envVar: 'FAKE_BROKEN_TEST' };
+  }
+  async detect() { return true; }
+  async parse() { throw new Error('fixture format drift'); }
+}
+
+class FakeSilentDriftParser extends BaseParser {
+  getInfo() {
+    return { name: 'fake-silent-drift-test', displayName: 'FakeSilent', defaultDir: '/tmp', envVar: 'FAKE_SILENT_TEST' };
+  }
+  async detect() { return true; }
+  countSourceFiles() { return 3; }
+  async parse() { return []; }
+}
+
+test('parseAllEnabledTools 保留解析失败健康状态', async () => {
+  registerParser(FakeBrokenParser);
+  const { toolBreakdown } = await parseAllEnabledTools({ enabledTools: ['fake-broken-test'] });
+
+  assert.deepEqual(toolBreakdown['fake-broken-test'], {
+    recordCount: 0,
+    sessionCount: 0,
+    scannedFiles: 0,
+    skippedFiles: 0,
+    successRate: null,
+    status: 'error',
+    error: 'fixture format drift',
+    lastSuccessAt: null,
+  });
+});
+
+test('parseAllEnabledTools 标记有日志但零记录的格式漂移', async () => {
+  registerParser(FakeSilentDriftParser);
+  const { toolBreakdown } = await parseAllEnabledTools({ enabledTools: ['fake-silent-drift-test'] });
+
+  assert.deepEqual(toolBreakdown['fake-silent-drift-test'], {
+    recordCount: 0,
+    sessionCount: 0,
+    scannedFiles: 3,
+    skippedFiles: 3,
+    successRate: 0,
+    status: 'error',
+    error: '发现 3 个日志文件，但未解析出记录',
+    lastSuccessAt: null,
+  });
+});
