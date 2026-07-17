@@ -255,6 +255,10 @@ lumencode report daily --projects D:/fzwork,E:/play/idea
 lumencode report daily --work          # 详报
 lumencode report daily --work --brief  # 简报
 lumencode report weekly --work
+
+# 帮助与版本
+lumencode --help        # 或 -h, -help
+lumencode --version     # 或 -v, -V
 ```
 
 ---
