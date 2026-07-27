@@ -493,6 +493,8 @@ if (!command || command === 'help' || command === '--help') {
   node index.js hooks:install
   node index.js hooks:install-claude
   node index.js hooks:install-codex
+  node index.js hooks:install-opencode
+  node index.js hooks:install-gemini
 
 零配置:
   首次运行自动检测 Claude 日志目录和项目路径，无需手动配置。
@@ -523,6 +525,16 @@ if (command === 'hooks:install' || command === 'hooks:install-claude') {
 
 if (command === 'hooks:install-codex') {
   await import('./hooks/install-codex.js');
+  process.exit(0);
+}
+
+if (command === 'hooks:install-opencode') {
+  await import('./hooks/install-opencode.js');
+  process.exit(0);
+}
+
+if (command === 'hooks:install-gemini') {
+  await import('./hooks/install-gemini.js');
   process.exit(0);
 }
 
