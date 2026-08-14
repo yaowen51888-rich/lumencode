@@ -18,7 +18,7 @@ import { parseAllEnabledTools } from '../lib/parsers/index.js';
 import { registerAllParsers } from '../lib/parsers/register.js';
 import { detectClaudeDir, deriveProjectPaths } from '../lib/parser.js';
 import { loadConfig } from '../lib/config.js';
-import { inferProvider, convertPortkeyPricing } from '../lib/pricing-loader.js';
+import { inferProvider, convertPortkeyPricing, initPricing, resolveModelPricing } from '../lib/pricing-loader.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PRICING_FILE = join(__dirname, '..', 'data', 'pricing.json');
@@ -82,13 +82,14 @@ async function main() {
 
   const queue = [...used];
   const c = { added: 0, updated: 0, unchanged: 0, overrideSkipped: 0, noPricing: 0 };
+  const unresolved = []; // Portkey 无收录模型，末尾做兜底诊断
 
   async function worker() {
     while (queue.length) {
       const model = queue.shift();
       if (overrideKeys.has(model)) { c.overrideSkipped++; continue; } // override 权威，不覆盖
       const fresh = await fetchOne(model);
-      if (!fresh) { c.noPricing++; continue; } // Portkey 无收录 / 网络/超时
+      if (!fresh) { c.noPricing++; unresolved.push(model); continue; } // Portkey 无收录 / 网络/超时
       const existing = pricing.models[model];
       if (existing && samePrice(existing, fresh)) {
         c.unchanged++;
@@ -110,6 +111,23 @@ async function main() {
   renameSync(tmp, PRICING_FILE);
 
   console.log(`同步完成: 新增 ${c.added} / 更新 ${c.updated} / 无变化 ${c.unchanged} / override跳过 ${c.overrideSkipped} / Portkey无收录 ${c.noPricing} / 实际模型 ${used.size}`);
+
+  // 无收录模型兜底诊断：标注运行时是否已有 fuzzy/alias 兜底，便于决定是否手动补 override。
+  // 这些模型 Portkey 无独立收录（多为中转别名 / China 厂商），精确价需 override 维护。
+  if (unresolved.length) {
+    initPricing(); // 重新加载已写入的最新表
+    console.log(`\nPortkey 无收录 ${unresolved.length} 个，运行时兜底诊断:`);
+    for (const m of unresolved) {
+      const r = resolveModelPricing(m);
+      if (r.unknown) {
+        console.log(`  ${m}: 无任何定价 → 建议在 overrides 添加 { "aliasOf": "..." } 或显式 {input,output,...}`);
+      } else if (r.fuzzy) {
+        console.log(`  ${m}: 已按 fuzzy 估算 → ${r.fuzzyKey} ($${r.input}/${r.output}/1M)`);
+      } else {
+        console.log(`  ${m}: 已有精确/alias 定价 ($${r.input}/${r.output}/1M)`);
+      }
+    }
+  }
 }
 
 main().catch(err => { console.error('同步失败:', err); process.exit(1); });

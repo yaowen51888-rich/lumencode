@@ -2,7 +2,7 @@
   "_meta": {
     "version": "1.0.0",
     "source": "https://configs.portkey.ai/pricing",
-    "syncedAt": "2026-07-04T04:36:03.539Z",
+    "syncedAt": "2026-08-14T07:20:47.748Z",
     "providers": [
       "anthropic",
       "openai",
@@ -177,6 +177,15 @@
       "output": 0.28,
       "cacheRead": 0.028,
       "cacheCreate": 0
+    },
+    "kimi-k3": {
+      "input": 3,
+      "output": 15,
+      "cacheRead": 0.3,
+      "cacheCreate": 0
+    },
+    "k3": {
+      "aliasOf": "kimi-k3"
     }
   },
   "models": {
