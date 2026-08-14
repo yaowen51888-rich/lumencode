@@ -18,8 +18,13 @@ import { detectClaudeDir, deriveProjectPaths } from '../../lib/parser.js';
 import { parseAllEnabledTools, detectAvailableTools } from '../../lib/parsers/index.js';
 import { registerAllParsers } from '../../lib/parsers/register.js';
 import { preloadUnknownPricing } from '../../lib/pricing-loader.js';
+import { getClaudeDirMaxMtime } from '../../lib/cache.js';
 import { normalizeProjectPath } from '../../lib/aggregate.js';
 import { toolSchemas, toolHandlers } from './tools.js';
+import { createRequire } from 'module';
+
+// 版本号取自 package.json，cwd 无关
+const { version: APP_VERSION } = createRequire(import.meta.url)('../../package.json');
 
 // 注册解析器
 registerAllParsers();
@@ -30,6 +35,7 @@ let cachedRecords = null;
 let cachedToolBreakdown = null;
 let cachedConfig = null;
 let pendingRecords = null;
+let cachedMtime = 0;
 
 /**
  * 加载并缓存配置
@@ -60,10 +66,13 @@ function loadMcpConfig() {
 }
 
 /**
- * 首次调用时解析 records 并缓存，后续复用
+ * 解析 records 并缓存。mtime 变化（新会话日志追加 / 项目增删）时失效重解析，
+ * 避免 stdio 长驻客户端（Cursor 等）启动后读不到后续新增会话。
  */
 async function ensureRecords() {
-  if (cachedRecords) {
+  const config = loadMcpConfig();
+  const currentMtime = getClaudeDirMaxMtime(config.claudeDir);
+  if (cachedRecords && currentMtime === cachedMtime) {
     return { records: cachedRecords, toolBreakdown: cachedToolBreakdown };
   }
   // 并发去重：MCP 客户端可通过 stdio 并发发请求，
@@ -71,7 +80,6 @@ async function ensureRecords() {
   if (pendingRecords) return pendingRecords;
 
   pendingRecords = (async () => {
-    const config = loadMcpConfig();
     const includeProjects = config.repos && config.repos.length > 0
       ? config.repos.map(r => normalizeProjectPath(r))
       : config._autoRepos
@@ -91,6 +99,7 @@ async function ensureRecords() {
 
     cachedRecords = records;
     cachedToolBreakdown = toolBreakdown;
+    cachedMtime = getClaudeDirMaxMtime(config.claudeDir);
 
     console.error(`[LumenCode MCP] 已加载 ${records.length} 条记录，工具: ${Object.keys(toolBreakdown).join(', ')}`);
 
@@ -109,7 +118,7 @@ async function ensureRecords() {
 
 const server = new McpServer({
   name: 'lumencode',
-  version: '1.3.8',
+  version: APP_VERSION,
 });
 
 // 注册所有 tools
