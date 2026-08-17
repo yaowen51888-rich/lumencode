@@ -11,6 +11,9 @@ export const API = {
   PROJECT_TRACKING: '/api/projects/tracking',
   SMART_REPORT_TOOLS: '/api/smart-report/tools',
   SMART_REPORT: '/api/smart-report',
+  UPDATE_CHECK: '/api/update/check',
+  UPDATE_STATUS: '/api/update/status',
+  UPDATE_APPLY: '/api/update/apply',
 };
 
 // 灰阶色板（按视觉权重从重到轻）

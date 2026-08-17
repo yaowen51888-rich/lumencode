@@ -2147,3 +2147,22 @@ input, textarea { font-family: inherit; color: inherit; }
 .tracking-badge.badge-on { color: var(--forest, #3d7558); border-color: color-mix(in srgb, var(--forest, #3d7558) 40%, transparent); }
 .tracking-badge.badge-partial { color: var(--ochre, #9a7836); border-color: color-mix(in srgb, var(--ochre, #9a7836) 40%, transparent); }
 .tracking-badge.badge-off { color: var(--foreground); opacity: 0.5; }
+
+/* ── 新版本更新弹窗（右下角） ── */
+.update-popup {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  max-width: 320px;
+  padding: 16px;
+  border-radius: var(--radius, 12px);
+  background: var(--card, #fff);
+  color: var(--card-foreground, inherit);
+  border: 1px solid var(--border, rgba(0,0,0,0.1));
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+.update-popup-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.update-popup-body { font-size: 13px; opacity: 0.85; margin-bottom: 12px; }
+.update-popup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.update-popup-progress { font-size: 12px; opacity: 0.7; margin-top: 8px; }

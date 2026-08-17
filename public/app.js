@@ -1,6 +1,6 @@
 import { COLORS, SCENARIO_COLORS, TEXT, ID, STORAGE } from './config.js';
 import { esc, fmt, fmtShort, destroyChart, destroyAllCharts, getChart, setChart, todayISO, fmtDate, TOOL_DISPLAY_NAMES, groupMcpByServer, aggregateToolsWithDualCounts, TOOL_COLORS, TOOL_SUB_NAMES, TOOL_META, toolDisplayName } from './utils.js';
-import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchAuditEvidence, fetchSessions, fetchStepStats, fetchHooksStatus, fetchProjectTracking, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport } from './api.js';
+import { createLatestRequestGuard, fetchTools, fetchReport, fetchConfig, saveConfig, fetchDetails, fetchAuditEvidence, fetchSessions, fetchStepStats, fetchHooksStatus, fetchProjectTracking, updateHooks, fetchSmartReportTools, fetchSmartReportRecord, generateSmartReport, fetchUpdateCheck, fetchUpdateStatus, applyUpdate, pingServer } from './api.js';
 import { renderWorkTypePie, renderModelBars, renderProjectBars, renderTimelineArea, renderCacheStack } from './charts.js';
 import { renderGitInsights, renderLineBlameEvidence, renderAuditCommitList, renderAuditEvidence } from './git-insights.js';
 import { loadWorkReport, copyWorkReport, downloadMarkdown, getWorkReportState, setWorkReportState } from './work-report.js';
@@ -310,6 +310,7 @@ function appState() {
       }
       await this.loadCurrentView();
       if (this.view === 'report') await this.loadReportContent();
+      runUpdateCheckPopup();
     },
 
     /* ── theme ── */
@@ -501,7 +502,7 @@ function appState() {
       if (this.view === 'settings' && v !== 'settings' && window._isSettingsDirty && window._isSettingsDirty()) {
         if (!confirm('设置有未保存的修改，确定离开吗？')) return;
       }
-      if (v === 'settings') { this.view = 'settings'; this.saveStateToHash(); window.openSettings(); return; }
+      if (v === 'settings') { this.view = 'settings'; this.saveStateToHash(); refreshVersionCard(); window.openSettings(); return; }
       v === 'report' ? this.openReport() : this.showLedger();
     },
     initSourcePaletteKb() {
@@ -1543,6 +1544,100 @@ function showToast(msg) {
   toast.style.opacity = '1';
   setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => { toast.style.display = 'none'; }, 300); }, 3000);
 }
+
+/* ── 自动更新 ── */
+let updateDismissed = false; // 用户点「稍后」后本次会话不再弹
+
+async function runUpdateCheckPopup() {
+  try {
+    const info = await fetchUpdateCheck();
+    if (!info.updateAvailable || !info.globallyInstalled || updateDismissed) return;
+    const body = document.getElementById('updatePopupBody');
+    if (body) body.textContent = `v${info.latest}（当前 v${info.current}）`;
+    document.getElementById('updatePopup')?.style.setProperty('display', 'block');
+  } catch { /* 检查失败静默 */ }
+}
+
+function dismissUpdatePopup() {
+  updateDismissed = true;
+  document.getElementById('updatePopup')?.style.setProperty('display', 'none');
+}
+
+// 一键更新：apply → 轮询 status 展示日志 → 连接断开(服务重启)后等恢复 → 刷新页面
+async function startUpdateFlow(mode) {
+  const popupBtn = document.getElementById('updatePopupBtn');
+  const progress = document.getElementById('updatePopupProgress');
+  const cardBtn = document.getElementById('updApplyBtn');
+  const cardHint = document.getElementById('updHint');
+  const showMsg = (msg) => {
+    if (progress) { progress.style.display = 'block'; progress.textContent = msg; }
+    if (mode === 'card' && cardHint) { cardHint.style.display = 'block'; cardHint.textContent = msg; }
+  };
+  if (popupBtn) popupBtn.disabled = true;
+  if (cardBtn) cardBtn.disabled = true;
+  try {
+    const r = await applyUpdate();
+    if (!r.started) { showMsg('已有更新在进行中'); resetUpdateButtons(); return; }
+    showMsg('正在更新…');
+    // 轮询 status；请求失败 = 服务已重启，转入等待恢复
+    for (;;) {
+      try {
+        const st = await fetchUpdateStatus();
+        if (st.message) showMsg(st.message.split('\n').pop());
+        if (!st.updating) { showMsg('更新失败，请查看服务端日志'); resetUpdateButtons(); return; }
+      } catch { break; } // 连接断开：服务正在重启
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    showMsg('正在重启服务…');
+    // 等新服务起来（最多 60s）；用 /api/tools 探测，兼容不带 update 路由的新版本
+    for (let i = 0; i < 60; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      try { await pingServer(); location.reload(); return; } catch { /* 尚未恢复 */ }
+    }
+    showMsg('服务重启超时，请手动刷新页面');
+  } catch (err) {
+    showMsg('更新失败: ' + err.message);
+  }
+  resetUpdateButtons();
+}
+
+function resetUpdateButtons() {
+  const popupBtn = document.getElementById('updatePopupBtn');
+  const cardBtn = document.getElementById('updApplyBtn');
+  if (popupBtn) popupBtn.disabled = false;
+  if (cardBtn) cardBtn.disabled = false;
+}
+
+// 设置页「版本与更新」卡片渲染；force=true 时强制重新检查
+async function refreshVersionCard(force = false) {
+  const cur = document.getElementById('updCurrent');
+  const lat = document.getElementById('updLatest');
+  const applyBtn = document.getElementById('updApplyBtn');
+  const hint = document.getElementById('updHint');
+  const checkBtn = document.getElementById('updCheckBtn');
+  if (checkBtn) checkBtn.disabled = true;
+  try {
+    const info = await fetchUpdateCheck(force);
+    if (cur) cur.textContent = 'v' + info.current;
+    if (lat) lat.textContent = info.latest ? 'v' + info.latest : '未知';
+    if (hint) hint.style.display = 'block';
+    if (info.globallyInstalled) {
+      applyBtn.style.display = info.updateAvailable ? 'inline-block' : 'none';
+      hint.textContent = info.updateAvailable ? '有新版本可更新' : '已是最新版本';
+    } else {
+      applyBtn.style.display = 'none';
+      hint.textContent = 'npx/本地方式运行不支持自动更新，请执行 npm install -g lumencode@latest';
+    }
+  } catch {
+    if (lat) lat.textContent = '检查失败';
+    if (hint) { hint.style.display = 'block'; hint.textContent = '版本检查失败，请检查网络'; }
+  }
+  if (checkBtn) checkBtn.disabled = false;
+}
+window.runUpdateCheckPopup = runUpdateCheckPopup;
+window.dismissUpdatePopup = dismissUpdatePopup;
+window.startUpdateFlow = startUpdateFlow;
+window.refreshVersionCard = refreshVersionCard;
 
 /* ── Settings Modal ── */
 const SCENARIO_LABELS = { coding: '编码', testing: '测试', debugging: '调试', documentation: '文档', review: '审查', planning: '规划', refactoring: '重构' };

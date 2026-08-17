@@ -14,6 +14,7 @@ import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
 import { createRequire } from 'module';
 import { enableHooks, disableHooks, getHooksStatus, HOOK_TOOLS, initStepTracking } from './lib/hooks-manager.js';
+import { setServeArgs } from './lib/updater.js';
 
 // 版本号取自 package.json，cwd 无关
 const { version: APP_VERSION } = createRequire(import.meta.url)('./package.json');
@@ -540,6 +541,7 @@ if (command === 'hooks:install-gemini') {
 
 if (command === 'serve') {
   const { config, effectiveIncludeProjects, configPath } = loadCliConfig();
+  setServeArgs(process.argv.slice(3)); // 自动更新重启时复用端口等原始参数
   startServer(config, effectiveIncludeProjects, buildReportData, configPath);
 } else if (command === 'doctor') {
   const { config, effectiveIncludeProjects } = loadCliConfig();

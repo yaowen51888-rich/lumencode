@@ -889,6 +889,26 @@
               </div>
             </section>
 
+            <!-- 版本与更新 -->
+            <section class="card cfg-card">
+              <div class="cfg-card-body">
+                <div class="cfg-section-title">版本与更新</div>
+                <div class="form-group">
+                  <label class="form-label">当前版本</label>
+                  <p class="form-hint" id="updCurrent" style="margin:0;">-</p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">最新版本</label>
+                  <p class="form-hint" id="updLatest" style="margin:0;">-</p>
+                </div>
+                <div class="form-group">
+                  <button class="btn" id="updCheckBtn" onclick="refreshVersionCard(true)">检查更新</button>
+                  <button class="btn btn-primary" id="updApplyBtn" onclick="startUpdateFlow('card')" style="display:none;margin-left:8px;">立即更新</button>
+                  <p class="form-hint" id="updHint" style="margin:8px 0 0;display:none;"></p>
+                </div>
+              </div>
+            </section>
+
             <!-- 代码仓库 -->
             <section class="card cfg-card">
               <div class="cfg-card-body">
@@ -1358,6 +1378,17 @@
       </div>
     </div>
   </div>
+
+    <!-- 新版本更新弹窗（右下角） -->
+    <div id="updatePopup" class="update-popup" style="display:none;">
+      <div class="update-popup-title">发现新版本</div>
+      <div id="updatePopupBody" class="update-popup-body">v0.0.0（当前 v0.0.0）</div>
+      <div id="updatePopupActions" class="update-popup-actions">
+        <button class="btn" onclick="dismissUpdatePopup()">稍后</button>
+        <button id="updatePopupBtn" class="btn btn-primary" onclick="startUpdateFlow()">立即更新</button>
+      </div>
+      <div id="updatePopupProgress" class="update-popup-progress" style="display:none;">正在更新…</div>
+    </div>
 
   <script type="module" src="/app.js"></script>
 </body>

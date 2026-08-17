@@ -174,3 +174,29 @@ export async function fetchWorkReport(params) {
   if (!res.ok) throw new Error('Failed to fetch work report');
   return res.text();
 }
+
+export async function fetchUpdateCheck(force = false) {
+  const res = await fetch(`${API.UPDATE_CHECK}${force ? '?force=1' : ''}`);
+  if (!res.ok) throw new Error('版本检查失败');
+  return res.json();
+}
+
+export async function fetchUpdateStatus() {
+  const res = await fetch(API.UPDATE_STATUS);
+  if (!res.ok) throw new Error('更新状态获取失败');
+  return res.json();
+}
+
+export async function applyUpdate() {
+  const res = await fetch(API.UPDATE_APPLY, { method: 'POST' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '触发更新失败');
+  return data;
+}
+
+// 更新重启后的恢复探测：/api/tools 自早期版本即存在，新版无 update 路由时也能确认服务已恢复
+export async function pingServer() {
+  const res = await fetch(API.TOOLS);
+  if (!res.ok) throw new Error('服务未恢复');
+  return true;
+}
