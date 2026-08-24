@@ -19,7 +19,8 @@ Thumbs.db
 # Local step tracking database (stores file snapshots)
 .lumencode/
 .ccusage/
-docs/
+docs/*
+!docs/adr/
 .playwright-mcp/
 .spec-workflow/
 specs/
